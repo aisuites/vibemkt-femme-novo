@@ -106,14 +106,12 @@ def dashboard(request):
             'posts_dia_percentual': (posts_hoje / org.quota_posts_dia * 100) if org.quota_posts_dia > 0 else 0,
             
             # Quotas mensais
-            'posts_mes': pautas_mes,
+            'posts_mes': posts_mes,
             'posts_mes_max': org.quota_posts_mes,
             'posts_mes_percentual': (posts_mes / org.quota_posts_mes * 100) if org.quota_posts_mes > 0 else 0,
             
-            # Custos
+            # Custo mensal (apenas tracking, sem limite)
             'cost_mes': cost_mes,
-            'cost_mes_max': float(org.quota_cost_mes_usd) if org.quota_cost_mes_usd else 0,
-            'cost_mes_percentual': (cost_mes / float(org.quota_cost_mes_usd) * 100) if org.quota_cost_mes_usd and org.quota_cost_mes_usd > 0 else 0,
         }
     
     # Atividades recentes
