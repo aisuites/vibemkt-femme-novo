@@ -43,6 +43,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'apps.core.middleware.TenantMiddleware',  # Tenant detection
+    'apps.core.middleware.TenantIsolationMiddleware',  # Tenant isolation
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -60,6 +62,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'apps.core.context_processors.tenant_context',  # Tenant context
             ],
         },
     },

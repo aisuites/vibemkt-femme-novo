@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from decimal import Decimal
 from apps.core.models import User, Area
+from apps.core.managers import OrganizationScopedManager
 from apps.knowledge.models import KnowledgeBase
 
 
@@ -88,6 +89,9 @@ class Pauta(models.Model):
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name='Concluído em')
+    
+    # Manager com filtro automático por organization
+    objects = OrganizationScopedManager()
     
     class Meta:
         verbose_name = 'Pauta'
@@ -281,6 +285,9 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
     
+    # Manager com filtro automático por organization
+    objects = OrganizationScopedManager()
+    
     class Meta:
         verbose_name = 'Post'
         verbose_name_plural = 'Posts'
@@ -385,6 +392,9 @@ class Asset(models.Model):
     # Status
     is_active = models.BooleanField(default=True, verbose_name='Ativo')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
+    
+    # Manager com filtro automático por organization
+    objects = OrganizationScopedManager()
     
     class Meta:
         verbose_name = 'Asset'
@@ -865,6 +875,9 @@ class VideoAvatar(models.Model):
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
+    
+    # Manager com filtro automático por organization
+    objects = OrganizationScopedManager()
     
     class Meta:
         ordering = ['-created_at']
