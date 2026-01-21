@@ -248,10 +248,23 @@ class KnowledgeBase(models.Model):
         return f"Base {self.organization.name} - {self.nome_empresa}"
     
     def save(self, *args, **kwargs):
-        """Calcula completude antes de salvar"""
-        self.completude_percentual = self.calculate_completude()
-        self.is_complete = self.completude_percentual >= 70
+        """Salvar e calcular completude"""
+        # Se já tem pk, calcular completude antes de salvar
+        if self.pk:
+            self.completude_percentual = self.calculate_completude()
+            self.is_complete = self.completude_percentual >= 70
+        
+        # Salvar
         super().save(*args, **kwargs)
+        
+        # Se é novo (acabou de ganhar pk), calcular completude e atualizar
+        if not self.completude_percentual and self.pk:
+            self.completude_percentual = self.calculate_completude()
+            self.is_complete = self.completude_percentual >= 70
+            KnowledgeBase.objects.filter(pk=self.pk).update(
+                completude_percentual=self.completude_percentual,
+                is_complete=self.is_complete
+            )
     
     def calculate_completude(self):
         """

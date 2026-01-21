@@ -49,6 +49,10 @@ def knowledge_view(request):
             nome_empresa=request.organization.name
         )
     
+    # Se kb ainda for None (usuário sem organization), criar vazia
+    if not kb:
+        kb = None
+    
     # Inicializar forms para cada bloco
     forms = {
         'block1': KnowledgeBaseBlock1Form(instance=kb),
@@ -60,26 +64,36 @@ def knowledge_view(request):
         'block7': KnowledgeBaseBlock7Form(instance=kb),
     }
     
-    # Buscar dados relacionados - TODOS os segmentos (ativos e inativos)
-    # Otimizado com select_related para evitar N+1 queries
-    internal_segments = InternalSegment.objects.filter(
-        knowledge_base=kb
-    ).select_related('parent', 'updated_by').order_by('is_active', 'order', 'name')
-    
-    colors = ColorPalette.objects.filter(knowledge_base=kb).order_by('order')
-    social_networks = SocialNetwork.objects.filter(knowledge_base=kb).order_by('order')
-    
-    reference_images = ReferenceImage.objects.filter(
-        knowledge_base=kb
-    ).select_related('uploaded_by').order_by('-created_at')[:20]
-    
-    logos = Logo.objects.filter(
-        knowledge_base=kb
-    ).select_related('uploaded_by').order_by('-is_primary', 'logo_type')
-    
-    fonts = CustomFont.objects.filter(
-        knowledge_base=kb
-    ).select_related('uploaded_by').order_by('font_type')
+    # Buscar dados relacionados apenas se kb existir e tiver pk
+    if kb and kb.pk:
+        # TODOS os segmentos (ativos e inativos)
+        # Otimizado com select_related para evitar N+1 queries
+        internal_segments = InternalSegment.objects.filter(
+            knowledge_base=kb
+        ).select_related('parent', 'updated_by').order_by('is_active', 'order', 'name')
+        
+        colors = ColorPalette.objects.filter(knowledge_base=kb).order_by('order')
+        social_networks = SocialNetwork.objects.filter(knowledge_base=kb).order_by('order')
+        
+        reference_images = ReferenceImage.objects.filter(
+            knowledge_base=kb
+        ).select_related('uploaded_by').order_by('-created_at')[:20]
+        
+        logos = Logo.objects.filter(
+            knowledge_base=kb
+        ).select_related('uploaded_by').order_by('-is_primary', 'logo_type')
+        
+        fonts = CustomFont.objects.filter(
+            knowledge_base=kb
+        ).select_related('uploaded_by').order_by('font_type')
+    else:
+        # KB não existe ou não tem pk, inicializar vazios
+        internal_segments = []
+        colors = []
+        social_networks = []
+        reference_images = []
+        logos = []
+        fonts = []
     
     # Calcular completude proporcional por bloco (% de campos preenchidos)
     def calc_bloco_percent(fields_filled, total_fields):
