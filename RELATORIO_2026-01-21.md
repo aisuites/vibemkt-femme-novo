@@ -246,10 +246,15 @@ area = models.ForeignKey(Area, on_delete=models.CASCADE)
    - Linhas 23-40: Ajustado AreaAdmin (permissões apenas superuser)
    
 4. `apps/content/admin.py`
-   - Linhas 28-33: Ajustado save_model() do PautaAdmin
+   - Linhas 28-43: Validação de quota no PautaAdmin.save_model()
+   - Linhas 71-86: Validação de quota no PostAdmin.save_model()
    
 5. `templates/dashboard/dashboard.html`
    - Linha 132-134: Adicionado/removido debug temporário
+   
+6. `BACKLOG.md`
+   - Adicionado ITEM #004: Modo multi-tenant/single-tenant configurável
+   - Atualizado ITEM #003: Etapa 4 (Alertas) para implementação futura
 
 ---
 
@@ -286,10 +291,12 @@ Area.objects.all()
 |-------|--------|-------|
 | **1. Remover UsageLimit** | ✅ CONCLUÍDA | 10 min |
 | **2. Auto-incremento QuotaUsageDaily** | ✅ CONCLUÍDA | 30 min |
-| **3. Validação de quotas** | ⏳ Aguardando | 45 min |
-| **4. Ativar alertas** | ⏳ Aguardando | 20 min |
+| **3. Validação de quotas** | ✅ CONCLUÍDA | 20 min |
+| **4. Ativar alertas** | 📋 No Backlog | - |
 
-**Progresso: 50% (2/4 etapas concluídas)** 🎯
+**Progresso: 75% (3/4 etapas concluídas)** 🎯
+
+**Etapa 4 movida para BACKLOG** - Será implementada posteriormente
 
 ---
 
@@ -309,6 +316,60 @@ Area.objects.all()
 ### **Usuários:**
 - `user_iamkt` (organization: IAMKT, is_staff: True)
 - `user_acme` (organization: ACME Corp, is_staff: True)
+
+---
+
+### **7. Implementação de Validação de Quotas (11:21 - 11:25)**
+
+**Objetivo:**
+- Bloquear criação de Pauta/Post ao atingir limite diário/mensal
+- Implementar validação no Django Admin
+- Exibir mensagens de erro amigáveis
+
+**Solução implementada:**
+```python
+# apps/content/admin.py
+def save_model(self, request, obj, form, change):
+    # Validar quota apenas ao criar (não ao editar)
+    if not change and obj.organization:
+        can_create, error_code, message = obj.organization.can_create_pauta()
+        if not can_create:
+            messages.error(request, f'❌ Não foi possível criar a pauta: {message}')
+            return  # Impede salvamento sem chamar super()
+    
+    super().save_model(request, obj, form, change)
+```
+
+**Onde implementado:**
+- `PautaAdmin.save_model()` (linhas 28-43)
+- `PostAdmin.save_model()` (linhas 71-86)
+
+**Métodos utilizados:**
+- `Organization.can_create_pauta()` (já existente)
+- `Organization.can_create_post()` (já existente)
+
+**Teste realizado:**
+```bash
+# Criar pautas até atingir limite
+1. Pauta criada (2/5) ✅
+2. Pauta criada (3/5) ✅
+3. Pauta criada (4/5) ✅
+4. BLOQUEADO: "Limite diário de pautas atingido (5/5)" ❌
+```
+
+**Mensagens de erro implementadas:**
+- ❌ "Limite diário de pautas atingido (X/X)"
+- ❌ "Limite diário de posts atingido (X/X)"
+- ❌ "Limite mensal de posts atingido (X/X)"
+- ❌ "Sem quota de pautas disponível"
+- ❌ "Organização aguardando aprovação"
+- ❌ "Essa empresa está suspensa"
+
+**Resultado:**
+- ✅ Validação funcionando corretamente
+- ✅ Bloqueio ao atingir limite
+- ✅ Mensagens amigáveis no Admin
+- ✅ Não afeta edição de registros existentes
 
 ---
 
@@ -387,6 +448,10 @@ Area.objects.all()
 3. `fix: Corrigir QuotaUsageDaily ACME manualmente`
 4. `feat: Melhorar AreaAdmin para multi-tenant e validar isolamento`
 5. `refactor: Transformar Areas em departamentos globais`
+6. `docs: Adicionar relatório detalhado do dia 21/01/2026`
+7. `docs: Adicionar ITEM #004 - Modo configurável multi-tenant vs single-tenant`
+8. `docs: Atualizar ITEM #003 - Etapa 4 será feita após Etapa 3`
+9. `feat: Implementar validação de quotas no Admin (OPÇÃO A - Etapa 3)`
 
 ---
 
