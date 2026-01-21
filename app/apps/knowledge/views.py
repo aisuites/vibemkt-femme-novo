@@ -36,7 +36,18 @@ def knowledge_view(request):
     Visualizar e Editar Base de Conhecimento
     Interface accordion com edição inline por campo
     """
-    kb = KnowledgeBase.get_instance()
+    # Buscar KnowledgeBase da organization do usuário
+    try:
+        kb = KnowledgeBase.objects.for_request(request).first()
+    except Exception:
+        kb = None
+    
+    # Se não existir, criar uma nova
+    if not kb and hasattr(request, 'organization') and request.organization:
+        kb = KnowledgeBase.objects.create(
+            organization=request.organization,
+            nome_empresa=request.organization.name
+        )
     
     # Inicializar forms para cada bloco
     forms = {
@@ -158,7 +169,10 @@ def knowledge_save_block(request, block_number):
     Returns:
         JSON: {success: bool, message: str, completude: int}
     """
-    kb = KnowledgeBase.get_instance()
+    # Buscar KnowledgeBase da organization
+    kb = KnowledgeBase.objects.for_request(request).first()
+    if not kb:
+        return JsonResponse({'success': False, 'message': 'Base de conhecimento não encontrada'}, status=404)
     
     # Mapear número do bloco para form
     form_classes = {
@@ -224,7 +238,11 @@ def knowledge_save_all(request):
     Salvar todos os blocos de uma vez
     Usa Service Layer para processamento
     """
-    kb = KnowledgeBase.get_instance()
+    # Buscar KnowledgeBase da organization
+    kb = KnowledgeBase.objects.for_request(request).first()
+    if not kb:
+        messages.error(request, 'Base de conhecimento não encontrada')
+        return redirect('knowledge:view')
     
     # Processar todos os forms (sem prefix pois o template não usa)
     forms = {
@@ -266,7 +284,9 @@ def knowledge_upload_image(request):
     if form.is_valid():
         try:
             image_file = request.FILES['image_file']
-            kb = KnowledgeBase.get_instance()
+            kb = KnowledgeBase.objects.for_request(request).first()
+            if not kb:
+                return JsonResponse({'success': False, 'message': 'Base de conhecimento não encontrada'}, status=404)
             
             # Validar imagem
             is_valid, error_msg = validate_image_file(image_file, max_size_mb=10)
@@ -359,7 +379,9 @@ def knowledge_upload_logo(request):
     if form.is_valid():
         try:
             logo_file = request.FILES['logo_file']
-            kb = KnowledgeBase.get_instance()
+            kb = KnowledgeBase.objects.for_request(request).first()
+            if not kb:
+                return JsonResponse({'success': False, 'message': 'Base de conhecimento não encontrada'}, status=404)
             
             # Upload para S3
             s3_key = f'knowledge/logos/{kb.id}/{logo_file.name}'
@@ -411,7 +433,9 @@ def knowledge_upload_font(request):
     if form.is_valid():
         try:
             font_file = request.FILES['font_file']
-            kb = KnowledgeBase.get_instance()
+            kb = KnowledgeBase.objects.for_request(request).first()
+            if not kb:
+                return JsonResponse({'success': False, 'message': 'Base de conhecimento não encontrada'}, status=404)
             
             # Upload para S3
             s3_key = f'knowledge/fonts/{kb.id}/{font_file.name}'
