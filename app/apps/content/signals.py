@@ -24,7 +24,10 @@ def increment_pauta_quota(sender, instance, created, **kwargs):
     
     Referência: core/views.py linhas 1725-1753 (aplicação anterior)
     """
+    logger.info(f'[PAUTA] Signal disparado: Pauta #{instance.id}, created={created}, org={instance.organization}')
+    
     if not created:
+        logger.info(f'[PAUTA] Pauta #{instance.id} - update (não criação), ignorando')
         return
     
     if not instance.organization:

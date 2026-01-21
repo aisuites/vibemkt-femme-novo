@@ -22,10 +22,25 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(Area)
 class AreaAdmin(admin.ModelAdmin):
-    list_display = ['name', 'parent', 'is_active', 'created_at']
-    list_filter = ['is_active', 'parent']
+    list_display = ['name', 'organization', 'parent', 'is_active', 'created_at']
+    list_filter = ['is_active', 'organization']
     search_fields = ['name', 'description']
     readonly_fields = ['created_at', 'updated_at']
+    
+    def save_model(self, request, obj, form, change):
+        """Auto-preencher organization ao salvar"""
+        if not obj.organization_id and hasattr(request, 'organization'):
+            obj.organization = request.organization
+        super().save_model(request, obj, form, change)
+    
+    def get_queryset(self, request):
+        """Filtrar por organization do usuário"""
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        if hasattr(request, 'organization') and request.organization:
+            return qs.filter(organization=request.organization)
+        return qs.none()
 
 
 @admin.register(AuditLog)
