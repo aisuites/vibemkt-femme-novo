@@ -22,9 +22,23 @@ def dashboard(request):
     user = request.user
     
     # Verificar se deve mostrar modal de boas-vindas
-    # TEMPORÁRIO: Sempre mostrar modal para testes
-    show_welcome = True
-    # show_welcome = request.session.pop('show_welcome_modal', False)
+    # Condições: 1) Não mostrado nesta sessão, 2) KB não está 100% completa
+    show_welcome = False
+    
+    if not request.session.get('welcome_shown', False):
+        # Verificar se Base de Conhecimento está 100% completa
+        try:
+            knowledge_base = KnowledgeBase.objects.first()
+            kb_completude = knowledge_base.completude_percentual if knowledge_base else 0
+            
+            # Só mostrar modal se KB não estiver 100% completa
+            if kb_completude < 100:
+                show_welcome = True
+                request.session['welcome_shown'] = True
+        except:
+            # Se não tem KB, mostrar modal
+            show_welcome = True
+            request.session['welcome_shown'] = True
     
     # Verificar se existe Base de Conhecimento
     try:
