@@ -84,13 +84,13 @@ def dashboard(request):
             date__gte=first_day_month,
             date__lte=today
         ).aggregate(
-            total_pautas=Sum('pautas_count'),
-            total_posts=Sum('posts_count'),
+            total_pautas=Sum('pautas_requested'),
+            total_posts=Sum('posts_created'),
             total_cost=Sum('cost_usd')
         )
         
-        pautas_hoje = usage_today.pautas_count if usage_today else 0
-        posts_hoje = usage_today.posts_count if usage_today else 0
+        pautas_hoje = usage_today.pautas_requested if usage_today else 0
+        posts_hoje = usage_today.posts_created if usage_today else 0
         pautas_mes = usage_month['total_pautas'] or 0
         posts_mes = usage_month['total_posts'] or 0
         cost_mes = float(usage_month['total_cost'] or 0)
