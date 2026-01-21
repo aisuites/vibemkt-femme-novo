@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Modal</title>
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+</head>
+<body>
+    <h1>Teste do Modal de Boas-vindas</h1>
+    <p>O modal deve aparecer abaixo:</p>
+
+    <!-- Modal de Boas-vindas -->
+    <div id="welcomeModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>🎉 Bem-vindo ao IAMKT!</h3>
+        </div>
+        <div class="modal-body">
+          <p>Olá, <strong>Admin</strong>!</p>
+          <p>É ótimo ter você aqui. Para começar a usar o sistema de forma eficiente, recomendamos que você:</p>
+          
+          <div class="welcome-steps">
+            <div class="welcome-step">
+              <span class="step-number">1</span>
+              <div class="step-content">
+                <h4>Preencha a Base de Conhecimento</h4>
+                <p>Configure informações sobre sua empresa.</p>
+              </div>
+            </div>
+            
+            <div class="welcome-step">
+              <span class="step-number">2</span>
+              <div class="step-content">
+                <h4>Explore as Ferramentas</h4>
+                <p>Crie pautas e gere posts.</p>
+              </div>
+            </div>
+            
+            <div class="welcome-step">
+              <span class="step-number">3</span>
+              <div class="step-content">
+                <h4>Gerencie suas Quotas</h4>
+                <p>Acompanhe o uso diário e mensal.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="welcome-kb-status">
+            <p class="kb-status-incomplete">⚠️ Sua Base de Conhecimento ainda não foi configurada.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary">Configurar Base de Conhecimento</button>
+          <button type="button" class="btn btn-secondary" onclick="closeWelcomeModal()">Explorar Dashboard</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function closeWelcomeModal() {
+        document.getElementById('welcomeModal').style.display = 'none';
+      }
+      
+      document.getElementById('welcomeModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeWelcomeModal();
+        }
+      });
+    </script>
+</body>
+</html>

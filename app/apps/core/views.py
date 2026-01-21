@@ -22,7 +22,9 @@ def dashboard(request):
     user = request.user
     
     # Verificar se deve mostrar modal de boas-vindas
-    show_welcome = request.session.pop('show_welcome_modal', False)
+    # TEMPORÁRIO: Sempre mostrar modal para testes
+    show_welcome = True
+    # show_welcome = request.session.pop('show_welcome_modal', False)
     
     # Verificar se existe Base de Conhecimento
     try:
