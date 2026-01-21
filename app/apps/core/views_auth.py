@@ -20,7 +20,7 @@ def login_view(request):
     """
     # Se já está autenticado, redirecionar para dashboard
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect('core:dashboard')
     
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -56,7 +56,7 @@ def login_view(request):
                 request.session['welcome_shown'] = True
             
             # Redirecionar para página solicitada ou dashboard
-            next_url = request.GET.get('next', 'dashboard')
+            next_url = request.GET.get('next', 'core:dashboard')
             return redirect(next_url)
         else:
             # Credenciais inválidas
@@ -81,7 +81,7 @@ def register_view(request):
     TODO: Implementar formulário de registro completo
     """
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect('core:dashboard')
     
     # Por enquanto, apenas renderiza página informativa
     return render(request, 'auth/register.html')
