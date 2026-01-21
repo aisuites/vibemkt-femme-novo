@@ -21,6 +21,9 @@ def dashboard(request):
     """
     user = request.user
     
+    # Verificar se deve mostrar modal de boas-vindas
+    show_welcome = request.session.pop('show_welcome_modal', False)
+    
     # Verificar se existe Base de Conhecimento
     try:
         knowledge_base = KnowledgeBase.objects.first()
@@ -156,6 +159,7 @@ def dashboard(request):
         'trends_recentes': trends_recentes,
         'quota_info': quota_info,
         'atividades_recentes': atividades_recentes,
+        'show_welcome_modal': show_welcome,
     }
     
     return render(request, 'dashboard/dashboard.html', context)

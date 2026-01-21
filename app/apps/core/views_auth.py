@@ -30,8 +30,30 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         
         if user is not None:
-            # Login bem-sucedido
+            # Verificar se usuário tem organização
+            if not hasattr(user, 'organization') or user.organization is None:
+                messages.error(request, 'Sua conta não está associada a nenhuma organização. Entre em contato com o suporte.')
+                return render(request, 'auth/login.html')
+            
+            # Verificar status da organização
+            org = user.organization
+            
+            if not org.is_active:
+                if org.approved_at:
+                    # Organização foi suspensa
+                    messages.error(request, 'Sua organização está suspensa. Para mais detalhes, entre em contato com o suporte: suporte@aisuites.com.br')
+                else:
+                    # Organização aguardando aprovação
+                    messages.warning(request, 'Sua organização está aguardando aprovação. Você será notificado por e-mail quando for aprovada.')
+                return render(request, 'auth/login.html')
+            
+            # Login bem-sucedido - organização ativa
             auth_login(request, user)
+            
+            # Verificar se é primeiro acesso (para mostrar modal de boas-vindas)
+            if not request.session.get('welcome_shown', False):
+                request.session['show_welcome_modal'] = True
+                request.session['welcome_shown'] = True
             
             # Redirecionar para página solicitada ou dashboard
             next_url = request.GET.get('next', 'dashboard')
