@@ -28,10 +28,6 @@ class AreaAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
 
 
-# UsageLimit foi DEPRECADO - usar Organization e QuotaUsageDaily
-# Mantido apenas para migração de dados históricos
-
-
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
     list_display = ['user', 'action', 'model_name', 'object_repr', 'created_at']
