@@ -6,9 +6,11 @@ from django.contrib.auth import authenticate, login as auth_login, logout as aut
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
 
 
 @never_cache
+@csrf_protect
 @require_http_methods(["GET", "POST"])
 def login_view(request):
     """

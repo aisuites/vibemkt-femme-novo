@@ -40,7 +40,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--iamkt-white);
+  color: var(--color-white);
   font-weight: 700;
   font-size: 18px;
   box-shadow: var(--shadow-subtle);
@@ -54,7 +54,7 @@
 
 .brand-name {
   font-weight: 700;
-  color: var(--iamkt-purple);
+  color: var(--color-primary);
   letter-spacing: 0.03em;
   font-size: 15px;
   text-transform: uppercase;
@@ -62,7 +62,7 @@
 
 .brand-tagline {
   font-size: 11px;
-  color: var(--iamkt-gray);
+  color: var(--color-text-muted);
 }
 
 .header-right {
@@ -79,7 +79,7 @@
   padding: 6px 12px;
   border-radius: 999px;
   background: rgba(244, 233, 248, 0.9);
-  color: var(--iamkt-purple);
+  color: var(--color-primary);
   font-weight: 500;
 }
 
@@ -100,11 +100,15 @@
   font-size: 11px;
   padding: 3px 8px;
   border-radius: 999px;
-  background: rgba(0, 188, 164, 0.08);
-  color: var(--iamkt-green);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  color: var(--color-secondary);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.header-logo {
+  width: 10%;
 }
 
 /* ========================================
@@ -140,7 +144,7 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--iamkt-gray);
+  color: var(--color-text-muted);
   margin-bottom: 4px;
 }
 
@@ -156,7 +160,7 @@
   gap: 8px;
   padding: 7px 9px;
   border-radius: 999px;
-  color: var(--iamkt-gray-dark);
+  color: var(--color-text);
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease;
 }
@@ -225,7 +229,7 @@
 .card-title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--iamkt-gray-dark);
+  color: var(--color-text);
 }
 
 /* ========================================
@@ -248,9 +252,9 @@
 }
 
 .btn-primary {
-  background: var(--iamkt-green);
-  color: var(--iamkt-white);
-  box-shadow: 0 10px 22px rgba(0, 188, 164, 0.35);
+  background: var(--color-secondary);
+  color: var(--color-white);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--color-accent) 35%, transparent);
 }
 
 .btn-primary:hover {
@@ -305,8 +309,8 @@
 }
 
 .badge-success {
-  background: rgba(0, 188, 164, 0.08);
-  color: var(--iamkt-green);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  color: var(--color-secondary);
 }
 
 .badge-warning {
@@ -361,7 +365,7 @@
 
 label {
   font-weight: 500;
-  color: var(--iamkt-gray-dark);
+  color: var(--color-text);
   font-size: 12px;
 }
 
@@ -376,7 +380,7 @@ textarea {
   padding: 8px 10px;
   font-size: 12px;
   font-family: inherit;
-  color: var(--iamkt-gray-dark);
+  color: var(--color-text);
   outline: none;
   transition: border 0.15s ease, box-shadow 0.15s ease;
 }
@@ -402,7 +406,7 @@ textarea:focus {
 
 .field-hint {
   font-size: 10px;
-  color: var(--iamkt-gray);
+  color: var(--color-text-muted);
   margin-top: 2px;
 }
 
@@ -450,7 +454,7 @@ textarea:focus {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100vh;
-  background: var(--iamkt-white);
+  background: var(--color-white);
 }
 
 .auth-left {
@@ -477,14 +481,14 @@ textarea:focus {
 .auth-title {
   font-size: 2.5rem;
   font-weight: var(--font-weight-bold);
-  color: var(--iamkt-purple);
+  color: var(--color-primary);
   margin-bottom: var(--spacing-4);
   line-height: 1.2;
 }
 
 .auth-description {
   font-size: var(--font-size-xl);
-  color: var(--iamkt-gray);
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 
@@ -493,7 +497,7 @@ textarea:focus {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-8);
-  background: var(--iamkt-gray-dark);
+  background: var(--color-text);
 }
 
 .auth-card {
@@ -508,7 +512,7 @@ textarea:focus {
 .auth-card-title {
   font-size: 1.75rem;
   font-weight: var(--font-weight-bold);
-  color: var(--iamkt-white);
+  color: var(--color-white);
   margin-bottom: var(--spacing-2);
 }
 
@@ -533,7 +537,7 @@ textarea:focus {
 .form-label {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-medium);
-  color: var(--iamkt-white);
+  color: var(--color-white);
 }
 
 .form-input-wrapper {
@@ -546,7 +550,7 @@ textarea:focus {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-sm);
-  color: var(--iamkt-white);
+  color: var(--color-white);
   font-size: var(--font-size-base);
   transition: all var(--transition-base);
 }
@@ -557,7 +561,7 @@ textarea:focus {
 
 .form-input:focus {
   outline: none;
-  border-color: var(--iamkt-purple);
+  border-color: var(--color-primary);
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -578,7 +582,7 @@ textarea:focus {
 }
 
 .btn-toggle-password:hover {
-  color: var(--iamkt-white);
+  color: var(--color-white);
 }
 
 .btn-block {
@@ -610,7 +614,7 @@ textarea:focus {
 .btn-secondary {
   padding: var(--spacing-4) var(--spacing-6);
   background: transparent;
-  color: var(--iamkt-white);
+  color: var(--color-white);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-lg);
@@ -636,7 +640,7 @@ textarea:focus {
 }
 
 .auth-link:hover {
-  color: var(--iamkt-white);
+  color: var(--color-white);
 }
 
 .auth-divider {
@@ -695,6 +699,6 @@ textarea:focus {
   }
   
   .auth-right {
-    background: var(--iamkt-gray-dark);
+    background: var(--color-text);
   }
 }
