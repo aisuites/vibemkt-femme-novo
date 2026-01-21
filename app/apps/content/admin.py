@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Pauta, GeneratedContent, Asset, TrendMonitor, 
+    Pauta, Post, Asset, TrendMonitor, 
     WebInsight, IAModelUsage, ContentMetrics
 )
 
@@ -26,8 +26,8 @@ class PautaAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(GeneratedContent)
-class GeneratedContentAdmin(admin.ModelAdmin):
+@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
     list_display = ['id', 'content_type', 'social_network', 'user', 'area', 
                    'ia_provider', 'status', 'created_at']
     list_filter = ['content_type', 'social_network', 'ia_provider', 'status', 'area', 'created_at']

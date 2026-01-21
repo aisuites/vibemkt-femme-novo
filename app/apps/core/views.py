@@ -6,7 +6,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 from apps.knowledge.models import KnowledgeBase
-from apps.content.models import Pauta, GeneratedContent, TrendMonitor
+from apps.content.models import Pauta, Post, TrendMonitor
 from apps.campaigns.models import Project, Approval
 from apps.core.models import UsageLimit
 
@@ -36,9 +36,9 @@ def dashboard(request):
     pautas_pendentes = Pauta.objects.filter(user=user, status='pending').count()
     
     # Posts gerados
-    posts_total = GeneratedContent.objects.filter(user=user).count()
-    posts_draft = GeneratedContent.objects.filter(user=user, status='draft').count()
-    posts_aprovados = GeneratedContent.objects.filter(user=user, status='approved').count()
+    posts_total = Post.objects.filter(user=user).count()
+    posts_draft = Post.objects.filter(user=user, status='draft').count()
+    posts_aprovados = Post.objects.filter(user=user, status='approved').count()
     
     # Projetos
     projetos_ativos = Project.objects.filter(
@@ -90,7 +90,7 @@ def dashboard(request):
         })
     
     # Últimos posts
-    ultimos_posts = GeneratedContent.objects.filter(user=user).order_by('-created_at')[:3]
+    ultimos_posts = Post.objects.filter(user=user).order_by('-created_at')[:3]
     for post in ultimos_posts:
         atividades_recentes.append({
             'tipo': 'post',

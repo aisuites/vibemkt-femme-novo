@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Pauta, GeneratedContent, TrendMonitor
+from .models import Pauta, Post, TrendMonitor
 
 
 @login_required
@@ -23,7 +23,7 @@ def pauta_create(request):
 @login_required
 def posts_list(request):
     """Listar posts do usuário"""
-    posts = GeneratedContent.objects.filter(user=request.user).order_by('-created_at')
+    posts = Post.objects.filter(user=request.user).order_by('-created_at')
     context = {'posts': posts}
     return render(request, 'content/posts_list.html', context)
 

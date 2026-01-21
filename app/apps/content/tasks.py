@@ -9,7 +9,7 @@ from django.db import models
 from datetime import datetime
 
 from apps.content.models import (
-    Pauta, GeneratedContent, IAModelUsage, ContentMetrics, TrendMonitor
+    Pauta, Post, IAModelUsage, ContentMetrics, TrendMonitor
 )
 from apps.knowledge.models import KnowledgeBase
 from apps.utils.ai_openai import openai_manager
@@ -194,14 +194,14 @@ def generate_post_task(self, content_id, provider='openai'):
     Task assíncrona para geração de post (legenda + imagem)
     
     Args:
-        content_id: ID do GeneratedContent
+        content_id: ID do Post
         provider: Provider de IA ('openai' ou 'gemini')
     
     Returns:
         dict: Resultado da geração
     """
     try:
-        content = GeneratedContent.objects.get(id=content_id)
+        content = Post.objects.get(id=content_id)
         content.status = 'processing'
         content.save()
         
@@ -344,7 +344,7 @@ Palavras a Evitar: {kb.palavras_evitar}
             'has_image': content.has_image
         }
         
-    except GeneratedContent.DoesNotExist:
+    except Post.DoesNotExist:
         logger.error(f"Content #{content_id} não encontrado")
         return {'success': False, 'error': 'Content não encontrado'}
         
@@ -352,7 +352,7 @@ Palavras a Evitar: {kb.palavras_evitar}
         logger.error(f"Erro ao gerar post #{content_id}: {e}")
         
         try:
-            content = GeneratedContent.objects.get(id=content_id)
+            content = Post.objects.get(id=content_id)
             content.status = 'error'
             content.save()
         except:

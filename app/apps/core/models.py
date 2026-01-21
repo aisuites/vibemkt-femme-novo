@@ -682,20 +682,6 @@ class VideoAvatarStatus(models.Model):
         return self.label
 
 
-class PostStatus(models.Model):
-    """Status possíveis para posts"""
-    code = models.CharField(max_length=40, unique=True, verbose_name='Código')
-    label = models.CharField(max_length=120, verbose_name='Label')
-    
-    class Meta:
-        ordering = ["id"]
-        verbose_name = "Status de Post"
-        verbose_name_plural = "Status de Posts"
-    
-    def __str__(self):
-        return self.label
-
-
 class QuotaUsageDaily(TimeStampedModel):
     """Cache de uso diário de quotas (evita COUNT toda vez)"""
     
@@ -825,7 +811,7 @@ class QuotaAdjustment(TimeStampedModel):
         verbose_name='Log de Auditoria da Pauta'
     )
     post = models.ForeignKey(
-        'Post',
+        'content.Post',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -967,105 +953,6 @@ class PautaAuditLog(TimeStampedModel):
         elif self.organization:
             return f"{self.get_action_display()} · {self.organization.name} · {user_email}"
         return f"{self.get_action_display()} · {user_email}"
-
-
-class Post(TimeStampedModel):
-    """Post gerado para redes sociais"""
-    organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        related_name="posts",
-        verbose_name='Organização'
-    )
-    pauta = models.ForeignKey(
-        'content.Pauta',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="posts",
-        verbose_name='Pauta'
-    )
-    network = models.CharField(
-        max_length=32,
-        default='Instagram',
-        blank=True,
-        verbose_name='Rede Social'
-    )
-    requested_theme = models.TextField(blank=True, verbose_name='Tema Solicitado')
-    title = models.CharField(max_length=220, blank=True, verbose_name='Título')
-    subtitle = models.CharField(max_length=220, blank=True, verbose_name='Subtítulo')
-    caption = models.TextField(blank=True, verbose_name='Legenda')
-    hashtags = models.CharField(
-        max_length=300,
-        blank=True,
-        help_text="Separar por espaço ou vírgula",
-        verbose_name='Hashtags'
-    )
-    cta = models.CharField(max_length=160, blank=True, verbose_name='CTA')
-    cta_requested = models.BooleanField(
-        default=True,
-        help_text="Usuário quer CTA no post",
-        verbose_name='CTA Solicitado'
-    )
-    image_prompt = models.TextField(blank=True, verbose_name='Prompt da Imagem')
-    status = models.ForeignKey(
-        PostStatus,
-        on_delete=models.PROTECT,
-        related_name="posts",
-        verbose_name='Status'
-    )
-    formats = models.JSONField(default=list, blank=True, verbose_name='Formatos')
-    is_carousel = models.BooleanField(default=False, verbose_name='É Carrossel')
-    image_count = models.PositiveSmallIntegerField(default=1, verbose_name='Quantidade de Imagens')
-    revisions_remaining = models.PositiveSmallIntegerField(
-        default=2,
-        verbose_name='Revisões Restantes'
-    )
-    thread_id = models.CharField(
-        max_length=160,
-        blank=True,
-        help_text="Thread ID do assistente GPT no N8N",
-        verbose_name='Thread ID'
-    )
-    slides_metadata = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="Dados estruturados de cada slide do carrossel (apenas para posts carousel)",
-        verbose_name='Metadados dos Slides'
-    )
-
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = 'Post'
-        verbose_name_plural = 'Posts'
-    
-    def __str__(self):
-        return f"Post #{self.pk} - {self.organization.name}"
-    
-    def hashtag_list(self):
-        """Retorna lista de hashtags formatadas"""
-        if not self.hashtags:
-            return []
-        tokens = [item.strip() for item in self.hashtags.replace("#", " #").split()]
-        return [tag if tag.startswith("#") else f"#{tag}" for tag in tokens if tag]
-
-    @property
-    def primary_format(self):
-        """Retorna o formato principal (primeiro da lista)"""
-        return (self.formats or [""])[0] or ""
-
-    def _normalized_formats(self):
-        """Retorna formatos normalizados"""
-        formats = []
-        for value in self.formats or []:
-            if not value:
-                continue
-            normalized = str(value).strip().lower()
-            if normalized and normalized not in formats:
-                formats.append(normalized)
-        if not formats:
-            formats = ["feed"]
-        return formats
 
 
 class VideoAvatar(TimeStampedModel):

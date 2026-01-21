@@ -1,6 +1,6 @@
 from django.db import models
 from apps.core.models import User, Area
-from apps.content.models import GeneratedContent
+from apps.content.models import Post
 
 
 class Project(models.Model):
@@ -81,7 +81,7 @@ class Approval(models.Model):
     Workflow de aprovação de conteúdo
     """
     content = models.ForeignKey(
-        GeneratedContent,
+        Post,
         on_delete=models.CASCADE,
         related_name='approvals',
         verbose_name='Conteúdo'
@@ -212,10 +212,10 @@ class ApprovalComment(models.Model):
         return f"Comentário de {self.user} em {self.created_at}"
 
 
-# Relacionamento Many-to-Many entre Project e GeneratedContent
+# Relacionamento Many-to-Many entre Project e Post
 class ProjectContent(models.Model):
     """
-    Relacionamento entre projetos e conteúdos
+    Relacionamento entre projetos e posts
     Permite que um conteúdo esteja em múltiplos projetos
     """
     project = models.ForeignKey(
@@ -225,7 +225,7 @@ class ProjectContent(models.Model):
         verbose_name='Projeto'
     )
     content = models.ForeignKey(
-        GeneratedContent,
+        Post,
         on_delete=models.CASCADE,
         related_name='content_projects',
         verbose_name='Conteúdo'

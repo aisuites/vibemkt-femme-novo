@@ -95,20 +95,32 @@ class Pauta(models.Model):
         return f"{self.title} - {self.user}"
 
 
-class GeneratedContent(models.Model):
+class Post(models.Model):
     """
-    Conteúdo gerado (posts, imagens, legendas)
+    Posts de redes sociais gerados por IA (Instagram, Facebook, LinkedIn, etc)
     """
+    # Multi-tenant
+    organization = models.ForeignKey(
+        'core.Organization',
+        on_delete=models.CASCADE,
+        related_name='posts',
+        null=True,
+        blank=True,
+        verbose_name='Organização',
+        help_text='Organização à qual este post pertence'
+    )
+    
+    # Auditoria (manter user e area além de organization)
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='generated_contents',
+        related_name='posts',
         verbose_name='Usuário'
     )
     area = models.ForeignKey(
         Area,
         on_delete=models.CASCADE,
-        related_name='generated_contents',
+        related_name='posts',
         verbose_name='Área'
     )
     pauta = models.ForeignKey(
@@ -116,8 +128,27 @@ class GeneratedContent(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='contents',
+        related_name='posts',
         verbose_name='Pauta'
+    )
+    
+    # Campos de texto estruturados
+    requested_theme = models.TextField(
+        blank=True,
+        verbose_name='Tema Solicitado',
+        help_text='Tema solicitado pelo usuário para geração do post'
+    )
+    title = models.CharField(
+        max_length=220,
+        blank=True,
+        verbose_name='Título',
+        help_text='Título do post (se aplicável)'
+    )
+    subtitle = models.CharField(
+        max_length=220,
+        blank=True,
+        verbose_name='Subtítulo',
+        help_text='Subtítulo do post (se aplicável)'
     )
     
     # Tipo de conteúdo
@@ -161,6 +192,58 @@ class GeneratedContent(models.Model):
     caption = models.TextField(verbose_name='Legenda')
     hashtags = models.JSONField(default=list, verbose_name='Hashtags')
     
+    # Call-to-Action
+    cta = models.CharField(
+        max_length=160,
+        blank=True,
+        verbose_name='CTA',
+        help_text='Call-to-action do post'
+    )
+    cta_requested = models.BooleanField(
+        default=True,
+        verbose_name='CTA Solicitado',
+        help_text='Usuário quer CTA no post'
+    )
+    
+    # Formatos múltiplos e carrossel
+    formats = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Formatos',
+        help_text='Lista de formatos: ["feed", "story", "reels"]'
+    )
+    is_carousel = models.BooleanField(
+        default=False,
+        verbose_name='É Carrossel',
+        help_text='Post é um carrossel (múltiplas imagens)'
+    )
+    image_count = models.PositiveSmallIntegerField(
+        default=1,
+        verbose_name='Quantidade de Imagens',
+        help_text='Número de imagens no carrossel'
+    )
+    slides_metadata = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Metadados dos Slides',
+        help_text='Dados estruturados de cada slide do carrossel'
+    )
+    
+    # Sistema de revisões
+    revisions_remaining = models.PositiveSmallIntegerField(
+        default=2,
+        verbose_name='Revisões Restantes',
+        help_text='Número de revisões que o usuário ainda pode solicitar'
+    )
+    
+    # Thread/Job tracking
+    thread_id = models.CharField(
+        max_length=160,
+        blank=True,
+        verbose_name='Thread ID',
+        help_text='ID do thread/job de processamento (N8N, GPT, etc)'
+    )
+    
     # Imagem gerada (S3)
     has_image = models.BooleanField(default=False, verbose_name='Tem Imagem')
     image_s3_key = models.CharField(max_length=500, blank=True, verbose_name='Chave S3 Imagem')
@@ -190,9 +273,10 @@ class GeneratedContent(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
     
     class Meta:
-        verbose_name = 'Conteúdo Gerado'
-        verbose_name_plural = 'Conteúdos Gerados'
+        verbose_name = 'Post'
+        verbose_name_plural = 'Posts'
         ordering = ['-created_at']
+        db_table = 'content_generatedcontent'  # Manter nome da tabela existente
         indexes = [
             models.Index(fields=['-created_at']),
             models.Index(fields=['user', '-created_at']),
@@ -203,6 +287,39 @@ class GeneratedContent(models.Model):
     
     def __str__(self):
         return f"{self.get_content_type_display()} - {self.social_network} - {self.created_at}"
+    
+    def hashtag_list(self):
+        """Retorna lista de hashtags formatadas"""
+        if not self.hashtags:
+            return []
+        
+        # Se já é lista (JSONField)
+        if isinstance(self.hashtags, list):
+            return [tag if tag.startswith("#") else f"#{tag}" for tag in self.hashtags if tag]
+        
+        # Se é string (fallback)
+        tokens = [item.strip() for item in str(self.hashtags).replace("#", " #").split()]
+        return [tag if tag.startswith("#") else f"#{tag}" for tag in tokens if tag]
+    
+    @property
+    def primary_format(self):
+        """Retorna o formato principal (primeiro da lista)"""
+        if not self.formats:
+            return self.content_type or ""
+        return self.formats[0] if self.formats else ""
+    
+    def _normalized_formats(self):
+        """Retorna formatos normalizados"""
+        formats = []
+        for value in self.formats or []:
+            if not value:
+                continue
+            normalized = str(value).strip().lower()
+            if normalized and normalized not in formats:
+                formats.append(normalized)
+        if not formats and self.content_type:
+            formats = [self.content_type]
+        return formats
 
 
 class Asset(models.Model):
