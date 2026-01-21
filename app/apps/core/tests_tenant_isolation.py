@@ -5,7 +5,7 @@ Testes para garantir que o isolamento de tenants está funcionando corretamente.
 """
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
-from apps.core.models import Organization
+from apps.core.models import Organization, Area
 from apps.content.models import Pauta, Post, Asset
 from apps.campaigns.models import Project
 from apps.knowledge.models import KnowledgeBase
@@ -40,6 +40,17 @@ class TenantIsolationTestCase(TestCase):
             quota_posts_mes=50
         )
         
+        # Criar areas
+        self.area1 = Area.objects.create(
+            name='Marketing',
+            organization=self.org1
+        )
+        
+        self.area2 = Area.objects.create(
+            name='Vendas',
+            organization=self.org2
+        )
+        
         # Criar usuários
         self.user1 = User.objects.create_user(
             username='user1',
@@ -59,6 +70,7 @@ class TenantIsolationTestCase(TestCase):
         self.pauta1 = Pauta.objects.create(
             organization=self.org1,
             user=self.user1,
+            area=self.area1,
             theme='Tema da Empresa A',
             target_audience='Público A',
             objective='engajamento',
@@ -69,6 +81,7 @@ class TenantIsolationTestCase(TestCase):
         self.post1 = Post.objects.create(
             organization=self.org1,
             user=self.user1,
+            area=self.area1,
             content_type='post',
             social_network='instagram',
             ia_provider='openai',
@@ -81,6 +94,7 @@ class TenantIsolationTestCase(TestCase):
         self.pauta2 = Pauta.objects.create(
             organization=self.org2,
             user=self.user2,
+            area=self.area2,
             theme='Tema da Empresa B',
             target_audience='Público B',
             objective='conversao',
@@ -91,6 +105,7 @@ class TenantIsolationTestCase(TestCase):
         self.post2 = Post.objects.create(
             organization=self.org2,
             user=self.user2,
+            area=self.area2,
             content_type='post',
             social_network='facebook',
             ia_provider='gemini',
@@ -174,6 +189,11 @@ class ManagerMethodsTestCase(TestCase):
             plan_type='premium'
         )
         
+        self.area = Area.objects.create(
+            name='Test Area',
+            organization=self.org
+        )
+        
         self.user = User.objects.create_user(
             username='testuser',
             email='test@test.com',
@@ -187,6 +207,7 @@ class ManagerMethodsTestCase(TestCase):
         Pauta.objects.create(
             organization=self.org,
             user=self.user,
+            area=self.area,
             theme='Tema 1',
             target_audience='Público',
             objective='engajamento',
@@ -212,6 +233,7 @@ class ManagerMethodsTestCase(TestCase):
         Post.objects.create(
             organization=self.org,
             user=self.user,
+            area=self.area,
             content_type='post',
             social_network='instagram',
             ia_provider='openai',
@@ -255,6 +277,16 @@ class SecurityTestCase(TestCase):
             plan_type='basic'
         )
         
+        self.area1 = Area.objects.create(
+            name='Area 1',
+            organization=self.org1
+        )
+        
+        self.area2 = Area.objects.create(
+            name='Area 2',
+            organization=self.org2
+        )
+        
         self.user1 = User.objects.create_user(
             username='user1',
             email='user1@org1.com',
@@ -275,6 +307,7 @@ class SecurityTestCase(TestCase):
         pauta = Pauta.objects.create(
             organization=self.org1,
             user=self.user1,
+            area=self.area1,
             theme='Tema Secreto',
             target_audience='Público',
             objective='engajamento',
@@ -296,6 +329,7 @@ class SecurityTestCase(TestCase):
         Pauta.objects.create(
             organization=self.org1,
             user=self.user1,
+            area=self.area1,
             theme='Tema 1',
             target_audience='Público',
             objective='engajamento',
@@ -306,6 +340,7 @@ class SecurityTestCase(TestCase):
         Pauta.objects.create(
             organization=self.org2,
             user=self.user2,
+            area=self.area2,
             theme='Tema 2',
             target_audience='Público',
             objective='conversao',
