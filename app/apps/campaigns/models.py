@@ -1,5 +1,6 @@
 from django.db import models
 from apps.core.models import User, Area
+from apps.core.managers import OrganizationScopedManager
 from apps.content.models import Post
 
 
@@ -61,6 +62,9 @@ class Project(models.Model):
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
+    
+    # Manager com filtro automático por organization
+    objects = OrganizationScopedManager()
     
     class Meta:
         verbose_name = 'Projeto'

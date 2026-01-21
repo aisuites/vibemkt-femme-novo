@@ -479,9 +479,12 @@ class TrendMonitor(models.Model):
     alert_sent = models.BooleanField(default=False, verbose_name='Alerta Enviado')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
     
+    # Manager com filtro automático por organization
+    objects = OrganizationScopedManager()
+    
     class Meta:
         verbose_name = 'Trend Monitor'
-        verbose_name_plural = 'Trends Monitoradas'
+        verbose_name_plural = 'Trend Monitors'
         ordering = ['-trend_score', '-created_at']
         indexes = [
             models.Index(fields=['-created_at']),
@@ -558,6 +561,9 @@ class WebInsight(models.Model):
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name='Concluído em')
+    
+    # Manager com filtro automático por organization
+    objects = OrganizationScopedManager()
     
     class Meta:
         verbose_name = 'Web Insight'
@@ -665,6 +671,9 @@ class IAModelUsage(models.Model):
         verbose_name='Status'
     )
     error_message = models.TextField(blank=True, verbose_name='Mensagem de Erro')
+    
+    # Manager com filtro automático por organization
+    objects = OrganizationScopedManager()
     
     class Meta:
         verbose_name = 'Uso de Modelo IA'

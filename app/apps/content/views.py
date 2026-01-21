@@ -13,6 +13,7 @@ def pautas_list(request):
 
 
 @login_required
+@require_organization
 def pauta_create(request):
     """Criar nova pauta"""
     # TODO: Implementar formulário
@@ -29,6 +30,7 @@ def posts_list(request):
 
 
 @login_required
+@require_organization
 def post_create(request):
     """Criar novo post"""
     # TODO: Implementar formulário
@@ -37,6 +39,7 @@ def post_create(request):
 
 
 @login_required
+@require_organization
 def trends_list(request):
     """Listar trends monitoradas"""
     trends = TrendMonitor.objects.filter(is_active=True).order_by('-created_at')

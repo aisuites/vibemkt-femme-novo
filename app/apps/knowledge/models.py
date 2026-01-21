@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import URLValidator
 from django.utils.text import slugify
 from apps.core.models import User
-
+from apps.core.managers import OrganizationScopedManager
 
 class InternalSegment(models.Model):
     """
@@ -236,6 +236,9 @@ class KnowledgeBase(models.Model):
         related_name='knowledge_updates',
         verbose_name='Última atualização por'
     )
+    
+    # Manager com filtro automático por organization
+    objects = OrganizationScopedManager()
     
     class Meta:
         verbose_name = 'Base de Conhecimento'

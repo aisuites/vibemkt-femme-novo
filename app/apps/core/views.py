@@ -1,17 +1,21 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.db.models import Count, Sum
+from django.contrib.auth import logout as auth_logout
+from django.db.models import Count, Sum, Q
 from django.utils import timezone
 from datetime import timedelta
+from decimal import Decimal
 
-from apps.knowledge.models import KnowledgeBase
+from apps.core.models import User, Area, UsageLimit, AuditLog
+from apps.core.decorators import require_organization
 from apps.content.models import Pauta, Post, TrendMonitor
 from apps.campaigns.models import Project, Approval
+from apps.knowledge.models import KnowledgeBase
 from apps.core.models import UsageLimit
 
 
 @login_required
+@require_organization
 def dashboard(request):
     """
     Dashboard principal do IAMKT.
