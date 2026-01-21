@@ -119,10 +119,11 @@ Remover registro de `UsageLimitAdmin` do Django Admin em `/opt/iamkt/app/apps/co
 
 ---
 
-## 📌 ITEM #003 - Criar sistema de envio de alertas de quota
+## 📌 ITEM #003 - Criar sistema de envio de alertas de quota (ETAPA 4)
 **Data de Cadastro:** 2025-01-20 21:03:00  
+**Atualizado:** 2026-01-21 11:21:00  
 **Prioridade:** ALTA  
-**Fase:** FASE 6 - Testes e Validação (após implementação básica)
+**Fase:** OPÇÃO A - Etapa 4 (após Etapa 3 - Validação de quotas)
 
 ### O que será feito:
 Implementar sistema automatizado de envio de alertas quando organization atingir 80% ou 100% das quotas diárias/mensais.
