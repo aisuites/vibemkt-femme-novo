@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Conta - IAMKT</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Coluna Esquerda: Logo e Texto -->
+        <div class="auth-left">
+            <div class="auth-brand">
+                <img src="{% static 'img/logo.png' %}" alt="IAMKT Logo" class="auth-logo">
+                <h1 class="auth-title">Cadastro em desenvolvimento</h1>
+                <p class="auth-description">
+                    Estamos preparando uma experiência incrível para você. 
+                    Em breve, você poderá criar sua conta e começar a usar nossa plataforma.
+                </p>
+            </div>
+        </div>
+
+        <!-- Coluna Direita: Mensagem -->
+        <div class="auth-right">
+            <div class="auth-card">
+                <h2 class="auth-card-title">Em breve</h2>
+                <p class="auth-card-subtitle">O cadastro de novas contas está em desenvolvimento.</p>
+
+                <div class="alert alert-info">
+                    <strong>Funcionalidade em desenvolvimento</strong><br>
+                    Por enquanto, entre em contato com o administrador para criar sua conta.
+                </div>
+
+                <a href="{% url 'login' %}" class="btn btn-primary btn-block">
+                    Voltar para o login
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
