@@ -19,30 +19,176 @@
         <div class="auth-left">
             <div class="auth-brand">
                 <img src="{% static 'img/logo.png' %}" alt="IAMKT Logo" class="auth-logo">
-                <h1 class="auth-title">Cadastro em desenvolvimento</h1>
+                <h1 class="auth-title">Comece agora</h1>
                 <p class="auth-description">
-                    Estamos preparando uma experiência incrível para você. 
-                    Em breve, você poderá criar sua conta e começar a usar nossa plataforma.
+                    Crie sua conta e tenha acesso a ferramentas de IA para criar conteúdo de marketing de forma inteligente e eficiente.
                 </p>
             </div>
         </div>
 
-        <!-- Coluna Direita: Mensagem -->
+        <!-- Coluna Direita: Formulário de Registro -->
         <div class="auth-right">
             <div class="auth-card">
-                <h2 class="auth-card-title">Em breve</h2>
-                <p class="auth-card-subtitle">O cadastro de novas contas está em desenvolvimento.</p>
+                <h2 class="auth-card-title">Criar Conta</h2>
+                <p class="auth-card-subtitle">Preencha os dados abaixo para começar.</p>
 
-                <div class="alert alert-info">
-                    <strong>Funcionalidade em desenvolvimento</strong><br>
-                    Por enquanto, entre em contato com o administrador para criar sua conta.
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" action="{% url 'register' %}" class="auth-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="full_name" class="form-label">Nome Completo</label>
+                        <input 
+                            type="text" 
+                            id="full_name" 
+                            name="full_name" 
+                            class="form-input" 
+                            placeholder="João Silva"
+                            value="{{ full_name|default:'' }}"
+                            required
+                            autofocus
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            class="form-input" 
+                            placeholder="seu@email.com"
+                            value="{{ email|default:'' }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="company_name" class="form-label">Nome da Empresa</label>
+                        <input 
+                            type="text" 
+                            id="company_name" 
+                            name="company_name" 
+                            class="form-input" 
+                            placeholder="Minha Empresa Ltda"
+                            value="{{ company_name|default:'' }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone" class="form-label">Telefone (opcional)</label>
+                        <input 
+                            type="tel" 
+                            id="phone" 
+                            name="phone" 
+                            class="form-input" 
+                            placeholder="(11) 98765-4321"
+                            value="{{ phone|default:'' }}"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="form-label">Senha</label>
+                        <div class="form-input-wrapper">
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                class="form-input" 
+                                placeholder="Mínimo 8 caracteres"
+                                required
+                            >
+                            <button type="button" class="btn-toggle-password" data-target="password" aria-label="Mostrar senha">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password_confirm" class="form-label">Confirmar Senha</label>
+                        <div class="form-input-wrapper">
+                            <input 
+                                type="password" 
+                                id="password_confirm" 
+                                name="password_confirm" 
+                                class="form-input" 
+                                placeholder="Digite a senha novamente"
+                                required
+                            >
+                            <button type="button" class="btn-toggle-password" data-target="password_confirm" aria-label="Mostrar senha">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-checkbox">
+                            <input type="checkbox" name="accept_terms" required>
+                            <span>
+                                Li e aceito os <a href="{% url 'core:terms' %}" target="_blank" class="auth-link-inline">Termos de Uso</a>
+                            </span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="auth-btn-primary">
+                        Criar Conta
+                    </button>
+                </form>
+
+                <div class="auth-divider">
+                    <span>Já tem uma conta?</span>
                 </div>
 
-                <a href="{% url 'login' %}" class="auth-btn-primary">
-                    Voltar para o login
+                <a href="{% url 'login' %}" class="auth-btn-secondary">
+                    Fazer login
                 </a>
             </div>
         </div>
     </div>
+
+    <script>
+        // Toggle password visibility
+        document.querySelectorAll('.btn-toggle-password').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const type = input.type === 'password' ? 'text' : 'password';
+                input.type = type;
+            });
+        });
+
+        // Phone mask (Brazilian format)
+        const phoneInput = document.getElementById('phone');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+                
+                if (value.length > 6) {
+                    value = value.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, '($1) $2-$3');
+                } else if (value.length > 2) {
+                    value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+                } else if (value.length > 0) {
+                    value = value.replace(/^(\d*)/, '($1');
+                }
+                
+                e.target.value = value;
+            });
+        }
+    </script>
 </body>
 </html>

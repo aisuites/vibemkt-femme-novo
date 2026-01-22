@@ -1,0 +1,187 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro Realizado - IAMKT</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    
+    <style>
+        .success-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            padding: var(--spacing-4);
+        }
+        
+        .success-card {
+            background: var(--color-white);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-8);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto var(--spacing-6);
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-white);
+            font-size: 40px;
+        }
+        
+        .success-title {
+            font-size: var(--font-3xl);
+            font-weight: 700;
+            color: var(--color-text);
+            margin-bottom: var(--spacing-4);
+        }
+        
+        .success-subtitle {
+            font-size: var(--font-lg);
+            color: var(--color-text-muted);
+            margin-bottom: var(--spacing-6);
+            line-height: 1.6;
+        }
+        
+        .success-info-box {
+            background: var(--color-background);
+            border-left: 4px solid var(--color-primary);
+            padding: var(--spacing-4);
+            margin: var(--spacing-6) 0;
+            text-align: left;
+            border-radius: var(--radius-md);
+        }
+        
+        .success-info-box h3 {
+            font-size: var(--font-base);
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-bottom: var(--spacing-2);
+        }
+        
+        .success-info-box p {
+            font-size: var(--font-sm);
+            color: var(--color-text);
+            margin: var(--spacing-1) 0;
+        }
+        
+        .success-steps {
+            text-align: left;
+            margin: var(--spacing-6) 0;
+        }
+        
+        .success-steps h3 {
+            font-size: var(--font-lg);
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: var(--spacing-4);
+        }
+        
+        .success-steps ol {
+            list-style: none;
+            counter-reset: step-counter;
+            padding: 0;
+        }
+        
+        .success-steps li {
+            counter-increment: step-counter;
+            position: relative;
+            padding-left: var(--spacing-8);
+            margin-bottom: var(--spacing-3);
+            font-size: var(--font-base);
+            color: var(--color-text);
+        }
+        
+        .success-steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 28px;
+            height: 28px;
+            background: var(--color-primary);
+            color: var(--color-white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: var(--font-sm);
+        }
+        
+        .success-actions {
+            margin-top: var(--spacing-8);
+            display: flex;
+            gap: var(--spacing-4);
+            justify-content: center;
+        }
+        
+        @media (max-width: 768px) {
+            .success-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-card">
+            <div class="success-icon">✓</div>
+            
+            <h1 class="success-title">Cadastro Realizado com Sucesso!</h1>
+            
+            <p class="success-subtitle">
+                Sua conta foi criada e está aguardando aprovação da nossa equipe.
+            </p>
+            
+            <div class="success-info-box">
+                <h3>📧 Confirmação Enviada</h3>
+                <p>Enviamos um email de confirmação para você com todos os detalhes do seu cadastro.</p>
+            </div>
+            
+            <div class="success-steps">
+                <h3>Próximos Passos:</h3>
+                <ol>
+                    <li>Nossa equipe irá revisar seu cadastro</li>
+                    <li>Você receberá um email quando sua conta for aprovada</li>
+                    <li>Após a aprovação, você poderá fazer login e começar a usar a plataforma</li>
+                </ol>
+            </div>
+            
+            <div class="success-info-box">
+                <h3>⏱️ Tempo de Aprovação</h3>
+                <p>
+                    Normalmente processamos novos cadastros em até 24 horas úteis. 
+                    Se tiver alguma dúvida, entre em contato: <strong>suporte@iamkt.com.br</strong>
+                </p>
+            </div>
+            
+            <div class="success-actions">
+                <a href="{% url 'login' %}" class="auth-btn-primary">
+                    Ir para Login
+                </a>
+                <a href="https://iamkt.aisuites.com.br" class="auth-btn-secondary">
+                    Conhecer o IAMKT
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
