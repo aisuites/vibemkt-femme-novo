@@ -1,16 +1,12 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.db.models import Count, Sum
 from django.utils import timezone
-from datetime import timedelta
-
-from apps.core.models import Organization, QuotaUsageDaily
-from apps.core.decorators import require_organization
+from django.views.decorators.http import require_http_methods
+from .models import Organization, QuotaUsageDaily
+from apps.content.models import Pauta, Post
 from apps.knowledge.models import KnowledgeBase
-from apps.content.models import Pauta, Post, TrendMonitor
 from apps.campaigns.models import Project, Approval
-
 
 @login_required
 @require_organization

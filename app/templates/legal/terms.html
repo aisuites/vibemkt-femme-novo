@@ -1,0 +1,147 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Termos de Uso - IAMKT{% endblock %}
+
+{% block content %}
+<div class="legal-container">
+    <div class="legal-header">
+        <h1>Termos de Uso</h1>
+        <p class="legal-updated">Última atualização: 22 de janeiro de 2026</p>
+    </div>
+
+    <div class="legal-content">
+        <section class="legal-section">
+            <h2>1. Aceitação dos Termos</h2>
+            <p>
+                Ao acessar e usar a plataforma IAMKT, você concorda em cumprir e estar vinculado aos seguintes 
+                termos e condições de uso. Se você não concordar com qualquer parte destes termos, não deverá 
+                usar nossos serviços.
+            </p>
+        </section>
+
+        <section class="legal-section">
+            <h2>2. Descrição do Serviço</h2>
+            <p>
+                O IAMKT é uma plataforma de geração de conteúdo assistida por inteligência artificial, 
+                oferecendo ferramentas para criação de pautas, posts para redes sociais, e gestão de 
+                conhecimento empresarial.
+            </p>
+        </section>
+
+        <section class="legal-section">
+            <h2>3. Cadastro e Conta</h2>
+            <p>
+                Para utilizar nossos serviços, você deve:
+            </p>
+            <ul>
+                <li>Fornecer informações verdadeiras, precisas e completas durante o cadastro</li>
+                <li>Manter a segurança de sua senha e conta</li>
+                <li>Notificar-nos imediatamente sobre qualquer uso não autorizado de sua conta</li>
+                <li>Ser responsável por todas as atividades que ocorram em sua conta</li>
+            </ul>
+        </section>
+
+        <section class="legal-section">
+            <h2>4. Planos e Pagamentos</h2>
+            <p>
+                O IAMKT oferece diferentes planos de assinatura com quotas específicas de uso. 
+                Os detalhes de cada plano, incluindo preços e limites, estão disponíveis em nossa 
+                página de planos. O pagamento deve ser realizado conforme o plano escolhido.
+            </p>
+        </section>
+
+        <section class="legal-section">
+            <h2>5. Uso Aceitável</h2>
+            <p>Você concorda em NÃO:</p>
+            <ul>
+                <li>Usar o serviço para qualquer finalidade ilegal ou não autorizada</li>
+                <li>Violar quaisquer leis em sua jurisdição</li>
+                <li>Transmitir vírus, malware ou qualquer código malicioso</li>
+                <li>Interferir ou interromper o serviço ou servidores</li>
+                <li>Criar múltiplas contas para contornar limites de uso</li>
+                <li>Compartilhar sua conta com terceiros</li>
+                <li>Usar o serviço para gerar conteúdo ilegal, ofensivo ou prejudicial</li>
+            </ul>
+        </section>
+
+        <section class="legal-section">
+            <h2>6. Propriedade Intelectual</h2>
+            <p>
+                O conteúdo gerado pela plataforma é de propriedade do usuário que o criou. 
+                No entanto, a plataforma IAMKT, seu código, design, marca e tecnologia são 
+                propriedade exclusiva da empresa e protegidos por leis de propriedade intelectual.
+            </p>
+        </section>
+
+        <section class="legal-section">
+            <h2>7. Privacidade e Dados</h2>
+            <p>
+                Sua privacidade é importante para nós. Coletamos e usamos seus dados conforme 
+                descrito em nossa Política de Privacidade. Ao usar o IAMKT, você concorda com 
+                a coleta e uso de informações de acordo com essa política.
+            </p>
+        </section>
+
+        <section class="legal-section">
+            <h2>8. Limitação de Responsabilidade</h2>
+            <p>
+                O IAMKT é fornecido "como está" e "conforme disponível". Não garantimos que o 
+                serviço será ininterrupto, seguro ou livre de erros. Em nenhuma circunstância 
+                seremos responsáveis por quaisquer danos diretos, indiretos, incidentais ou 
+                consequenciais resultantes do uso ou incapacidade de usar o serviço.
+            </p>
+        </section>
+
+        <section class="legal-section">
+            <h2>9. Modificações do Serviço</h2>
+            <p>
+                Reservamo-nos o direito de modificar ou descontinuar, temporária ou permanentemente, 
+                o serviço (ou qualquer parte dele) com ou sem aviso prévio. Não seremos responsáveis 
+                por qualquer modificação, suspensão ou descontinuação do serviço.
+            </p>
+        </section>
+
+        <section class="legal-section">
+            <h2>10. Rescisão</h2>
+            <p>
+                Podemos encerrar ou suspender sua conta e acesso ao serviço imediatamente, sem aviso 
+                prévio ou responsabilidade, por qualquer motivo, incluindo, sem limitação, se você 
+                violar os Termos de Uso.
+            </p>
+        </section>
+
+        <section class="legal-section">
+            <h2>11. Alterações nos Termos</h2>
+            <p>
+                Reservamo-nos o direito de modificar estes termos a qualquer momento. Notificaremos 
+                você sobre quaisquer alterações publicando os novos Termos de Uso nesta página e 
+                atualizando a data de "Última atualização" acima.
+            </p>
+        </section>
+
+        <section class="legal-section">
+            <h2>12. Lei Aplicável</h2>
+            <p>
+                Estes Termos serão regidos e interpretados de acordo com as leis do Brasil, 
+                sem considerar conflitos de disposições legais.
+            </p>
+        </section>
+
+        <section class="legal-section">
+            <h2>13. Contato</h2>
+            <p>
+                Se você tiver alguma dúvida sobre estes Termos de Uso, entre em contato conosco:
+            </p>
+            <ul>
+                <li>Email: suporte@iamkt.com.br</li>
+                <li>Website: https://iamkt.aisuites.com.br</li>
+            </ul>
+        </section>
+    </div>
+
+    <div class="legal-footer">
+        <a href="{% url 'login' %}" class="btn-secondary">Voltar para Login</a>
+    </div>
+</div>
+{% endblock %}

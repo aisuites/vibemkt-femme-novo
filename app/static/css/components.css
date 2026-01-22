@@ -4,6 +4,266 @@
  */
 
 /* ========================================
+   0. AUTH PAGES (Login, Register)
+   ======================================== */
+
+.auth-container {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--color-background);
+}
+
+.auth-left {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8);
+  color: var(--color-white);
+}
+
+.auth-left-content {
+  max-width: 500px;
+  text-align: center;
+}
+
+.auth-logo {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto var(--spacing-6);
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 20%, #ffb7c9 0, var(--color-primary) 45%, #4c1f63 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 700;
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-title {
+  font-size: var(--font-3xl);
+  font-weight: 700;
+  margin-bottom: var(--spacing-4);
+  line-height: 1.2;
+}
+
+.auth-subtitle {
+  font-size: var(--font-lg);
+  opacity: 0.9;
+  line-height: 1.6;
+}
+
+.auth-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8);
+  background: var(--color-white);
+}
+
+.auth-form-container {
+  width: 100%;
+  max-width: 450px;
+}
+
+.auth-form-header {
+  margin-bottom: var(--spacing-6);
+}
+
+.auth-form-title {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-2);
+}
+
+.auth-form-description {
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.auth-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.auth-form-label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.auth-form-input {
+  padding: var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+  transition: all 0.2s ease;
+}
+
+.auth-form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.auth-form-input.error {
+  border-color: var(--color-danger);
+}
+
+.auth-form-error {
+  font-size: var(--font-sm);
+  color: var(--color-danger);
+  margin-top: var(--spacing-1);
+}
+
+.auth-form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.auth-form-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.auth-form-checkbox label {
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.auth-form-submit {
+  padding: var(--spacing-3) var(--spacing-6);
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.auth-form-submit:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.auth-form-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-form-footer {
+  margin-top: var(--spacing-4);
+  text-align: center;
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+}
+
+.auth-form-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-form-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 968px) {
+  .auth-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .auth-left {
+    display: none;
+  }
+}
+
+/* ========================================
+   0.1. LEGAL PAGES (Terms, Privacy)
+   ======================================== */
+
+.legal-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--spacing-8) var(--spacing-4);
+}
+
+.legal-header {
+  text-align: center;
+  margin-bottom: var(--spacing-8);
+  padding-bottom: var(--spacing-6);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.legal-header h1 {
+  font-size: var(--font-3xl);
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-2);
+}
+
+.legal-updated {
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+}
+
+.legal-content {
+  line-height: 1.8;
+}
+
+.legal-section {
+  margin-bottom: var(--spacing-8);
+}
+
+.legal-section h2 {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-4);
+}
+
+.legal-section p {
+  color: var(--color-text);
+  margin-bottom: var(--spacing-3);
+}
+
+.legal-section ul {
+  list-style: disc;
+  margin-left: var(--spacing-6);
+  margin-bottom: var(--spacing-3);
+}
+
+.legal-section li {
+  margin-bottom: var(--spacing-2);
+  color: var(--color-text);
+}
+
+.legal-footer {
+  margin-top: var(--spacing-8);
+  padding-top: var(--spacing-6);
+  border-top: 2px solid var(--color-border);
+  text-align: center;
+}
+
+/* ========================================
    1. HEADER STICKY
    ======================================== */
 

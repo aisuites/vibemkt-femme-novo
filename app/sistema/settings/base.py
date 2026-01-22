@@ -83,16 +83,35 @@ USE_TZ = True
 
 # STATIC FILES
 STATIC_URL = '/static/'
-STATIC_ROOT = '/app/staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # STATICFILES_STORAGE - Usar ManifestStaticFilesStorage para cache busting
 # Isso resolve o problema do collectstatic não copiar arquivos corretamente
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # MEDIA FILES
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/app/media'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# EMAIL CONFIGURATION
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = config('EMAIL_HOST', default='localhost')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@iamkt.com.br')
+
+# EMAIL NOTIFICATION GROUPS
+NOTIFICATION_EMAILS_GESTAO = config('NOTIFICATION_EMAILS_GESTAO', default='')
+NOTIFICATION_EMAILS_OPERACAO = config('NOTIFICATION_EMAILS_OPERACAO', default='')
+NOTIFICATION_EMAILS_POSTS = config('NOTIFICATION_EMAILS_POSTS', default='')
+NEWUSER_NOTIFICATION_EMAILS = config('NEWUSER_NOTIFICATION_EMAILS', default='')
+
+# SITE URL (for emails)
+SITE_URL = config('SITE_URL', default='https://iamkt.aisuites.com.br')
 
 # DEFAULT PRIMARY KEY
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo Cadastro - IAMKT</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            margin: -40px -40px 30px -40px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+        .alert-badge {
+            display: inline-block;
+            background-color: #ef4444;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 12px;
+            margin: 20px 0;
+            background-color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #6b7280;
+        }
+        .info-value {
+            color: #111827;
+        }
+        .action-button {
+            display: inline-block;
+            background-color: #8b5cf6;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        .action-button:hover {
+            background-color: #7c3aed;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                🔔 Novo Cadastro Aguardando Aprovação
+                <span class="alert-badge">AÇÃO NECESSÁRIA</span>
+            </h1>
+        </div>
+
+        <p>Uma nova solicitação de cadastro foi recebida:</p>
+
+        <div class="info-grid">
+            <div class="info-label">👤 Nome:</div>
+            <div class="info-value">{{ user_name }}</div>
+            
+            <div class="info-label">📧 Email:</div>
+            <div class="info-value">{{ user_email }}</div>
+            
+            <div class="info-label">🏢 Empresa:</div>
+            <div class="info-value">{{ organization_name }}</div>
+            
+            <div class="info-label">📅 Data:</div>
+            <div class="info-value">{{ created_at|date:"d/m/Y H:i" }}</div>
+        </div>
+
+        <p><strong>Próximos passos:</strong></p>
+        <ol>
+            <li>Acesse o painel administrativo</li>
+            <li>Revise os dados da organização</li>
+            <li>Defina o plano e quotas</li>
+            <li>Ative a organização e o usuário</li>
+        </ol>
+
+        <div style="text-align: center;">
+            <a href="{{ admin_url }}" class="action-button">
+                Acessar Painel Admin
+            </a>
+        </div>
+
+        <div class="footer">
+            <p>
+                <strong>IAMKT - Sistema de Notificações</strong><br>
+                Este é um email automático enviado para a equipe de operações.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
