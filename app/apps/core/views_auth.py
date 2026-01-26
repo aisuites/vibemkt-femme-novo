@@ -182,6 +182,10 @@ def register_view(request):
             user.set_password(password)
             user.save()
             
+            # 3.1. Definir usuário como owner da organização
+            organization.owner = user
+            organization.save()
+            
             # 4. Enviar emails
             email_user_sent = send_registration_confirmation(user, organization)
             email_team_sent = send_registration_notification(user, organization)
