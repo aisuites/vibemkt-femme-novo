@@ -413,7 +413,7 @@ class OrganizationAdmin(admin.ModelAdmin):
     def suspend_for_terms(self, request, queryset):
         """⚠️ Suspender por violação de termos"""
         count = 0
-        for org in queryset.filter(is_active=True):
+        for org in queryset:
             org.is_active = False
             org.suspension_reason = 'terms'
             org.internal_notes += f"\n[{timezone.now().strftime('%d/%m/%Y %H:%M')}] Suspensa por violação de termos - {request.user.email}"
@@ -430,7 +430,7 @@ class OrganizationAdmin(admin.ModelAdmin):
     def suspend_canceled(self, request, queryset):
         """🚫 Marcar como cancelada pelo cliente"""
         count = 0
-        for org in queryset.filter(is_active=True):
+        for org in queryset:
             org.is_active = False
             org.suspension_reason = 'canceled'
             org.internal_notes += f"\n[{timezone.now().strftime('%d/%m/%Y %H:%M')}] Cancelada pelo cliente - {request.user.email}"
