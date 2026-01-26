@@ -296,6 +296,56 @@ MULTI_TENANT_MODE=False
 
 ---
 
+## 📌 ITEM #005 - Otimizar envio de emails em massa
+**Data de Cadastro:** 2026-01-26 17:25:00  
+**Prioridade:** MÉDIA  
+**Fase:** Melhorias Futuras
+
+### Problema:
+Aprovar 100 organizações = 100 emails enviados sequencialmente, pode causar lentidão e timeout.
+
+### Solução Proposta:
+1. **Opção A - Celery (Recomendado):**
+   - Implementar fila de emails assíncrona com Celery
+   - Emails enviados em background
+   - Não bloqueia aprovação no admin
+   
+2. **Opção B - Batch Emails:**
+   - Agrupar emails e enviar em lote
+   - Usar `send_mass_mail()` do Django
+   - Mais simples mas ainda síncrono
+
+### Estimativa:
+- Celery: 4-6 horas
+- Batch: 2-3 horas
+
+---
+
+## 📌 ITEM #006 - Flag de desativação manual de usuários
+**Data de Cadastro:** 2026-01-26 17:25:00  
+**Prioridade:** BAIXA  
+**Fase:** Melhorias Futuras
+
+### Problema:
+Admin desativou usuário manualmente, mas ao aprovar organização o usuário é reativado automaticamente.
+
+### Solução Proposta:
+1. Adicionar campo `manually_deactivated` (BooleanField) no model User
+2. Quando admin desativar usuário manualmente no admin, marcar flag
+3. Actions de aprovação verificam flag antes de reativar:
+   ```python
+   # Ativar apenas usuários não desativados manualmente
+   org.users.filter(
+       is_active=False,
+       manually_deactivated=False
+   ).update(is_active=True)
+   ```
+
+### Estimativa:
+- 2-3 horas (migration + lógica + testes)
+
+---
+
 ## 📝 Notas
 - Este arquivo será atualizado conforme novas tarefas forem identificadas
 - Cada item deve ter data de cadastro e descrição detalhada
