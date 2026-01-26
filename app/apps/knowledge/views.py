@@ -53,6 +53,9 @@ def knowledge_view(request):
     if not kb:
         kb = None
     
+    # Recuperar erros de validação da sessão (se houver)
+    validation_errors = request.session.pop('validation_errors', None)
+    
     # Inicializar forms para cada bloco
     forms = {
         'block1': KnowledgeBaseBlock1Form(instance=kb),
@@ -164,6 +167,7 @@ def knowledge_view(request):
         'fonts': fonts,
         'completude_blocos': completude_blocos,
         'completude_total': kb.completude_percentual,
+        'validation_errors': validation_errors,
     }
     
     return render(request, 'knowledge/view.html', context)
@@ -269,11 +273,64 @@ def knowledge_save_all(request):
         'block7': KnowledgeBaseBlock7Form(request.POST, instance=kb),
     }
     
-    # Usar Service Layer para salvar
+    # Validar todos os forms primeiro
+    all_valid = True
+    validation_errors = []
+    
+    for block_name, form in forms.items():
+        if not form.is_valid():
+            all_valid = False
+            block_number = block_name.replace('block', '')
+            block_titles = {
+                '1': 'Identidade institucional',
+                '2': 'Públicos & segmentos',
+                '3': 'Posicionamento & diferenciais',
+                '4': 'Tom de voz',
+                '5': 'Identidade visual',
+                '6': 'Sites e redes sociais',
+                '7': 'Dados & insights'
+            }
+            block_title = block_titles.get(block_number, f'Bloco {block_number}')
+            
+            for field, errors in form.errors.items():
+                if field != '__all__':
+                    field_label = form.fields[field].label or field
+                    validation_errors.append({
+                        'block': block_number,
+                        'block_title': block_title,
+                        'field': field,
+                        'field_label': field_label,
+                        'errors': errors
+                    })
+    
+    if not all_valid:
+        # Mensagem principal
+        messages.error(request, f'❌ Existem {len(validation_errors)} campo(s) obrigatório(s) não preenchido(s). Verifique os blocos destacados abaixo.')
+        
+        # Mensagens específicas por campo
+        for error_info in validation_errors:
+            messages.error(
+                request, 
+                f"Bloco {error_info['block']} ({error_info['block_title']}): {error_info['field_label']} - {', '.join(error_info['errors'])}"
+            )
+        
+        # Adicionar lista de blocos com erro na sessão para destacar no frontend
+        request.session['validation_errors'] = {
+            'blocks': list(set([e['block'] for e in validation_errors])),
+            'fields': [{'block': e['block'], 'field': e['field']} for e in validation_errors]
+        }
+        
+        return redirect('knowledge:view')
+    
+    # Se validação passou, usar Service Layer para salvar
     success, errors = KnowledgeBaseService.save_all_blocks(request, kb, forms)
     
     if success:
-        messages.success(request, 'Base de Conhecimento salva com sucesso!')
+        messages.success(request, '✅ Base de Conhecimento salva com sucesso!')
+        
+        # Limpar erros de validação da sessão
+        if 'validation_errors' in request.session:
+            del request.session['validation_errors']
         
         # Mostrar warnings se houver erros não-críticos
         for error in errors:

@@ -608,6 +608,14 @@ window.KNOWLEDGE_SOCIAL_NETWORKS = {
   linkedin: '{% for sn in social_networks %}{% if sn.network_type == "linkedin" %}{{ sn.url }}{% endif %}{% endfor %}',
   youtube: '{% for sn in social_networks %}{% if sn.network_type == "youtube" %}{{ sn.url }}{% endif %}{% endfor %}'
 };
+
+// Erros de validação (se houver)
+{% if validation_errors %}
+window.VALIDATION_ERRORS = {
+  blocks: {{ validation_errors.blocks|safe }},
+  fields: {{ validation_errors.fields|safe }}
+};
+{% endif %}
 </script>
 <script src="{% static 'js/toaster.js' %}"></script>
 <script src="{% static 'js/knowledge.js' %}"></script>
@@ -617,6 +625,7 @@ window.KNOWLEDGE_SOCIAL_NETWORKS = {
 <script src="{% static 'js/fonts.js' %}"></script>
 <script src="{% static 'js/uploads.js' %}"></script>
 <script src="{% static 'js/knowledge-events.js' %}"></script>
+<script src="{% static 'js/knowledge-validation.js' %}"></script>
 <script>
 // Carregar redes sociais existentes
 document.addEventListener('DOMContentLoaded', function() {
