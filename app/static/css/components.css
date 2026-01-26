@@ -33,8 +33,7 @@
   width: 120px;
   height: 120px;
   margin: 0 auto var(--spacing-6);
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 20%, #ffb7c9 0, var(--color-primary) 45%, #4c1f63 100%);
+  
   display: flex;
   align-items: center;
   justify-content: center;
@@ -184,6 +183,10 @@
 
 .auth-form-link:hover {
   text-decoration: underline;
+}
+
+.label-branco{
+  color: var(--color-white);
 }
 
 @media (max-width: 968px) {
@@ -753,7 +756,7 @@ textarea:focus {
 
 .auth-logo {
   width: 100%;
-  max-width: 180px;
+  max-width: 480px;
   height: auto;
   margin-bottom: var(--spacing-8);
 }
