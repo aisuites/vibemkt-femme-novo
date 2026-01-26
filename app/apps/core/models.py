@@ -511,7 +511,7 @@ class Organization(TimeStampedModel):
         super().save(*args, **kwargs)
     
     def get_quota_usage_today(self):
-        """Retorna uso de hoje (com cache por 1 minuto)"""
+        """Retorna uso de quotas de hoje (com cache por 1 minuto)"""
         from django.core.cache import cache
         
         cache_key = f'quota_usage_{self.id}_{timezone.now().date()}'
@@ -530,16 +530,25 @@ class Organization(TimeStampedModel):
             except QuotaUsageDaily.DoesNotExist:
                 usage = {'pautas_used': 0, 'posts_used': 0}
             
-            cache.set(cache_key, usage, 60)
+            cache.set(cache_key, usage, 60)  # Cache por 1 minuto
         
         return usage
     
     def get_billing_cycle_start(self):
-        """Retorna a data de início do ciclo mensal atual baseado em billing_cycle_day"""
+        """
+        Retorna a data de início do ciclo mensal atual baseado em billing_cycle_day.
+        
+        Exemplo: Se billing_cycle_day = 15
+        - Hoje é 20/out: ciclo começou em 15/out
+        - Hoje é 10/out: ciclo começou em 15/set
+        """
+        from datetime import timedelta
+        
         now = timezone.now()
         current_day = now.day
-        cycle_day = min(self.billing_cycle_day, 28)
+        cycle_day = min(self.billing_cycle_day, 28)  # Máximo dia 28 para evitar problemas com fevereiro
         
+        # Se hoje >= dia do ciclo, ciclo começou neste mês
         if current_day >= cycle_day:
             cycle_start = now.replace(day=cycle_day, hour=0, minute=0, second=0, microsecond=0)
         else:

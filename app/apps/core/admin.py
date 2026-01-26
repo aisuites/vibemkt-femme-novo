@@ -123,12 +123,12 @@ class PlanTemplateAdmin(admin.ModelAdmin):
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
     list_display = [
-        'name', 'slug', 'plan_type', 'is_active',
-        'quota_pautas_dia', 'quota_posts_dia', 'quota_posts_mes'
+        'name', 'status_badge', 'plan_type', 'uso_hoje',
+        'billing_cycle_day', 'created_at'
     ]
-    list_filter = ['plan_type', 'is_active', 'created_at']
+    list_filter = ['plan_type', 'is_active', 'suspension_reason', 'created_at']
     search_fields = ['name', 'slug']
-    readonly_fields = ['created_at', 'updated_at', 'approved_at']
+    readonly_fields = ['created_at', 'updated_at', 'approved_at', 'approved_by']
     
     actions = [
         'approve_with_template',
@@ -143,21 +143,85 @@ class OrganizationAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Informações Básicas', {
-            'fields': ('name', 'slug', 'is_active', 'approved_at')
+            'fields': ('name', 'slug', 'tagline', 'owner')
         }),
-        ('Plano e Quotas', {
+        ('Plano e Status', {
+            'fields': ('plan_type', 'is_active', 'suspension_reason', 'approved_at', 'approved_by')
+        }),
+        ('Quotas de Conteúdo', {
             'fields': (
-                'plan_type',
                 'quota_pautas_dia',
                 'quota_posts_dia',
                 'quota_posts_mes'
             )
+        }),
+        ('Quotas de Vídeos Avatar', {
+            'fields': (
+                'videos_avatar_enabled',
+                'quota_videos_dia',
+                'quota_videos_mes'
+            )
+        }),
+        ('Billing Cycle', {
+            'fields': ('billing_cycle_day',),
+            'description': 'Dia do mês que reseta a quota mensal (1-28)'
+        }),
+        ('Alertas', {
+            'fields': ('alert_80_enabled', 'alert_100_enabled', 'alert_email'),
+            'classes': ('collapse',)
+        }),
+        ('Notas Internas', {
+            'fields': ('internal_notes',),
+            'classes': ('collapse',),
+            'description': 'Notas internas da equipe (não visível para cliente)'
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
+    
+    # ========================================
+    # MÉTODOS CUSTOMIZADOS - List Display
+    # ========================================
+    
+    def status_badge(self, obj):
+        """Badge colorido de status"""
+        from django.utils.html import format_html
+        
+        if obj.is_active:
+            return format_html(
+                '<span style="background:#28a745;color:white;padding:4px 8px;border-radius:4px;font-weight:600;">✅ Ativa</span>'
+            )
+        else:
+            reason = obj.get_suspension_reason_display()
+            if obj.suspension_reason == 'pending':
+                color = '#ffc107'  # Amarelo
+                icon = '⚠️'
+            elif obj.suspension_reason == 'payment':
+                color = '#dc3545'  # Vermelho
+                icon = '💳'
+            elif obj.suspension_reason == 'terms':
+                color = '#dc3545'  # Vermelho
+                icon = '⚠️'
+            elif obj.suspension_reason == 'canceled':
+                color = '#6c757d'  # Cinza
+                icon = '🚫'
+            else:
+                color = '#6c757d'
+                icon = '⚠️'
+            
+            return format_html(
+                '<span style="background:{};color:#000;padding:4px 8px;border-radius:4px;font-weight:600;">{} {}</span>',
+                color, icon, reason
+            )
+    status_badge.short_description = 'Status'
+    
+    def uso_hoje(self, obj):
+        """Mostra uso de quotas hoje"""
+        usage = obj.get_quota_usage_today()
+        return f"Pautas: {usage['pautas_used']}/{obj.quota_pautas_dia} | Posts: {usage['posts_used']}/{obj.quota_posts_dia}"
+    uso_hoje.short_description = 'Uso Hoje'
     
     # ========================================
     # ACTIONS - Aprovação e Gestão de Planos
