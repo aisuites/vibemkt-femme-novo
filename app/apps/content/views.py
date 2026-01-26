@@ -9,8 +9,8 @@ from .models import Pauta, Post, TrendMonitor
 @require_organization
 def pautas_list(request):
     """Listar pautas da organization"""
-    # OrganizationScopedManager filtra automaticamente por request.organization
-    pautas = Pauta.objects.all().order_by('-created_at')
+    # CRÍTICO: Filtrar explicitamente por organization do request
+    pautas = Pauta.objects.for_request(request).order_by('-created_at')
     context = {'pautas': pautas}
     return render(request, 'content/pautas_list.html', context)
 
@@ -28,8 +28,8 @@ def pauta_create(request):
 @require_organization
 def posts_list(request):
     """Listar posts da organization"""
-    # OrganizationScopedManager filtra automaticamente por request.organization
-    posts = Post.objects.all().order_by('-created_at')
+    # CRÍTICO: Filtrar explicitamente por organization do request
+    posts = Post.objects.for_request(request).order_by('-created_at')
     context = {'posts': posts}
     return render(request, 'content/posts_list.html', context)
 
@@ -47,7 +47,7 @@ def post_create(request):
 @require_organization
 def trends_list(request):
     """Listar trends monitoradas da organization"""
-    # OrganizationScopedManager filtra automaticamente por request.organization
-    trends = TrendMonitor.objects.filter(is_active=True).order_by('-created_at')
+    # CRÍTICO: Filtrar explicitamente por organization do request
+    trends = TrendMonitor.objects.for_request(request).filter(is_active=True).order_by('-created_at')
     context = {'trends': trends}
     return render(request, 'content/trends_list.html', context)
