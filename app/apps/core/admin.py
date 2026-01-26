@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib import messages
+from django.utils import timezone
 from .models import (
-    User, Area, AuditLog, SystemConfig,
+    User, Area, AuditLog, SystemConfig, PlanTemplate,
     Organization, QuotaUsageDaily, QuotaAdjustment, QuotaAlert
 )
 
@@ -66,6 +68,58 @@ class SystemConfigAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
 
 
+@admin.register(PlanTemplate)
+class PlanTemplateAdmin(admin.ModelAdmin):
+    list_display = [
+        'name', 'plan_type', 'quota_pautas_dia', 
+        'quota_posts_dia', 'quota_posts_mes',
+        'videos_avatar_enabled', 'is_active', 'is_default', 'display_order'
+    ]
+    list_filter = ['plan_type', 'is_active', 'is_default', 'videos_avatar_enabled']
+    search_fields = ['name', 'description']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Identificação', {
+            'fields': ('plan_type', 'name', 'description')
+        }),
+        ('Quotas de Conteúdo', {
+            'fields': (
+                'quota_pautas_dia',
+                'quota_posts_dia',
+                'quota_posts_mes'
+            ),
+            'description': 'Limites de criação de pautas e posts'
+        }),
+        ('Quotas de Vídeos Avatar', {
+            'fields': (
+                'videos_avatar_enabled',
+                'quota_videos_dia',
+                'quota_videos_mes'
+            ),
+            'description': 'Configurações de vídeos com avatar IA'
+        }),
+        ('Configurações', {
+            'fields': ('is_active', 'is_default', 'display_order'),
+            'description': 'is_default: Plano aplicado automaticamente em aprovações'
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def has_delete_permission(self, request, obj=None):
+        """Apenas superuser pode deletar templates de plano"""
+        return request.user.is_superuser
+    
+    def save_model(self, request, obj, form, change):
+        """Se marcar como padrão, desmarcar outros"""
+        if obj.is_default:
+            PlanTemplate.objects.filter(is_default=True).exclude(pk=obj.pk).update(is_default=False)
+        super().save_model(request, obj, form, change)
+
+
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
     list_display = [
@@ -75,6 +129,17 @@ class OrganizationAdmin(admin.ModelAdmin):
     list_filter = ['plan_type', 'is_active', 'created_at']
     search_fields = ['name', 'slug']
     readonly_fields = ['created_at', 'updated_at', 'approved_at']
+    
+    actions = [
+        'approve_with_template',
+        'approve_as_free',
+        'approve_as_basic',
+        'approve_as_premium',
+        'suspend_for_payment',
+        'suspend_for_terms',
+        'suspend_canceled',
+        'reactivate_organizations'
+    ]
     
     fieldsets = (
         ('Informações Básicas', {
@@ -93,6 +158,224 @@ class OrganizationAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    
+    # ========================================
+    # ACTIONS - Aprovação e Gestão de Planos
+    # ========================================
+    
+    def approve_with_template(self, request, queryset):
+        """✅ Aprovar usando template de plano configurável"""
+        # Buscar template padrão ou primeiro ativo
+        template = PlanTemplate.objects.filter(is_active=True, is_default=True).first()
+        
+        if not template:
+            template = PlanTemplate.objects.filter(is_active=True).first()
+        
+        if not template:
+            self.message_user(
+                request,
+                'Nenhum template de plano ativo encontrado. Configure em Templates de Planos.',
+                messages.ERROR
+            )
+            return
+        
+        count = 0
+        for org in queryset:
+            # Definir approved_at se ainda não tiver (primeira aprovação)
+            if not org.approved_at:
+                org.approved_at = timezone.now()
+                org.approved_by = request.user
+            
+            org.is_active = True
+            org.suspension_reason = ''
+            
+            # Aplicar template
+            template.apply_to_organization(org)
+            org.save()
+            count += 1
+        
+        self.message_user(
+            request,
+            f'{count} organização(ões) aprovada(s) com template "{template.name}" ({template.get_quota_summary()}).',
+            messages.SUCCESS
+        )
+    approve_with_template.short_description = "✅ Aprovar com Template Configurável"
+    
+    def approve_as_free(self, request, queryset):
+        """✅ Aprovar organizações como plano FREE"""
+        # Tentar usar template
+        template = PlanTemplate.objects.filter(plan_type='free', is_active=True).first()
+        
+        count = 0
+        for org in queryset:
+            # Definir approved_at se ainda não tiver (primeira aprovação)
+            if not org.approved_at:
+                org.approved_at = timezone.now()
+                org.approved_by = request.user
+            
+            org.is_active = True
+            org.suspension_reason = ''
+            
+            if template:
+                # Usar template configurável
+                template.apply_to_organization(org)
+            else:
+                # Fallback: valores hardcoded (compatibilidade)
+                org.plan_type = 'free'
+                org.quota_pautas_dia = 3
+                org.quota_posts_dia = 3
+                org.quota_posts_mes = 15
+            
+            org.save()
+            count += 1
+        
+        quota_info = f"({org.quota_pautas_dia}/{org.quota_posts_dia}/{org.quota_posts_mes})"
+        self.message_user(
+            request,
+            f'{count} organização(ões) aprovada(s) como FREE {quota_info}.',
+            messages.SUCCESS
+        )
+    approve_as_free.short_description = "✅ Aprovar como FREE (3/3/15)"
+    
+    def approve_as_basic(self, request, queryset):
+        """✅ Aprovar organizações como plano BASIC"""
+        # Tentar usar template
+        template = PlanTemplate.objects.filter(plan_type='basic', is_active=True).first()
+        
+        count = 0
+        for org in queryset:
+            # Definir approved_at se ainda não tiver (primeira aprovação)
+            if not org.approved_at:
+                org.approved_at = timezone.now()
+                org.approved_by = request.user
+            
+            org.is_active = True
+            org.suspension_reason = ''
+            
+            if template:
+                # Usar template configurável
+                template.apply_to_organization(org)
+            else:
+                # Fallback: valores hardcoded (compatibilidade)
+                org.plan_type = 'basic'
+                org.quota_pautas_dia = 5
+                org.quota_posts_dia = 5
+                org.quota_posts_mes = 30
+            
+            org.save()
+            count += 1
+        
+        quota_info = f"({org.quota_pautas_dia}/{org.quota_posts_dia}/{org.quota_posts_mes})"
+        self.message_user(
+            request,
+            f'{count} organização(ões) aprovada(s) como BASIC {quota_info}.',
+            messages.SUCCESS
+        )
+    approve_as_basic.short_description = "✅ Aprovar como BASIC (5/5/30)"
+    
+    def approve_as_premium(self, request, queryset):
+        """✅ Aprovar organizações como plano PREMIUM"""
+        # Tentar usar template
+        template = PlanTemplate.objects.filter(plan_type='premium', is_active=True).first()
+        
+        count = 0
+        for org in queryset:
+            # Definir approved_at se ainda não tiver (primeira aprovação)
+            if not org.approved_at:
+                org.approved_at = timezone.now()
+                org.approved_by = request.user
+            
+            org.is_active = True
+            org.suspension_reason = ''
+            
+            if template:
+                # Usar template configurável
+                template.apply_to_organization(org)
+            else:
+                # Fallback: valores hardcoded (compatibilidade)
+                org.plan_type = 'premium'
+                org.quota_pautas_dia = 10
+                org.quota_posts_dia = 10
+                org.quota_posts_mes = 60
+            
+            org.save()
+            count += 1
+        
+        quota_info = f"({org.quota_pautas_dia}/{org.quota_posts_dia}/{org.quota_posts_mes})"
+        self.message_user(
+            request,
+            f'{count} organização(ões) aprovada(s) como PREMIUM {quota_info}.',
+            messages.SUCCESS
+        )
+    approve_as_premium.short_description = "✅ Aprovar como PREMIUM (10/10/60)"
+    
+    def suspend_for_payment(self, request, queryset):
+        """💳 Suspender por pagamento atrasado"""
+        count = 0
+        for org in queryset.filter(is_active=True):
+            org.is_active = False
+            org.suspension_reason = 'payment'
+            org.internal_notes += f"\n[{timezone.now().strftime('%d/%m/%Y %H:%M')}] Suspensa por pagamento atrasado - {request.user.email}"
+            org.save()
+            count += 1
+        
+        self.message_user(
+            request,
+            f'{count} organização(ões) suspensa(s) por pagamento atrasado.',
+            messages.WARNING
+        )
+    suspend_for_payment.short_description = "💳 Suspender por pagamento atrasado"
+    
+    def suspend_for_terms(self, request, queryset):
+        """⚠️ Suspender por violação de termos"""
+        count = 0
+        for org in queryset.filter(is_active=True):
+            org.is_active = False
+            org.suspension_reason = 'terms'
+            org.internal_notes += f"\n[{timezone.now().strftime('%d/%m/%Y %H:%M')}] Suspensa por violação de termos - {request.user.email}"
+            org.save()
+            count += 1
+        
+        self.message_user(
+            request,
+            f'{count} organização(ões) suspensa(s) por violação de termos.',
+            messages.WARNING
+        )
+    suspend_for_terms.short_description = "⚠️ Suspender por violação de termos"
+    
+    def suspend_canceled(self, request, queryset):
+        """🚫 Marcar como cancelada pelo cliente"""
+        count = 0
+        for org in queryset.filter(is_active=True):
+            org.is_active = False
+            org.suspension_reason = 'canceled'
+            org.internal_notes += f"\n[{timezone.now().strftime('%d/%m/%Y %H:%M')}] Cancelada pelo cliente - {request.user.email}"
+            org.save()
+            count += 1
+        
+        self.message_user(
+            request,
+            f'{count} organização(ões) marcada(s) como canceladas.',
+            messages.WARNING
+        )
+    suspend_canceled.short_description = "🚫 Marcar como cancelada"
+    
+    def reactivate_organizations(self, request, queryset):
+        """✅ Reativar organizações"""
+        count = 0
+        for org in queryset.filter(is_active=False, approved_at__isnull=False):
+            org.is_active = True
+            org.suspension_reason = ''
+            org.internal_notes += f"\n[{timezone.now().strftime('%d/%m/%Y %H:%M')}] Reativada - {request.user.email}"
+            org.save()
+            count += 1
+        
+        self.message_user(
+            request,
+            f'{count} organização(ões) reativada(s).',
+            messages.SUCCESS
+        )
+    reactivate_organizations.short_description = "✅ Reativar organizações"
 
 
 @admin.register(QuotaUsageDaily)

@@ -202,6 +202,115 @@ class SystemConfig(models.Model):
         return config
 
 
+class PlanTemplate(TimeStampedModel):
+    """
+    Template de plano com quotas configuráveis.
+    Permite que gestores alterem limites sem mexer no código.
+    """
+    # Choices importados de Organization (definido abaixo)
+    PLAN_TYPE_CHOICES = [
+        ('pending', 'Aguardando Aprovação'),
+        ('free', 'Gratuito'),
+        ('basic', 'Básico'),
+        ('premium', 'Premium'),
+        ('custom', 'Personalizado'),
+    ]
+    
+    # Identificação
+    plan_type = models.CharField(
+        max_length=20,
+        choices=PLAN_TYPE_CHOICES,
+        unique=True,
+        verbose_name='Tipo de Plano'
+    )
+    name = models.CharField(
+        max_length=100,
+        verbose_name='Nome do Plano',
+        help_text='Ex: Plano Gratuito, Plano Básico'
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Descrição'
+    )
+    
+    # Quotas de Conteúdo
+    quota_pautas_dia = models.PositiveIntegerField(
+        default=3,
+        verbose_name='Pautas por Dia',
+        help_text='Limite de pautas que podem ser criadas por dia'
+    )
+    quota_posts_dia = models.PositiveIntegerField(
+        default=3,
+        verbose_name='Posts por Dia',
+        help_text='Limite de posts que podem ser criados por dia'
+    )
+    quota_posts_mes = models.PositiveIntegerField(
+        default=15,
+        verbose_name='Posts por Mês',
+        help_text='Limite de posts que podem ser criados por mês'
+    )
+    
+    # Quotas de Vídeos Avatar
+    quota_videos_dia = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name='Vídeos Avatar por Dia',
+        help_text='Limite de vídeos avatar por dia (0 = desabilitado)'
+    )
+    quota_videos_mes = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name='Vídeos Avatar por Mês',
+        help_text='Limite de vídeos avatar por mês (0 = desabilitado)'
+    )
+    videos_avatar_enabled = models.BooleanField(
+        default=False,
+        verbose_name='Vídeos Avatar Habilitados',
+        help_text='Se marcado, permite criação de vídeos avatar'
+    )
+    
+    # Configurações
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Ativo',
+        help_text='Plano disponível para uso'
+    )
+    is_default = models.BooleanField(
+        default=False,
+        verbose_name='Padrão',
+        help_text='Plano aplicado por padrão em novas aprovações'
+    )
+    display_order = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name='Ordem de Exibição',
+        help_text='Ordem de exibição no admin (menor = primeiro)'
+    )
+    
+    class Meta:
+        verbose_name = 'Template de Plano'
+        verbose_name_plural = 'Templates de Planos'
+        ordering = ['display_order', 'plan_type']
+    
+    def __str__(self):
+        return f"{self.name} ({self.get_plan_type_display()})"
+    
+    def apply_to_organization(self, organization):
+        """
+        Aplica este template a uma organização.
+        Retorna a organização (não salva automaticamente).
+        """
+        organization.plan_type = self.plan_type
+        organization.quota_pautas_dia = self.quota_pautas_dia
+        organization.quota_posts_dia = self.quota_posts_dia
+        organization.quota_posts_mes = self.quota_posts_mes
+        organization.quota_videos_dia = self.quota_videos_dia
+        organization.quota_videos_mes = self.quota_videos_mes
+        organization.videos_avatar_enabled = self.videos_avatar_enabled
+        return organization
+    
+    def get_quota_summary(self):
+        """Retorna resumo das quotas em formato legível"""
+        return f"Pautas: {self.quota_pautas_dia}/dia | Posts: {self.quota_posts_dia}/dia, {self.quota_posts_mes}/mês"
+
+
 class Organization(TimeStampedModel):
     """
     Organização/Empresa no sistema multi-tenant.
