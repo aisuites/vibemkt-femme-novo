@@ -396,7 +396,7 @@ class OrganizationAdmin(admin.ModelAdmin):
     def suspend_for_payment(self, request, queryset):
         """💳 Suspender por pagamento atrasado"""
         count = 0
-        for org in queryset.filter(is_active=True):
+        for org in queryset:
             org.is_active = False
             org.suspension_reason = 'payment'
             org.internal_notes += f"\n[{timezone.now().strftime('%d/%m/%Y %H:%M')}] Suspensa por pagamento atrasado - {request.user.email}"
