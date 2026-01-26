@@ -70,7 +70,7 @@
     </div>
   </div>
   
-  <form method="post" action="{% url 'knowledge:save_all' %}" class="form-grid" enctype="multipart/form-data">
+  <form method="post" action="{% url 'knowledge:save_all' %}" class="form-grid" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
     
     <!-- BLOCO 1: IDENTIDADE INSTITUCIONAL -->
