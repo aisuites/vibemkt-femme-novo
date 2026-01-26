@@ -108,6 +108,16 @@ class Pauta(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.user}"
+    
+    def save(self, *args, **kwargs):
+        """
+        Garantir integridade: organization da pauta DEVE ser igual à organization do user.
+        Previne inconsistências de dados entre tenants.
+        """
+        if self.user and self.user.organization:
+            # Forçar organization da pauta = organization do user
+            self.organization = self.user.organization
+        super().save(*args, **kwargs)
 
 
 class Post(models.Model):
@@ -304,6 +314,16 @@ class Post(models.Model):
     
     def __str__(self):
         return f"{self.get_content_type_display()} - {self.social_network} - {self.created_at}"
+    
+    def save(self, *args, **kwargs):
+        """
+        Garantir integridade: organization do post DEVE ser igual à organization do user.
+        Previne inconsistências de dados entre tenants.
+        """
+        if self.user and self.user.organization:
+            # Forçar organization do post = organization do user
+            self.organization = self.user.organization
+        super().save(*args, **kwargs)
     
     def hashtag_list(self):
         """Retorna lista de hashtags formatadas"""
