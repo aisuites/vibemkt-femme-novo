@@ -4,14 +4,7 @@
  * Accordion colapsável com toggle e scroll suave
  */
 
-// Inicializar quando DOM estiver pronto
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
-}
-
-document.addEventListener('DOMContentLoaded', function() {
+function initKnowledgeAccordion() {
     // Reabrir Bloco 2 se segmento foi criado
     if (sessionStorage.getItem('keepBlock2Open')) {
         const bloco2 = document.getElementById('bloco2');
@@ -92,4 +85,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-});
+}
+
+// Inicializar quando DOM estiver pronto
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initKnowledgeAccordion);
+} else {
+    initKnowledgeAccordion();
+}
