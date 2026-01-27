@@ -126,18 +126,17 @@ class S3Service:
         )
     
     @classmethod
-    def _get_bucket_name(cls, organization_id: int) -> str:
+    def _get_bucket_name(cls, organization_id: int = None) -> str:
         """
-        Retorna nome do bucket para a organização
+        Retorna nome do bucket único para toda aplicação
         
         Args:
-            organization_id: ID da organização
+            organization_id: ID da organização (não usado, mantido por compatibilidade)
             
         Returns:
-            Nome do bucket (ex: iamkt-org-1)
+            Nome do bucket único (ex: iamkt-uploads)
         """
-        template = getattr(settings, 'AWS_BUCKET_NAME_TEMPLATE', 'iamkt-org-{org_id}')
-        return template.format(org_id=organization_id)
+        return getattr(settings, 'AWS_BUCKET_NAME', 'iamkt-uploads')
     
     @classmethod
     def _sanitize_filename(cls, filename: str) -> str:
@@ -214,9 +213,10 @@ class S3Service:
         # Gerar nome do arquivo usando o padrão
         filename = config['filename_pattern'].format(**pattern_data)
         
-        # Retornar com folder
+        # Retornar com prefixo de organização + folder
+        # Estrutura: org-{id}/folder/filename
         folder = config['folder']
-        return f"{folder}/{filename}"
+        return f"org-{organization_id}/{folder}/{filename}"
     
     @classmethod
     def validate_file(
@@ -306,8 +306,8 @@ class S3Service:
             custom_data=custom_data
         )
         
-        # Obter bucket
-        bucket_name = cls._get_bucket_name(organization_id)
+        # Obter bucket único
+        bucket_name = cls._get_bucket_name()
         
         # Preparar metadados
         s3_metadata = {
@@ -367,15 +367,20 @@ class S3Service:
             URL temporária para acesso ao arquivo
             
         Raises:
-            ValueError: Se s3_key inválida
+            ValueError: Se s3_key inválida ou não pertence à organização
             Exception: Se erro ao gerar URL
         """
         # Validar s3_key (prevenir path traversal)
         if '..' in s3_key or '//' in s3_key:
             raise ValueError("Chave de arquivo contém caracteres suspeitos")
         
+        # SEGURANÇA: Validar que s3_key pertence à organização
+        expected_prefix = f"org-{organization_id}/"
+        if not s3_key.startswith(expected_prefix):
+            raise ValueError(f"Acesso negado: arquivo não pertence à organização")
+        
         # Obter bucket
-        bucket_name = cls._get_bucket_name(organization_id)
+        bucket_name = cls._get_bucket_name()
         
         # Determinar tempo de expiração
         if expires_in is None:
@@ -420,8 +425,13 @@ class S3Service:
         if '..' in s3_key or '//' in s3_key:
             return False
         
+        # SEGURANÇA: Validar que s3_key pertence à organização
+        expected_prefix = f"org-{organization_id}/"
+        if not s3_key.startswith(expected_prefix):
+            return False
+        
         # Obter bucket
-        bucket_name = cls._get_bucket_name(organization_id)
+        bucket_name = cls._get_bucket_name()
         
         # Deletar arquivo
         s3_client = cls._get_s3_client()
@@ -440,7 +450,7 @@ class S3Service:
     def get_file_url(
         cls,
         s3_key: str,
-        organization_id: int
+        organization_id: int = None
     ) -> str:
         """
         Retorna URL pública do arquivo (se bucket for público)
@@ -448,12 +458,12 @@ class S3Service:
         
         Args:
             s3_key: Chave do arquivo no S3
-            organization_id: ID da organização
+            organization_id: ID da organização (não usado, mantido por compatibilidade)
             
         Returns:
             URL do arquivo
         """
-        bucket_name = cls._get_bucket_name(organization_id)
+        bucket_name = cls._get_bucket_name()
         region = settings.AWS_REGION
         
         return f"https://{bucket_name}.s3.{region}.amazonaws.com/{s3_key}"
