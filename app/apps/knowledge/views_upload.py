@@ -6,10 +6,11 @@ Versão 2.0 - Seguindo guia Django S3 completo
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
+from django_ratelimit.decorators import ratelimit
 from apps.core.services import S3Service
 from apps.core.utils.image_validators import ImageValidator
+from apps.core.utils.upload_validators import FileUploadValidator
 from apps.knowledge.models import Logo, ReferenceImage, CustomFont
-from apps.knowledge.models import CustomFont
 import json
 
 
@@ -77,6 +78,7 @@ def get_preview_url(request):
 # ============================================
 
 @login_required
+@ratelimit(key='user', rate='10/m', method='POST', block=True)
 @require_http_methods(["POST"])
 def generate_logo_upload_url(request):
     """
@@ -110,6 +112,19 @@ def generate_logo_upload_url(request):
             return JsonResponse({
                 'success': False,
                 'error': 'Parâmetros obrigatórios: fileName, fileType, fileSize'
+            }, status=400)
+        
+        # VALIDAÇÃO DE SEGURANÇA
+        is_valid, error_msg = FileUploadValidator.validate_image(
+            file_name=file_name,
+            file_type=file_type,
+            file_size=int(file_size)
+        )
+        
+        if not is_valid:
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
             }, status=400)
         
         # Gerar Presigned URL usando novo S3Service
@@ -284,6 +299,7 @@ def delete_logo(request, logo_id):
 # ============================================
 
 @login_required
+@ratelimit(key='user', rate='20/m', method='POST', block=True)
 @require_http_methods(["POST"])
 def generate_reference_upload_url(request):
     """
@@ -317,6 +333,19 @@ def generate_reference_upload_url(request):
             return JsonResponse({
                 'success': False,
                 'error': 'Parâmetros obrigatórios: fileName, fileType, fileSize'
+            }, status=400)
+        
+        # VALIDAÇÃO DE SEGURANÇA
+        is_valid, error_msg = FileUploadValidator.validate_image(
+            file_name=file_name,
+            file_type=file_type,
+            file_size=int(file_size)
+        )
+        
+        if not is_valid:
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
             }, status=400)
         
         # Gerar Presigned URL
@@ -441,6 +470,7 @@ def create_reference_image(request):
 
 
 @login_required
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 @require_http_methods(["POST"])
 def generate_font_upload_url(request):
     """
@@ -472,6 +502,19 @@ def generate_font_upload_url(request):
             return JsonResponse({
                 'success': False,
                 'error': 'Parâmetros obrigatórios: fileName, fileType, fileSize'
+            }, status=400)
+        
+        # VALIDAÇÃO DE SEGURANÇA
+        is_valid, error_msg = FileUploadValidator.validate_font(
+            file_name=file_name,
+            file_type=file_type,
+            file_size=int(file_size)
+        )
+        
+        if not is_valid:
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
             }, status=400)
         
         # Gerar Presigned URL
