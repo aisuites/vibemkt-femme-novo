@@ -69,10 +69,10 @@ class KnowledgeBaseAdmin(admin.ModelAdmin):
             'fields': ('tom_voz_externo', 'tom_voz_interno', 'palavras_recomendadas', 'palavras_evitar')
         }),
         ('Bloco 5: Identidade Visual', {
-            'fields': ('paleta_cores', 'tipografia')
+            'fields': ()
         }),
         ('Bloco 6: Sites e Redes Sociais', {
-            'fields': ('site_institucional', 'redes_sociais', 'templates_redes')
+            'fields': ('site_institucional', 'templates_redes')
         }),
         ('Bloco 7: Dados e Insights', {
             'fields': ('fontes_confiaveis', 'canais_trends', 'palavras_chave_trends')

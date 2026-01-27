@@ -126,8 +126,8 @@ def knowledge_view(request):
     
     # BLOCO 5: Identidade Visual (2 campos principais)
     bloco5_fields = [
-        colors.exists() or (kb.paleta_cores and len(kb.paleta_cores) > 0),
-        fonts.exists() or (kb.tipografia and len(kb.tipografia) > 0)
+        colors.exists(),
+        fonts.exists()
     ]
     bloco5_filled = sum(1 for f in bloco5_fields if f)
     
