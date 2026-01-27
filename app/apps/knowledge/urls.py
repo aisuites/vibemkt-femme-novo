@@ -5,6 +5,7 @@ from django.urls import path
 from . import views
 from . import views_segments
 from . import views_tags
+from . import views_upload
 
 app_name = 'knowledge'
 
@@ -17,10 +18,22 @@ urlpatterns = [
     path('save-all/', views.knowledge_save_all, name='save_all'),
     path('save-tags/', views_tags.knowledge_save_tags, name='save_tags'),
     
-    # Uploads
+    # Uploads (legado - manter por compatibilidade)
     path('upload/image/', views.knowledge_upload_image, name='upload_image'),
     path('upload/logo/', views.knowledge_upload_logo, name='upload_logo'),
     path('upload/font/', views.knowledge_upload_font, name='upload_font'),
+    
+    # Upload S3 - Logos
+    path('logo/upload-url/', views_upload.generate_logo_upload_url, name='logo_upload_url'),
+    path('logo/create/', views_upload.create_logo, name='logo_create'),
+    path('logo/preview-url/', views_upload.get_logo_preview_url, name='logo_preview_url'),
+    path('logo/<int:logo_id>/delete/', views_upload.delete_logo, name='logo_delete'),
+    
+    # Upload S3 - Imagens de Referência
+    path('reference/upload-url/', views_upload.generate_reference_upload_url, name='reference_upload_url'),
+    path('reference/create/', views_upload.create_reference, name='reference_create'),
+    path('reference/preview-url/', views_upload.get_reference_preview_url, name='reference_preview_url'),
+    path('reference/<int:reference_id>/delete/', views_upload.delete_reference, name='reference_delete'),
     
     # Segmentos Internos (AJAX)
     path('segment/create/', views_segments.segment_create, name='segment_create'),
