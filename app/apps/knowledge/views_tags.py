@@ -58,8 +58,14 @@ def knowledge_save_tags(request):
                     'message': 'Todas as tags devem ser strings'
                 }, status=400)
         
-        # Obter instância
-        kb = KnowledgeBase.get_instance()
+        # Obter KnowledgeBase da organização do usuário
+        kb = KnowledgeBase.objects.for_request(request).first()
+        
+        if not kb:
+            return JsonResponse({
+                'success': False,
+                'message': 'Base de Conhecimento não encontrada'
+            }, status=404)
         
         # Atualizar campo específico
         setattr(kb, field_name, tags)

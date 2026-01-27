@@ -16,7 +16,15 @@ def segment_create(request):
     """Criar novo segmento interno via AJAX"""
     try:
         data = json.loads(request.body)
-        kb = KnowledgeBase.get_instance()
+        
+        # Obter KnowledgeBase da organização do usuário
+        kb = KnowledgeBase.objects.for_request(request).first()
+        
+        if not kb:
+            return JsonResponse({
+                'success': False,
+                'message': 'Base de Conhecimento não encontrada'
+            }, status=404)
         
         segment = InternalSegment.objects.create(
             knowledge_base=kb,
