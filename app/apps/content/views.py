@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from apps.core.decorators import require_organization
 from .models import Pauta, Post, TrendMonitor
 
@@ -10,7 +11,15 @@ from .models import Pauta, Post, TrendMonitor
 def pautas_list(request):
     """Listar pautas da organization"""
     # CRÍTICO: Filtrar explicitamente por organization do request
-    pautas = Pauta.objects.for_request(request).order_by('-created_at')
+    pautas_list = Pauta.objects.for_request(request).select_related(
+        'created_by', 'knowledge_base'
+    ).order_by('-created_at')
+    
+    # Paginação
+    paginator = Paginator(pautas_list, 20)  # 20 pautas por página
+    page_number = request.GET.get('page')
+    pautas = paginator.get_page(page_number)
+    
     context = {'pautas': pautas}
     return render(request, 'content/pautas_list.html', context)
 
@@ -29,7 +38,15 @@ def pauta_create(request):
 def posts_list(request):
     """Listar posts da organization"""
     # CRÍTICO: Filtrar explicitamente por organization do request
-    posts = Post.objects.for_request(request).order_by('-created_at')
+    posts_list = Post.objects.for_request(request).select_related(
+        'created_by', 'pauta', 'knowledge_base'
+    ).prefetch_related('assets').order_by('-created_at')
+    
+    # Paginação
+    paginator = Paginator(posts_list, 20)  # 20 posts por página
+    page_number = request.GET.get('page')
+    posts = paginator.get_page(page_number)
+    
     context = {'posts': posts}
     return render(request, 'content/posts_list.html', context)
 
@@ -48,6 +65,14 @@ def post_create(request):
 def trends_list(request):
     """Listar trends monitoradas da organization"""
     # CRÍTICO: Filtrar explicitamente por organization do request
-    trends = TrendMonitor.objects.for_request(request).filter(is_active=True).order_by('-created_at')
+    trends_list = TrendMonitor.objects.for_request(request).select_related(
+        'created_by'
+    ).filter(is_active=True).order_by('-created_at')
+    
+    # Paginação
+    paginator = Paginator(trends_list, 30)  # 30 trends por página
+    page_number = request.GET.get('page')
+    trends = paginator.get_page(page_number)
+    
     context = {'trends': trends}
     return render(request, 'content/trends_list.html', context)
