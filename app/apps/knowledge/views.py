@@ -9,7 +9,7 @@ import json
 
 from .models import (
     KnowledgeBase, InternalSegment, ColorPalette, SocialNetwork, 
-    ReferenceImage, Logo, CustomFont, KnowledgeChangeLog
+    ReferenceImage, Logo, CustomFont, KnowledgeChangeLog, Typography
 )
 from .forms import (
     KnowledgeBaseBlock1Form, KnowledgeBaseBlock2Form,
@@ -87,6 +87,10 @@ def knowledge_view(request):
         ).select_related('uploaded_by').order_by('-is_primary', 'logo_type')
         
         fonts = kb.typography_settings.select_related('updated_by', 'custom_font').order_by('order', 'usage')
+        
+        custom_fonts = CustomFont.objects.filter(
+            knowledge_base=kb
+        ).select_related('uploaded_by').order_by('-created_at')
     else:
         # KB não existe ou não tem pk, inicializar vazios
         internal_segments = []
@@ -95,6 +99,7 @@ def knowledge_view(request):
         reference_images = []
         logos = []
         fonts = []
+        custom_fonts = []
     
     # Calcular completude proporcional por bloco (% de campos preenchidos)
     def calc_bloco_percent(fields_filled, total_fields):
@@ -163,6 +168,7 @@ def knowledge_view(request):
         'reference_images': reference_images,
         'logos': logos,
         'fonts': fonts,
+        'custom_fonts': custom_fonts,
         'completude_blocos': completude_blocos,
         'completude_total': kb.completude_percentual,
         'validation_errors': validation_errors,

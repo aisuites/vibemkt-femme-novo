@@ -6,6 +6,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/knowledge.css' %}">
+<link rel="stylesheet" href="{% static 'css/uploads.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -318,8 +319,8 @@
             
             <div id="logos-gallery" class="logos-gallery">
               {% for logo in logos %}
-              <div class="logo-preview-item" data-logo-id="{{ logo.id }}">
-                <img src="{{ logo.s3_url }}" alt="{{ logo.name }}">
+              <div class="logo-preview-item" data-logo-id="{{ logo.id }}" data-s3-key="{{ logo.s3_key }}">
+                <img src="#" alt="{{ logo.name }}" data-lazy-load="{{ logo.s3_key }}">
                 <div class="logo-preview-info">
                   <span class="logo-preview-name">{{ logo.name }}</span>
                   <span class="logo-preview-type">{{ logo.get_logo_type_display }}</span>
@@ -351,8 +352,8 @@
             
             <div id="references-gallery" class="references-gallery">
               {% for img in reference_images %}
-              <div class="reference-preview-item" data-ref-id="{{ img.id }}">
-                <img src="{{ img.s3_url }}" alt="{{ img.title }}">
+              <div class="reference-preview-item" data-ref-id="{{ img.id }}" data-s3-key="{{ img.s3_key }}">
+                <img src="#" alt="{{ img.title }}" data-lazy-load="{{ img.s3_key }}">
                 <div class="reference-preview-overlay">
                   <span class="reference-preview-title">{{ img.title }}</span>
                   <button type="button" class="btn-remove-reference" data-action="remove-reference" data-ref-id="{{ img.id }}" title="Remover">
@@ -602,6 +603,18 @@
 // Dados do backend para JavaScript
 window.KNOWLEDGE_COLORS = {{ colors|colors_to_json|safe }};
 window.KNOWLEDGE_FONTS = {{ fonts|fonts_to_json|safe }};
+window.KNOWLEDGE_CUSTOM_FONTS = [
+  {% for font in custom_fonts %}
+  {
+    id: {{ font.id }},
+    name: '{{ font.name|escapejs }}',
+    font_type: '{{ font.font_type }}',
+    file_format: '{{ font.file_format }}',
+    s3_key: '{{ font.s3_key|escapejs }}',
+    s3_url: '{{ font.s3_url|escapejs }}'
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
 window.KNOWLEDGE_SOCIAL_NETWORKS = {
   instagram: '{% for sn in social_networks %}{% if sn.network_type == "instagram" %}{{ sn.url }}{% endif %}{% endfor %}',
   facebook: '{% for sn in social_networks %}{% if sn.network_type == "facebook" %}{{ sn.url }}{% endif %}{% endfor %}',
@@ -617,6 +630,8 @@ window.VALIDATION_ERRORS = {
 };
 {% endif %}
 </script>
+<link rel="stylesheet" href="{% static 'css/confirm-modal.css' %}">
+<script src="{% static 'js/confirm-modal.js' %}"></script>
 <script src="{% static 'js/toaster.js' %}"></script>
 <script src="{% static 'js/knowledge.js' %}"></script>
 <script src="{% static 'js/knowledge-navigation.js' %}"></script>
@@ -624,9 +639,12 @@ window.VALIDATION_ERRORS = {
 <script src="{% static 'js/tags.js' %}"></script>
 <script src="{% static 'js/colors.js' %}"></script>
 <script src="{% static 'js/fonts.js' %}"></script>
-<script src="{% static 'js/uploads.js' %}"></script>
+<script src="{% static 'js/image-validator.js' %}"></script>
+<script src="{% static 'js/image-preview-loader.js' %}"></script>
+<script src="{% static 'js/uploads-simple.js' %}"></script>
 <script src="{% static 'js/knowledge-events.js' %}"></script>
 <script src="{% static 'js/knowledge-validation.js' %}"></script>
+<!-- <script src="{% static 'js/uploads.js' %}"></script> --> <!-- Mock antigo - comentado para teste -->
 <script>
 // Carregar redes sociais existentes
 document.addEventListener('DOMContentLoaded', function() {

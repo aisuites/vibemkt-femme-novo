@@ -102,55 +102,21 @@ function initFontEvents() {
  * UPLOADS
  */
 function initUploadEvents() {
-    // Logo upload
-    const logoInput = document.getElementById('logo-upload-input');
-    const logoBtn = document.querySelector('[data-action="trigger-logo-upload"]');
-    
-    if (logoInput && logoBtn) {
-        logoBtn.addEventListener('click', () => {
-            logoInput.click();
-        });
-        
-        logoInput.addEventListener('change', (e) => {
-            if (typeof handleLogoUpload === 'function') {
-                handleLogoUpload(e);
-            }
-        });
-    }
-
-    // Reference upload
-    const refInput = document.getElementById('reference-upload-input');
-    const refBtn = document.querySelector('[data-action="trigger-reference-upload"]');
-    
-    if (refInput && refBtn) {
-        refBtn.addEventListener('click', () => {
-            refInput.click();
-        });
-        
-        refInput.addEventListener('change', (e) => {
-            if (typeof handleReferenceUpload === 'function') {
-                handleReferenceUpload(e);
-            }
-        });
-    }
-
-    // Remover logo (delegação de eventos)
-    document.addEventListener('click', (e) => {
-        if (e.target.closest('[data-action="remove-logo"]')) {
-            const btn = e.target.closest('[data-action="remove-logo"]');
-            const logoId = parseInt(btn.dataset.logoId);
-            if (typeof removeLogo === 'function') {
+    // Event listener para remover logo
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('[data-action="remove-logo"]') || e.target.closest('[data-action="remove-logo"]')) {
+            const btn = e.target.matches('[data-action="remove-logo"]') ? e.target : e.target.closest('[data-action="remove-logo"]');
+            const logoId = btn.dataset.logoId;
+            if (logoId && typeof removeLogo === 'function') {
                 removeLogo(logoId);
             }
         }
-    });
-
-    // Remover referência (delegação de eventos)
-    document.addEventListener('click', (e) => {
-        if (e.target.closest('[data-action="remove-reference"]')) {
-            const btn = e.target.closest('[data-action="remove-reference"]');
-            const refId = parseInt(btn.dataset.refId);
-            if (typeof removeReference === 'function') {
+        
+        // Event listener para remover referência
+        if (e.target.matches('[data-action="remove-reference"]') || e.target.closest('[data-action="remove-reference"]')) {
+            const btn = e.target.matches('[data-action="remove-reference"]') ? e.target : e.target.closest('[data-action="remove-reference"]');
+            const refId = btn.dataset.refId;
+            if (refId && typeof removeReference === 'function') {
                 removeReference(refId);
             }
         }

@@ -1,14 +1,75 @@
 """
 Views para upload de arquivos usando S3 Presigned URLs
+Versão 2.0 - Seguindo guia Django S3 completo
 """
 
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_exempt
-from apps.core.services import S3Service, ImageProcessor
-from apps.knowledge.models import Logo, ReferenceImage, KnowledgeBase
+from apps.core.services import S3Service
+from apps.core.utils.image_validators import ImageValidator
+from apps.knowledge.models import Logo, ReferenceImage, CustomFont
+from apps.knowledge.models import CustomFont
 import json
+
+
+# ============================================
+# VIEW GENÉRICA DE PREVIEW (Seguindo Guia)
+# ============================================
+
+@login_required
+@require_http_methods(["GET"])
+def get_preview_url(request):
+    """
+    View genérica para obter Presigned URL de preview
+    Funciona para qualquer tipo de arquivo (logos, references, etc)
+    
+    GET params:
+        - s3_key: Chave do arquivo no S3
+    
+    Returns:
+        {
+            'success': bool,
+            'data': {
+                'previewUrl': str,
+                'expiresIn': int
+            }
+        }
+    """
+    try:
+        s3_key = request.GET.get('s3_key')
+        
+        if not s3_key:
+            return JsonResponse({
+                'success': False,
+                'error': 'Parâmetro s3_key obrigatório'
+            }, status=400)
+        
+        # Validar que arquivo pertence à organização do usuário
+        organization = request.organization
+        S3Service.validate_organization_access(s3_key, organization.id)
+        
+        # Gerar Presigned URL
+        preview_url = S3Service.generate_presigned_download_url(s3_key)
+        
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'previewUrl': preview_url,
+                'expiresIn': S3Service.DOWNLOAD_URL_EXPIRATION
+            }
+        })
+        
+    except ValueError as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=403)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': 'Erro ao gerar URL de preview'
+        }, status=500)
 
 
 # ============================================
@@ -33,16 +94,13 @@ def generate_logo_upload_url(request):
             'data': {
                 'upload_url': str,
                 's3_key': str,
-                'bucket': str,
                 'expires_in': int
             }
         }
     """
     try:
-        # Obter organização do usuário
         organization = request.organization
         
-        # Validar parâmetros
         file_name = request.POST.get('fileName')
         file_type = request.POST.get('fileType')
         file_size = request.POST.get('fileSize')
@@ -54,19 +112,18 @@ def generate_logo_upload_url(request):
                 'error': 'Parâmetros obrigatórios: fileName, fileType, fileSize'
             }, status=400)
         
-        # Gerar Presigned URL
+        # Gerar Presigned URL usando novo S3Service
         result = S3Service.generate_presigned_upload_url(
-            file_type='logo',
             file_name=file_name,
-            mime_type=file_type,
+            file_type=file_type,
             file_size=int(file_size),
+            category='logos',
             organization_id=organization.id,
-            custom_data={'logo_type': logo_type},
-            metadata={
-                'user-id': str(request.user.id),
-                'logo-type': logo_type,
-            }
+            custom_data={'logo_type': logo_type}
         )
+        
+        # Adicionar organization_id para o JavaScript usar nos headers
+        result['organization_id'] = organization.id
         
         return JsonResponse({
             'success': True,
@@ -102,25 +159,21 @@ def create_logo(request):
         {
             'success': bool,
             'data': {
-                'id': int,
-                'name': str,
-                'preview_url': str,
-                'logo_type': str
+                'logoId': int,
+                'previewUrl': str
             }
         }
     """
     try:
-        # Obter organização e knowledge base
         organization = request.organization
-        kb = KnowledgeBase.objects.filter(organization=organization).first()
         
-        if not kb:
-            return JsonResponse({
-                'success': False,
-                'error': 'Base de conhecimento não encontrada'
-            }, status=404)
+        # Obter ou criar knowledge_base (usando get_or_create para evitar duplicatas)
+        from apps.knowledge.models import KnowledgeBase
+        knowledge_base, created = KnowledgeBase.objects.get_or_create(
+            organization=organization,
+            defaults={'nome_empresa': organization.name}
+        )
         
-        # Validar parâmetros
         name = request.POST.get('name')
         logo_type = request.POST.get('logoType')
         s3_key = request.POST.get('s3Key')
@@ -133,106 +186,55 @@ def create_logo(request):
                 'error': 'Parâmetros obrigatórios: name, logoType, s3Key, fileFormat'
             }, status=400)
         
-        # Se é logo principal, desmarcar outros
-        if is_primary:
-            Logo.objects.filter(knowledge_base=kb, is_primary=True).update(is_primary=False)
+        # Validar que s3_key pertence à organização
+        S3Service.validate_organization_access(s3_key, organization.id)
         
-        # Criar registro do logo
+        # Validar dimensões da imagem (se não for SVG)
+        if file_format != 'svg':
+            # TODO: Baixar imagem do S3 e validar dimensões
+            pass
+        
+        # Gerar URL pública
+        s3_url = S3Service.get_public_url(s3_key)
+        
+        # Criar registro no banco
         logo = Logo.objects.create(
-            knowledge_base=kb,
+            knowledge_base=knowledge_base,
             name=name,
             logo_type=logo_type,
-            s3_key=s3_key,
-            s3_url=S3Service.get_file_url(s3_key, organization.id),
             file_format=file_format,
+            s3_key=s3_key,
+            s3_url=s3_url,
             is_primary=is_primary,
             uploaded_by=request.user
         )
         
         # Gerar URL de preview
-        preview_url = S3Service.generate_presigned_download_url(
-            s3_key=s3_key,
-            organization_id=organization.id,
-            url_type='preview'
-        )
+        preview_url = S3Service.generate_presigned_download_url(s3_key)
         
         return JsonResponse({
             'success': True,
             'data': {
-                'id': logo.id,
+                'logoId': logo.id,
                 'name': logo.name,
-                'logo_type': logo.logo_type,
-                'preview_url': preview_url,
-                'is_primary': logo.is_primary
+                'previewUrl': preview_url
             }
         })
         
+    except ValueError as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=403)
     except Exception as e:
+        import traceback
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Erro ao criar logo: {str(e)}")
+        logger.error(traceback.format_exc())
         return JsonResponse({
             'success': False,
             'error': f'Erro ao criar logo: {str(e)}'
-        }, status=500)
-
-
-@login_required
-@require_http_methods(["POST"])
-def get_logo_preview_url(request):
-    """
-    Gera Presigned URL para preview de logo existente
-    
-    POST params:
-        - logoId: ID do logo
-    
-    Returns:
-        {
-            'success': bool,
-            'data': {
-                'preview_url': str,
-                'expires_in': int
-            }
-        }
-    """
-    try:
-        organization = request.organization
-        logo_id = request.POST.get('logoId')
-        
-        if not logo_id:
-            return JsonResponse({
-                'success': False,
-                'error': 'logoId é obrigatório'
-            }, status=400)
-        
-        # Buscar logo
-        logo = Logo.objects.filter(
-            id=logo_id,
-            knowledge_base__organization=organization
-        ).first()
-        
-        if not logo:
-            return JsonResponse({
-                'success': False,
-                'error': 'Logo não encontrado'
-            }, status=404)
-        
-        # Gerar URL de preview
-        preview_url = S3Service.generate_presigned_download_url(
-            s3_key=logo.s3_key,
-            organization_id=organization.id,
-            url_type='preview'
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'data': {
-                'preview_url': preview_url,
-                'expires_in': S3Service.PRESIGNED_URL_EXPIRATION['preview']
-            }
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': 'Erro ao gerar URL de preview'
         }, status=500)
 
 
@@ -246,38 +248,30 @@ def delete_logo(request, logo_id):
         - logo_id: ID do logo
     
     Returns:
-        {
-            'success': bool,
-            'message': str
-        }
+        {'success': bool}
     """
     try:
         organization = request.organization
         
-        # Buscar logo
-        logo = Logo.objects.filter(
+        logo = Logo.objects.get(
             id=logo_id,
             knowledge_base__organization=organization
-        ).first()
-        
-        if not logo:
-            return JsonResponse({
-                'success': False,
-                'error': 'Logo não encontrado'
-            }, status=404)
+        )
         
         # Deletar do S3
-        s3_key = logo.s3_key
-        S3Service.delete_file(s3_key, organization.id)
+        if logo.s3_key:
+            S3Service.delete_file(logo.s3_key)
         
         # Deletar do banco
         logo.delete()
         
-        return JsonResponse({
-            'success': True,
-            'message': 'Logo deletado com sucesso'
-        })
+        return JsonResponse({'success': True})
         
+    except Logo.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Logo não encontrado'
+        }, status=404)
     except Exception as e:
         return JsonResponse({
             'success': False,
@@ -299,6 +293,7 @@ def generate_reference_upload_url(request):
         - fileName: Nome do arquivo
         - fileType: MIME type
         - fileSize: Tamanho em bytes
+        - category: Categoria (opcional)
     
     Returns:
         {
@@ -306,7 +301,6 @@ def generate_reference_upload_url(request):
             'data': {
                 'upload_url': str,
                 's3_key': str,
-                'bucket': str,
                 'expires_in': int
             }
         }
@@ -314,10 +308,10 @@ def generate_reference_upload_url(request):
     try:
         organization = request.organization
         
-        # Validar parâmetros
         file_name = request.POST.get('fileName')
         file_type = request.POST.get('fileType')
         file_size = request.POST.get('fileSize')
+        category = request.POST.get('category', 'geral')
         
         if not all([file_name, file_type, file_size]):
             return JsonResponse({
@@ -327,15 +321,16 @@ def generate_reference_upload_url(request):
         
         # Gerar Presigned URL
         result = S3Service.generate_presigned_upload_url(
-            file_type='reference',
             file_name=file_name,
-            mime_type=file_type,
+            file_type=file_type,
             file_size=int(file_size),
+            category='references',
             organization_id=organization.id,
-            metadata={
-                'user-id': str(request.user.id),
-            }
+            custom_data={'reference_category': category}
         )
+        
+        # Adicionar organization_id para o JavaScript usar nos headers
+        result['organization_id'] = organization.id
         
         return JsonResponse({
             'success': True,
@@ -356,87 +351,89 @@ def generate_reference_upload_url(request):
 
 @login_required
 @require_http_methods(["POST"])
-def create_reference(request):
+def create_reference_image(request):
     """
     Cria registro de ReferenceImage após upload bem-sucedido no S3
     
     POST params:
-        - title: Título da imagem
-        - description: Descrição (opcional)
+        - name: Nome da imagem
         - s3Key: Chave do arquivo no S3
-        - fileSize: Tamanho do arquivo em bytes
-        - width: Largura da imagem
-        - height: Altura da imagem
-        - perceptualHash: Hash perceptual (opcional)
+        - category: Categoria (opcional)
+        - description: Descrição (opcional)
     
     Returns:
         {
             'success': bool,
             'data': {
-                'id': int,
-                'title': str,
-                'preview_url': str
+                'referenceId': int,
+                'previewUrl': str
             }
         }
     """
     try:
         organization = request.organization
-        kb = KnowledgeBase.objects.filter(organization=organization).first()
         
-        if not kb:
-            return JsonResponse({
-                'success': False,
-                'error': 'Base de conhecimento não encontrada'
-            }, status=404)
+        # Obter ou criar knowledge_base (usando get_or_create para evitar duplicatas)
+        from apps.knowledge.models import KnowledgeBase
+        knowledge_base, created = KnowledgeBase.objects.get_or_create(
+            organization=organization,
+            defaults={'nome_empresa': organization.name}
+        )
         
-        # Validar parâmetros
-        title = request.POST.get('title')
-        description = request.POST.get('description', '')
+        name = request.POST.get('name')
         s3_key = request.POST.get('s3Key')
-        file_size = request.POST.get('fileSize')
-        width = request.POST.get('width')
-        height = request.POST.get('height')
-        perceptual_hash = request.POST.get('perceptualHash', '')
+        category = request.POST.get('category', 'geral')
+        description = request.POST.get('description', '')
         
-        if not all([title, s3_key, file_size, width, height]):
+        if not all([name, s3_key]):
             return JsonResponse({
                 'success': False,
-                'error': 'Parâmetros obrigatórios: title, s3Key, fileSize, width, height'
+                'error': 'Parâmetros obrigatórios: name, s3Key'
             }, status=400)
         
-        # Criar registro da imagem
+        # Validar que s3_key pertence à organização
+        S3Service.validate_organization_access(s3_key, organization.id)
+        
+        # Gerar URL pública
+        s3_url = S3Service.get_public_url(s3_key)
+        
+        # Criar registro no banco
         reference = ReferenceImage.objects.create(
-            knowledge_base=kb,
-            title=title,
+            knowledge_base=knowledge_base,
+            title=name,  # ReferenceImage usa 'title' não 'name'
             description=description,
             s3_key=s3_key,
-            s3_url=S3Service.get_file_url(s3_key, organization.id),
-            file_size=int(file_size),
-            width=int(width),
-            height=int(height),
-            perceptual_hash=perceptual_hash,
+            s3_url=s3_url,
+            perceptual_hash='',  # TODO: Calcular hash perceptual
+            file_size=0,  # TODO: Obter do S3 ou enviar do frontend
+            width=0,  # TODO: Obter dimensões da imagem
+            height=0,  # TODO: Obter dimensões da imagem
             uploaded_by=request.user
         )
         
         # Gerar URL de preview
-        preview_url = S3Service.generate_presigned_download_url(
-            s3_key=s3_key,
-            organization_id=organization.id,
-            url_type='preview'
-        )
+        preview_url = S3Service.generate_presigned_download_url(s3_key)
         
         return JsonResponse({
             'success': True,
             'data': {
-                'id': reference.id,
-                'title': reference.title,
-                'preview_url': preview_url,
-                'width': reference.width,
-                'height': reference.height
+                'referenceId': reference.id,
+                'name': reference.title,
+                'previewUrl': preview_url
             }
         })
         
+    except ValueError as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=403)
     except Exception as e:
+        import traceback
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Erro ao criar imagem de referência: {str(e)}")
+        logger.error(traceback.format_exc())
         return JsonResponse({
             'success': False,
             'error': f'Erro ao criar imagem de referência: {str(e)}'
@@ -445,69 +442,198 @@ def create_reference(request):
 
 @login_required
 @require_http_methods(["POST"])
-def get_reference_preview_url(request):
+def generate_font_upload_url(request):
     """
-    Gera Presigned URL para preview de imagem de referência existente
+    Gera Presigned URL para upload de fonte customizada
     
     POST params:
-        - referenceId: ID da imagem
+        - fileName: Nome do arquivo
+        - fileType: MIME type
+        - fileSize: Tamanho em bytes
     
     Returns:
         {
             'success': bool,
             'data': {
-                'preview_url': str,
+                'upload_url': str,
+                's3_key': str,
                 'expires_in': int
             }
         }
     """
     try:
         organization = request.organization
-        reference_id = request.POST.get('referenceId')
         
-        if not reference_id:
+        file_name = request.POST.get('fileName')
+        file_type = request.POST.get('fileType')
+        file_size = request.POST.get('fileSize')
+        
+        if not all([file_name, file_type, file_size]):
             return JsonResponse({
                 'success': False,
-                'error': 'referenceId é obrigatório'
+                'error': 'Parâmetros obrigatórios: fileName, fileType, fileSize'
             }, status=400)
         
-        # Buscar imagem
-        reference = ReferenceImage.objects.filter(
-            id=reference_id,
-            knowledge_base__organization=organization
-        ).first()
+        # Gerar Presigned URL
+        result = S3Service.generate_presigned_upload_url(
+            file_name=file_name,
+            file_type=file_type,
+            file_size=int(file_size),
+            category='fonts',
+            organization_id=organization.id
+        )
         
-        if not reference:
+        # Adicionar organization_id para o JavaScript usar nos headers
+        result['organization_id'] = organization.id
+        
+        return JsonResponse({
+            'success': True,
+            'data': result
+        })
+        
+    except ValueError as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': 'Erro ao gerar URL de upload'
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def create_custom_font(request):
+    """
+    Cria registro de CustomFont após upload bem-sucedido no S3
+    
+    POST params:
+        - name: Nome da fonte
+        - s3Key: Chave do arquivo no S3
+        - fileFormat: Formato do arquivo (ttf, otf, woff, woff2)
+    
+    Returns:
+        {
+            'success': bool,
+            'data': {
+                'fontId': int,
+                'name': str,
+                'previewUrl': str
+            }
+        }
+    """
+    try:
+        organization = request.organization
+        
+        # Obter ou criar knowledge_base (usando get_or_create para evitar duplicatas)
+        from apps.knowledge.models import KnowledgeBase
+        knowledge_base, created = KnowledgeBase.objects.get_or_create(
+            organization=organization,
+            defaults={'nome_empresa': organization.name}
+        )
+        
+        name = request.POST.get('name')
+        s3_key = request.POST.get('s3Key')
+        file_format = request.POST.get('fileFormat')
+        
+        if not all([name, s3_key, file_format]):
             return JsonResponse({
                 'success': False,
-                'error': 'Imagem não encontrada'
-            }, status=404)
+                'error': 'Parâmetros obrigatórios: name, s3Key, fileFormat'
+            }, status=400)
+        
+        # Validar que s3_key pertence à organização
+        S3Service.validate_organization_access(s3_key, organization.id)
+        
+        # Gerar URL pública
+        s3_url = S3Service.get_public_url(s3_key)
+        
+        # Criar registro no banco
+        custom_font = CustomFont.objects.create(
+            knowledge_base=knowledge_base,
+            name=name,
+            font_type='corpo',  # Padrão, pode ser alterado depois
+            s3_key=s3_key,
+            s3_url=s3_url,
+            file_format=file_format,
+            uploaded_by=request.user
+        )
         
         # Gerar URL de preview
-        preview_url = S3Service.generate_presigned_download_url(
-            s3_key=reference.s3_key,
-            organization_id=organization.id,
-            url_type='preview'
-        )
+        preview_url = S3Service.generate_presigned_download_url(s3_key)
         
         return JsonResponse({
             'success': True,
             'data': {
-                'preview_url': preview_url,
-                'expires_in': S3Service.PRESIGNED_URL_EXPIRATION['preview']
+                'fontId': custom_font.id,
+                'name': custom_font.name,
+                'previewUrl': preview_url
             }
         })
         
-    except Exception as e:
+    except ValueError as e:
         return JsonResponse({
             'success': False,
-            'error': 'Erro ao gerar URL de preview'
+            'error': str(e)
+        }, status=403)
+    except Exception as e:
+        import traceback
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Erro ao criar fonte: {str(e)}")
+        logger.error(traceback.format_exc())
+        return JsonResponse({
+            'success': False,
+            'error': 'Erro ao criar fonte customizada'
         }, status=500)
 
 
 @login_required
 @require_http_methods(["DELETE"])
-def delete_reference(request, reference_id):
+def delete_custom_font(request, font_id):
+    """
+    Deleta fonte customizada do banco e do S3
+    
+    URL params:
+        - font_id: ID da fonte
+    
+    Returns:
+        {'success': bool}
+    """
+    try:
+        organization = request.organization
+        
+        font = CustomFont.objects.get(
+            id=font_id,
+            knowledge_base__organization=organization
+        )
+        
+        # Deletar do S3
+        if font.s3_key:
+            S3Service.delete_file(font.s3_key)
+        
+        # Deletar do banco
+        font.delete()
+        
+        return JsonResponse({'success': True})
+        
+    except CustomFont.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Fonte não encontrada'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': 'Erro ao deletar fonte'
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["DELETE"])
+def delete_reference_image(request, reference_id):
     """
     Deleta imagem de referência do banco e do S3
     
@@ -515,38 +641,30 @@ def delete_reference(request, reference_id):
         - reference_id: ID da imagem
     
     Returns:
-        {
-            'success': bool,
-            'message': str
-        }
+        {'success': bool}
     """
     try:
         organization = request.organization
         
-        # Buscar imagem
-        reference = ReferenceImage.objects.filter(
+        reference = ReferenceImage.objects.get(
             id=reference_id,
             knowledge_base__organization=organization
-        ).first()
-        
-        if not reference:
-            return JsonResponse({
-                'success': False,
-                'error': 'Imagem não encontrada'
-            }, status=404)
+        )
         
         # Deletar do S3
-        s3_key = reference.s3_key
-        S3Service.delete_file(s3_key, organization.id)
+        if reference.s3_key:
+            S3Service.delete_file(reference.s3_key)
         
         # Deletar do banco
         reference.delete()
         
-        return JsonResponse({
-            'success': True,
-            'message': 'Imagem deletada com sucesso'
-        })
+        return JsonResponse({'success': True})
         
+    except ReferenceImage.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Imagem não encontrada'
+        }, status=404)
     except Exception as e:
         return JsonResponse({
             'success': False,

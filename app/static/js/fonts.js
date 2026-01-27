@@ -42,13 +42,21 @@ function getUsosDisponiveis(usoAtual = '') {
 }
 
 // Adicionar uma nova fonte
-function addFonte(tipo = 'GOOGLE', nomeFonte = '', variante = '', uso = '', arquivoUrl = '') {
+function addFonte(tipo = 'GOOGLE', nomeFonte = '', variante = '', uso = '', arquivoUrl = '', fontId = null) {
     const fontesList = document.getElementById('fontes-list');
     if (!fontesList) return;
     
     const fonteItem = document.createElement('div');
-    fonteItem.className = 'fonte-item collapsed';
+    fonteItem.className = 'fonte-item collapsed';  // Iniciar fechada
     fonteItem.setAttribute('data-index', fonteIndex);
+    fonteItem.setAttribute('data-uso-atual', uso);
+    fonteItem.setAttribute('data-tipo', tipo);  // Adicionar tipo como data attribute
+    
+    // Se for fonte customizada com ID, adicionar data-font-id
+    if (fontId) {
+        fonteItem.setAttribute('data-font-id', fontId);
+        console.log(`DEBUG: data-font-id="${fontId}" adicionado ao fonteItem`);
+    }
     
     // Obter usos disponíveis ANTES de marcar como ocupado
     const usosDisponiveis = getUsosDisponiveis();
@@ -188,14 +196,13 @@ function selectFonteTipo(index, tipo) {
     const fonteItem = document.querySelector(`.fonte-item[data-index="${index}"]`);
     if (!fonteItem) return;
     
+    // Atualizar data-tipo
+    fonteItem.setAttribute('data-tipo', tipo);
+    
     // Atualizar botões ativos
     fonteItem.querySelectorAll('.fonte-tipo-option').forEach(opt => opt.classList.remove('active'));
     fonteItem.querySelector(`.fonte-tipo-option:nth-child(${tipo === 'GOOGLE' ? 1 : 2})`).classList.add('active');
     
-    // Atualizar input hidden
-    fonteItem.querySelector('.fonte-tipo-input').value = tipo;
-    
-    // Mostrar/ocultar campos
     const googleFields = fonteItem.querySelector('.fonte-google-fields');
     const uploadFields = fonteItem.querySelector('.fonte-upload-fields');
     
@@ -251,8 +258,78 @@ function updateFonteUso(index) {
 }
 
 // Remover fonte
-function removeFonte(button) {
-    const fonteItem = button.closest('.fonte-item');
+async function removeFonte(indexOrButton, uso) {
+    let fonteItem;
+    
+    // Se recebeu um número (índice), buscar pelo data-index
+    if (typeof indexOrButton === 'number') {
+        fonteItem = document.querySelector(`.fonte-item[data-index="${indexOrButton}"]`);
+    } else {
+        // Se recebeu um elemento (button), buscar o pai
+        fonteItem = indexOrButton.closest('.fonte-item');
+    }
+    
+    if (!fonteItem) {
+        console.log('DEBUG: fonteItem não encontrado');
+        return;
+    }
+    
+    // Verificar se é fonte customizada (UPLOAD)
+    const fontId = fonteItem.dataset.fontId;
+    const tipo = fonteItem.dataset.tipo;  // Usar data-tipo ao invés de querySelector
+    const isCustomFont = tipo === 'UPLOAD';
+    
+    console.log('DEBUG removeFonte:', {
+        fontId: fontId,
+        tipo: tipo,
+        isCustomFont: isCustomFont,
+        datasetKeys: Object.keys(fonteItem.dataset)
+    });
+    
+    // Se for fonte customizada, deletar do banco
+    if (isCustomFont && fontId) {
+        const confirmed = await showConfirm(
+            'Esta ação não pode ser desfeita. A fonte será removida permanentemente do sistema.',
+            'Remover fonte?'
+        );
+        if (!confirmed) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/knowledge/font/${fontId}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                if (typeof toaster !== 'undefined') {
+                    toaster.error(data.error || 'Erro ao remover fonte');
+                } else {
+                    alert(data.error || 'Erro ao remover fonte');
+                }
+                return;
+            }
+            
+            if (typeof toaster !== 'undefined') {
+                toaster.success('Fonte removida com sucesso!');
+            }
+        } catch (error) {
+            console.error('Erro ao remover fonte:', error);
+            if (typeof toaster !== 'undefined') {
+                toaster.error('Erro ao remover fonte');
+            } else {
+                alert('Erro ao remover fonte');
+            }
+            return;
+        }
+    }
+    
+    // Remover visualmente
     const usoSelect = fonteItem.querySelector('.fonte-uso');
     if (usoSelect) {
         usosOcupados.delete(usoSelect.value);
@@ -264,6 +341,22 @@ function removeFonte(button) {
         fonteItem.remove();
         syncFontsToForm();
     }, 200);
+}
+
+// Helper para obter CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 
 function syncFontsToForm() {
@@ -326,31 +419,157 @@ function syncFontsToForm() {
 }
 
 // Handle upload de arquivo TTF
-function handleFonteUpload(index, input) {
+async function handleFonteUpload(index, input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
         const fonteItem = document.querySelector(`.fonte-item[data-index="${index}"]`);
         if (!fonteItem) return;
         
         const hiddenInput = fonteItem.querySelector('input[name*="nome_fonte_upload"]');
-        hiddenInput.value = file.name.replace('.ttf', '');
+        const fontName = file.name.replace(/\.(ttf|otf|woff|woff2)$/i, '');
+        hiddenInput.value = fontName;
         
-        // TODO: Implementar preview de fonte uploadada quando S3 estiver integrado
+        // Upload para S3
+        try {
+            // Mostrar loading
+            input.disabled = true;
+            
+            // 1. Obter Presigned URL
+            const urlResponse = await fetch('/knowledge/font/upload-url/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: new URLSearchParams({
+                    fileName: file.name,
+                    fileType: file.type || 'font/ttf',
+                    fileSize: file.size
+                })
+            });
+            
+            if (!urlResponse.ok) {
+                throw new Error('Erro ao obter URL de upload');
+            }
+            
+            const urlData = await urlResponse.json();
+            if (!urlData.success) {
+                throw new Error(urlData.error || 'Erro ao obter URL de upload');
+            }
+            
+            // Extrair organization_id do s3_key
+            let orgId = urlData.data.organization_id;
+            if (!orgId && urlData.data.s3_key) {
+                const match = urlData.data.s3_key.match(/org-(\d+)\//);
+                if (match) orgId = match[1];
+            }
+            
+            // 2. Upload para S3
+            const uploadHeaders = {
+                'Content-Type': file.type || 'font/ttf',
+                'x-amz-server-side-encryption': 'AES256',
+                'x-amz-storage-class': 'INTELLIGENT_TIERING',
+                'x-amz-meta-original-name': file.name,
+                'x-amz-meta-organization-id': String(orgId || '0'),
+                'x-amz-meta-category': 'fonts',
+                'x-amz-meta-upload-timestamp': Math.floor(Date.now() / 1000).toString()
+            };
+            
+            const s3Response = await fetch(urlData.data.upload_url, {
+                method: 'PUT',
+                body: file,
+                headers: uploadHeaders
+            });
+            
+            if (!s3Response.ok) {
+                throw new Error('Erro ao enviar arquivo para S3');
+            }
+            
+            // 3. Criar registro no banco
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            const createResponse = await fetch('/knowledge/font/create/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: new URLSearchParams({
+                    s3Key: urlData.data.s3_key,
+                    name: fontName,
+                    fileFormat: fileExt
+                })
+            });
+            
+            if (!createResponse.ok) {
+                throw new Error('Erro ao criar registro da fonte');
+            }
+            
+            const createData = await createResponse.json();
+            if (!createData.success) {
+                throw new Error(createData.error || 'Erro ao criar registro');
+            }
+            
+            // Sucesso!
+            if (typeof toaster !== 'undefined') {
+                toaster.success(`Fonte ${fontName} enviada com sucesso!`);
+            }
+            
+            // Adicionar ID da fonte no input hidden para referência
+            const fontIdInput = document.createElement('input');
+            fontIdInput.type = 'hidden';
+            fontIdInput.name = `fontes[${index}][font_id]`;
+            fontIdInput.value = createData.data.fontId;
+            fonteItem.appendChild(fontIdInput);
+            
+        } catch (error) {
+            console.error('Erro no upload da fonte:', error);
+            if (typeof toaster !== 'undefined') {
+                toaster.error('Erro ao enviar fonte: ' + error.message);
+            }
+            hiddenInput.value = '';
+        } finally {
+            input.disabled = false;
+        }
     }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 
 // Inicializar fontes existentes
 document.addEventListener('DOMContentLoaded', function() {
     const fontesData = window.KNOWLEDGE_FONTS || [];
+    const customFontsData = window.KNOWLEDGE_CUSTOM_FONTS || [];
     
+    // Adicionar fontes do Typography (Google Fonts)
     if (fontesData.length > 0) {
         fontesData.forEach(font => {
             addFonte(font.tipo, font.nome, font.variante, font.uso, font.arquivo_url);
         });
-    } else {
-        // Adicionar fonte padrão
-        addFonte('GOOGLE', 'Quicksand', '600', 'TITULO');
     }
+    
+    // Adicionar fontes customizadas (Upload)
+    if (customFontsData.length > 0) {
+        customFontsData.forEach(font => {
+            console.log('DEBUG: Adicionando fonte customizada:', font);
+            // Passar ID como 5º parâmetro para ser adicionado como data-font-id
+            addFonte('UPLOAD', font.name, '', font.font_type.toUpperCase(), font.s3_url, font.id);
+        });
+    }
+    
+    // Não adicionar fonte padrão - deixar vazio para usuário escolher
 });
 
 // Expor funções globalmente

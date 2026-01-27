@@ -1,0 +1,241 @@
+/* ============================================
+   UPLOADS - Estilos para Preview de Logos e Imagens
+   ============================================ */
+
+/* Logo Preview Item */
+.logo-preview-item {
+    position: relative;
+    display: inline-block;
+    margin: 8px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.logo-preview-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.logo-preview-item img {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    background: #f5f5f5;
+    display: block;
+}
+
+.logo-preview-info {
+    padding: 8px;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+}
+
+.logo-preview-name {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+.logo-preview-type {
+    display: block;
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+}
+
+/* Botão Remover Logo */
+.btn-remove-logo {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 59, 48, 0.95);
+    color: white;
+    border: 2px solid white;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.logo-preview-item:hover .btn-remove-logo {
+    opacity: 1;
+}
+
+.btn-remove-logo:hover {
+    background: rgba(255, 59, 48, 1);
+    transform: scale(1.1);
+}
+
+/* Logo Pendente */
+.logo-preview-item.logo-pending {
+    border: 2px dashed #ffa500;
+}
+
+.logo-preview-item.logo-pending .logo-preview-type {
+    color: #ffa500;
+    font-weight: 600;
+}
+
+/* Animação de Remoção */
+.logo-preview-item.removing {
+    animation: fadeOut 0.2s ease forwards;
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+/* Reference Preview Item */
+.reference-preview-item {
+    position: relative;
+    display: inline-block;
+    margin: 8px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.reference-preview-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.reference-preview-item img {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+}
+
+.reference-preview-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    padding: 12px 8px 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.reference-preview-item:hover .reference-preview-overlay {
+    opacity: 1;
+}
+
+.reference-preview-title {
+    display: block;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Botão Remover Referência */
+.btn-remove-reference {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 59, 48, 0.95);
+    color: white;
+    border: 2px solid white;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.reference-preview-item:hover .btn-remove-reference {
+    opacity: 1;
+}
+
+.btn-remove-reference:hover {
+    background: rgba(255, 59, 48, 1);
+    transform: scale(1.1);
+}
+
+/* Referência Pendente */
+.reference-preview-item.reference-pending {
+    border: 2px dashed #ffa500;
+}
+
+/* Animação de Remoção */
+.reference-preview-item.removing {
+    animation: fadeOut 0.2s ease forwards;
+}
+
+/* Drag & Drop */
+.upload-area.drag-over {
+    background: #e3f2fd;
+    border-color: #2196f3;
+}
+
+/* Galleries */
+.logos-gallery,
+.references-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 60px;
+    padding: 8px;
+    background: #fafafa;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.logos-gallery:empty::before,
+.references-gallery:empty::before {
+    content: 'Nenhum arquivo adicionado ainda';
+    color: #999;
+    font-size: 14px;
+    font-style: italic;
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Spinner de Processamento */
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

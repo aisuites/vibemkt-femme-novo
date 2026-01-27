@@ -23,17 +23,23 @@ urlpatterns = [
     path('upload/logo/', views.knowledge_upload_logo, name='upload_logo'),
     path('upload/font/', views.knowledge_upload_font, name='upload_font'),
     
+    # Upload S3 - View Genérica de Preview (seguindo guia)
+    path('preview-url/', views_upload.get_preview_url, name='preview_url'),
+    
     # Upload S3 - Logos
     path('logo/upload-url/', views_upload.generate_logo_upload_url, name='logo_upload_url'),
     path('logo/create/', views_upload.create_logo, name='logo_create'),
-    path('logo/preview-url/', views_upload.get_logo_preview_url, name='logo_preview_url'),
     path('logo/<int:logo_id>/delete/', views_upload.delete_logo, name='logo_delete'),
     
     # Upload S3 - Imagens de Referência
     path('reference/upload-url/', views_upload.generate_reference_upload_url, name='reference_upload_url'),
-    path('reference/create/', views_upload.create_reference, name='reference_create'),
-    path('reference/preview-url/', views_upload.get_reference_preview_url, name='reference_preview_url'),
-    path('reference/<int:reference_id>/delete/', views_upload.delete_reference, name='reference_delete'),
+    path('reference/create/', views_upload.create_reference_image, name='reference_create'),
+    path('reference/<int:reference_id>/delete/', views_upload.delete_reference_image, name='reference_delete'),
+    
+    # Upload S3 - Fontes Customizadas
+    path('font/upload-url/', views_upload.generate_font_upload_url, name='font_upload_url'),
+    path('font/create/', views_upload.create_custom_font, name='font_create'),
+    path('font/<int:font_id>/delete/', views_upload.delete_custom_font, name='font_delete'),
     
     # Segmentos Internos (AJAX)
     path('segment/create/', views_segments.segment_create, name='segment_create'),

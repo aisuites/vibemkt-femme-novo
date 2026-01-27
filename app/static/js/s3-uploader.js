@@ -45,9 +45,16 @@ class S3Uploader {
             this._updateProgress(10, 'Preparando upload...');
             const presignedData = await this._getPresignedUrl(file);
             
+            console.log('DEBUG S3Uploader - presignedData:', {
+                upload_url: presignedData.upload_url,
+                s3_key: presignedData.s3_key,
+                signed_headers: presignedData.signed_headers,
+                has_signed_headers: !!presignedData.signed_headers
+            });
+            
             // Etapa 2: Upload para S3
             this._updateProgress(30, 'Enviando arquivo...');
-            await this._uploadToS3(presignedData.upload_url, file);
+            await this._uploadToS3(presignedData.upload_url, file, presignedData.signed_headers || {});
             
             // Etapa 3: Criar registro no banco
             this._updateProgress(70, 'Finalizando...');
@@ -108,13 +115,30 @@ class S3Uploader {
      * Faz upload do arquivo para S3
      * @private
      */
-    async _uploadToS3(url, file) {
+    async _uploadToS3(url, file, signedHeaders = {}) {
+        const headers = {
+            'Content-Type': file.type,
+            ...signedHeaders
+        };
+        
+        console.log('DEBUG _uploadToS3:', {
+            url: url,
+            fileType: file.type,
+            fileSize: file.size,
+            signedHeaders: signedHeaders,
+            finalHeaders: headers
+        });
+        
         const response = await fetch(url, {
             method: 'PUT',
             body: file,
-            headers: {
-                'Content-Type': file.type
-            }
+            headers: headers
+        });
+        
+        console.log('DEBUG _uploadToS3 response:', {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok
         });
         
         if (!response.ok) {
@@ -198,251 +222,3 @@ class S3Uploader {
         return cookieValue;
     }
 }
-
-
-/**
- * Image Preview Loader - Carrega previews de imagens com lazy loading
- * 
- * Uso:
- *   const loader = new ImagePreviewLoader('/knowledge/logo/preview-url/');
- *   loader.observe(imageElement);
- */
-class ImagePreviewLoader {
-    /**
-     * @param {string} previewUrlEndpoint - Endpoint para obter URL de preview
-     * @param {Object} options - Opções do Intersection Observer
-     */
-    constructor(previewUrlEndpoint, options = {}) {
-        this.previewUrlEndpoint = previewUrlEndpoint;
-        this.cache = new Map(); // Cache de URLs
-        
-        this.observer = new IntersectionObserver(
-            this._handleIntersection.bind(this),
-            {
-                rootMargin: '50px',
-                threshold: 0.01,
-                ...options
-            }
-        );
-    }
-    
-    /**
-     * Observa elemento de imagem para lazy loading
-     * 
-     * @param {HTMLImageElement} imageElement - Elemento <img> com data-s3-key
-     */
-    observe(imageElement) {
-        if (!imageElement.dataset.s3Key && !imageElement.dataset.recordId) {
-            console.warn('Elemento não tem data-s3-key ou data-record-id:', imageElement);
-            return;
-        }
-        this.observer.observe(imageElement);
-    }
-    
-    /**
-     * Para de observar elemento
-     */
-    unobserve(imageElement) {
-        this.observer.unobserve(imageElement);
-    }
-    
-    /**
-     * Desconecta observer
-     */
-    disconnect() {
-        this.observer.disconnect();
-        this.cache.clear();
-    }
-    
-    /**
-     * Handler do Intersection Observer
-     * @private
-     */
-    async _handleIntersection(entries) {
-        for (const entry of entries) {
-            if (entry.isIntersecting) {
-                const img = entry.target;
-                const recordId = img.dataset.recordId;
-                const recordType = img.dataset.recordType; // 'logo' ou 'reference'
-                
-                try {
-                    // Verificar cache
-                    const cacheKey = `${recordType}-${recordId}`;
-                    let url = this.cache.get(cacheKey);
-                    
-                    if (!url) {
-                        // Obter URL do backend
-                        url = await this._getPreviewUrl(recordId, recordType);
-                        this.cache.set(cacheKey, url);
-                    }
-                    
-                    // Carregar imagem
-                    img.src = url;
-                    img.classList.add('loaded');
-                    
-                    // Parar de observar
-                    this.observer.unobserve(img);
-                    
-                } catch (error) {
-                    console.error('Erro ao carregar preview:', error);
-                    img.src = '/static/images/error-placeholder.png';
-                    img.classList.add('error');
-                    this.observer.unobserve(img);
-                }
-            }
-        }
-    }
-    
-    /**
-     * Obtém URL de preview do backend
-     * @private
-     */
-    async _getPreviewUrl(recordId, recordType) {
-        const paramName = recordType === 'logo' ? 'logoId' : 'referenceId';
-        
-        const response = await fetch(this.previewUrlEndpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': this._getCookie('csrftoken')
-            },
-            body: new URLSearchParams({
-                [paramName]: recordId
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error('Erro ao obter URL de preview');
-        }
-        
-        const result = await response.json();
-        if (!result.success) {
-            throw new Error(result.error || 'Erro ao obter URL de preview');
-        }
-        
-        return result.data.preview_url;
-    }
-    
-    /**
-     * Obtém cookie CSRF
-     * @private
-     */
-    _getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-}
-
-
-/**
- * Utilitários para validação de arquivos
- */
-const FileValidators = {
-    /**
-     * Valida tamanho do arquivo
-     */
-    maxSize: (maxMB) => (file) => {
-        const maxBytes = maxMB * 1024 * 1024;
-        if (file.size > maxBytes) {
-            return {
-                valid: false,
-                error: `Arquivo muito grande. Máximo: ${maxMB}MB`
-            };
-        }
-        return { valid: true };
-    },
-    
-    /**
-     * Valida tipo do arquivo
-     */
-    allowedTypes: (types) => (file) => {
-        if (!types.includes(file.type)) {
-            return {
-                valid: false,
-                error: `Tipo de arquivo não permitido. Aceitos: ${types.join(', ')}`
-            };
-        }
-        return { valid: true };
-    },
-    
-    /**
-     * Valida dimensões de imagem
-     */
-    imageDimensions: (minWidth, minHeight, maxWidth, maxHeight) => async (file) => {
-        return new Promise((resolve) => {
-            const img = new Image();
-            const url = URL.createObjectURL(file);
-            
-            img.onload = () => {
-                URL.revokeObjectURL(url);
-                
-                if (minWidth && img.width < minWidth) {
-                    resolve({
-                        valid: false,
-                        error: `Largura mínima: ${minWidth}px`
-                    });
-                    return;
-                }
-                
-                if (minHeight && img.height < minHeight) {
-                    resolve({
-                        valid: false,
-                        error: `Altura mínima: ${minHeight}px`
-                    });
-                    return;
-                }
-                
-                if (maxWidth && img.width > maxWidth) {
-                    resolve({
-                        valid: false,
-                        error: `Largura máxima: ${maxWidth}px`
-                    });
-                    return;
-                }
-                
-                if (maxHeight && img.height > maxHeight) {
-                    resolve({
-                        valid: false,
-                        error: `Altura máxima: ${maxHeight}px`
-                    });
-                    return;
-                }
-                
-                resolve({ valid: true, width: img.width, height: img.height });
-            };
-            
-            img.onerror = () => {
-                URL.revokeObjectURL(url);
-                resolve({
-                    valid: false,
-                    error: 'Erro ao carregar imagem'
-                });
-            };
-            
-            img.src = url;
-        });
-    },
-    
-    /**
-     * Combina múltiplos validadores
-     */
-    combine: (...validators) => async (file) => {
-        for (const validator of validators) {
-            const result = await validator(file);
-            if (!result.valid) {
-                return result;
-            }
-        }
-        return { valid: true };
-    }
-};
