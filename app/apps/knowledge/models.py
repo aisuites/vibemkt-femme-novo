@@ -166,27 +166,12 @@ class KnowledgeBase(models.Model):
     )
     
     # BLOCO 5: IDENTIDADE VISUAL
-    paleta_cores = models.JSONField(
-        default=dict,
-        blank=True,
-        verbose_name='Paleta de Cores (LEGADO)',
-        help_text='⚠️ DEPRECADO: Use ColorPalette model. Este campo será removido em versão futura.'
-    )
-    tipografia = models.JSONField(
-        default=dict,
-        blank=True,
-        verbose_name='Tipografia (LEGADO)',
-        help_text='⚠️ DEPRECADO: Use CustomFont model. Este campo será removido em versão futura.'
-    )
+    # Cores gerenciadas via ColorPalette model
+    # Tipografia gerenciada via Typography model
     
     # BLOCO 6: SITES E REDES SOCIAIS
     site_institucional = models.URLField(blank=True, verbose_name='Site Institucional')
-    redes_sociais = models.JSONField(
-        default=dict,
-        blank=True,
-        verbose_name='Redes Sociais (LEGADO)',
-        help_text='⚠️ DEPRECADO: Use SocialNetwork model. Este campo será removido em versão futura.'
-    )
+    # Redes sociais gerenciadas via SocialNetwork model
     templates_redes = models.JSONField(
         default=dict,
         blank=True,
@@ -299,9 +284,8 @@ class KnowledgeBase(models.Model):
             score += 1
         
         # BLOCO 5: Identidade Visual (usa models relacionados)
-        # Mínimo: 2 cores OU paleta_cores legado preenchido
-        has_colors = self.colors.exists() or (self.paleta_cores and len(self.paleta_cores) > 0)
-        if has_colors:
+        # Mínimo: 2 cores na paleta
+        if self.colors.exists():
             score += 1
         
         # BLOCO 6: Sites e Redes (usa SocialNetwork model)
@@ -382,12 +366,13 @@ class CustomFont(models.Model):
     file_format = models.CharField(
         max_length=10,
         choices=[
-            ('ttf', 'TrueType'),
-            ('otf', 'OpenType'),
+            ('ttf', 'TrueType (TTF)'),
+            ('otf', 'OpenType (OTF)'),
             ('woff', 'WOFF'),
             ('woff2', 'WOFF2'),
         ],
-        verbose_name='Formato'
+        verbose_name='Formato',
+        help_text='Formato do arquivo de fonte'
     )
     uploaded_by = models.ForeignKey(
         User,
@@ -560,6 +545,97 @@ class SocialNetwork(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.get_network_type_display()})"
+
+
+class Typography(models.Model):
+    """
+    Configuração de tipografia da marca
+    Suporta Google Fonts e Fontes Customizadas (TTF/OTF)
+    """
+    knowledge_base = models.ForeignKey(
+        KnowledgeBase,
+        on_delete=models.CASCADE,
+        related_name='typography_settings',
+        verbose_name='Base de Conhecimento'
+    )
+    
+    # Uso da fonte
+    usage = models.CharField(
+        max_length=50,
+        verbose_name='Uso da Fonte',
+        help_text='Ex: Texto corrido, Títulos, Botões, etc'
+    )
+    
+    # Tipo de fonte
+    font_source = models.CharField(
+        max_length=20,
+        choices=[
+            ('google', 'Google Fonts'),
+            ('upload', 'Upload TTF/OTF'),
+        ],
+        verbose_name='Origem da Fonte'
+    )
+    
+    # GOOGLE FONTS (quando font_source='google')
+    google_font_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nome da Fonte (Google)',
+        help_text='Ex: Montserrat, Open Sans, Roboto'
+    )
+    google_font_weight = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Peso da Fonte',
+        help_text='Ex: Regular, Bold, Light, 400, 700'
+    )
+    google_font_url = models.URLField(
+        blank=True,
+        verbose_name='URL Google Fonts',
+        help_text='Gerado automaticamente'
+    )
+    
+    # UPLOAD TTF/OTF (quando font_source='upload')
+    custom_font = models.ForeignKey(
+        CustomFont,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='typography_usages',
+        verbose_name='Fonte Customizada'
+    )
+    
+    # Metadados
+    order = models.IntegerField(default=0, verbose_name='Ordem')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
+    updated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Atualizado por'
+    )
+    
+    class Meta:
+        verbose_name = 'Configuração de Tipografia'
+        verbose_name_plural = 'Configurações de Tipografia'
+        ordering = ['order', 'usage']
+        unique_together = [['knowledge_base', 'usage']]
+    
+    def __str__(self):
+        if self.font_source == 'google':
+            return f"{self.usage}: {self.google_font_name} {self.google_font_weight}"
+        else:
+            return f"{self.usage}: {self.custom_font.name if self.custom_font else 'N/A'}"
+    
+    def get_font_css(self):
+        """Retorna CSS para usar a fonte"""
+        if self.font_source == 'google':
+            return f"font-family: '{self.google_font_name}', sans-serif;"
+        elif self.custom_font:
+            return f"font-family: '{self.custom_font.name}', sans-serif;"
+        return ""
 
 
 class SocialNetworkTemplate(models.Model):

@@ -4,7 +4,29 @@
  * Accordion colapsável com toggle e scroll suave
  */
 
+// Inicializar quando DOM estiver pronto
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Reabrir Bloco 2 se segmento foi criado
+    if (sessionStorage.getItem('keepBlock2Open')) {
+        const bloco2 = document.getElementById('bloco2');
+        if (bloco2) {
+            bloco2.classList.remove('accordion-closed');
+            bloco2.classList.add('accordion-open');
+            
+            // Scroll suave até o bloco
+            setTimeout(() => {
+                bloco2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+        }
+        sessionStorage.removeItem('keepBlock2Open');
+    }
+
     const formBlocks = document.querySelectorAll('.form-block');
     
     formBlocks.forEach(function(block) {

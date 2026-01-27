@@ -82,9 +82,21 @@ async function saveSegment() {
         
         const data = await response.json();
         
-        // Fechar modal e recarregar página
+        // Mostrar toast de sucesso
+        if (window.toaster) {
+            toaster.success(data.message || 'Segmento criado com sucesso');
+        }
+        
+        // Salvar estado para manter Bloco 2 aberto após reload
+        sessionStorage.setItem('keepBlock2Open', 'true');
+        
+        // Fechar modal
         closeSegmentModal();
-        location.reload();
+        
+        // Aguardar toast aparecer, depois reload
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
         
     } catch (error) {
         console.error('Erro ao salvar segmento:', error);

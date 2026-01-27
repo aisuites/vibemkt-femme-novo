@@ -156,72 +156,33 @@ class KnowledgeBaseBlock4Form(forms.ModelForm):
 class KnowledgeBaseBlock5Form(forms.ModelForm):
     """
     Bloco 5: Identidade Visual
-    Campos: paleta_cores, tipografia (LEGADOS - agora usamos ColorPalette e CustomFont models)
     
-    Nota: ColorPalette, CustomFont, Logo são gerenciados via models separados
-    Este form mantém os campos JSON legados como opcionais
+    Nota: ColorPalette, Typography, CustomFont, Logo são gerenciados via models separados
+    Este form não tem campos - bloco 5 é gerenciado via AJAX e uploads
     """
-    paleta_cores = forms.JSONField(required=False, widget=forms.HiddenInput())
-    tipografia = forms.JSONField(required=False, widget=forms.HiddenInput())
-    
     class Meta:
         model = KnowledgeBase
-        fields = ['paleta_cores', 'tipografia']
-    
-    def clean_paleta_cores(self):
-        data = self.cleaned_data.get('paleta_cores')
-        if not data:
-            return {}
-        if isinstance(data, str):
-            try:
-                data = json.loads(data)
-            except json.JSONDecodeError:
-                return {}
-        return data
-    
-    def clean_tipografia(self):
-        data = self.cleaned_data.get('tipografia')
-        if not data:
-            return {}
-        if isinstance(data, str):
-            try:
-                data = json.loads(data)
-            except json.JSONDecodeError:
-                return {}
-        return data
+        fields = []
 
 
 class KnowledgeBaseBlock6Form(forms.ModelForm):
     """
     Bloco 6: Sites e Redes Sociais
-    Campos: site_institucional, redes_sociais (LEGADO), templates_redes (LEGADO)
+    Campos: site_institucional, templates_redes
     
     Nota: SocialNetwork e SocialNetworkTemplate são gerenciados via models separados
-    Este form mantém os campos JSON legados como opcionais
     """
-    redes_sociais = forms.JSONField(required=False, widget=forms.HiddenInput())
     templates_redes = forms.JSONField(required=False, widget=forms.HiddenInput())
     
     class Meta:
         model = KnowledgeBase
-        fields = ['site_institucional', 'redes_sociais', 'templates_redes']
+        fields = ['site_institucional', 'templates_redes']
         widgets = {
             'site_institucional': forms.URLInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'https://exemplo.com.br'
             }),
         }
-    
-    def clean_redes_sociais(self):
-        data = self.cleaned_data.get('redes_sociais')
-        if not data:
-            return {}
-        if isinstance(data, str):
-            try:
-                data = json.loads(data)
-            except json.JSONDecodeError:
-                return {}
-        return data
     
     def clean_templates_redes(self):
         data = self.cleaned_data.get('templates_redes')

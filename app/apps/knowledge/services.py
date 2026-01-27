@@ -375,16 +375,16 @@ class KnowledgeBaseService:
             return False, all_errors
         
         try:
-            # Salvar forms em ordem
-            for form in forms.values():
+            # Salvar cada form
+            for block_name, form in forms.items():
                 kb = form.save(commit=False)
+                kb.last_updated_by = request.user
+                kb.save()
             
-            kb.last_updated_by = request.user
-            kb.save()
-            
-            # Processar cores
+            # Processar cores da paleta (Bloco 5)
             colors_created, color_errors = ColorService.process_colors(request, kb)
-            all_errors.extend(color_errors)
+            if color_errors:
+                all_errors.extend(color_errors)
             
             # Processar fontes
             fonts_created, font_errors = FontService.process_fonts(request, kb)
