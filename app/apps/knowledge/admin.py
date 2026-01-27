@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     KnowledgeBase, InternalSegment, ReferenceImage, CustomFont, Logo, 
     Competitor, ColorPalette, SocialNetwork, SocialNetworkTemplate,
-    KnowledgeChangeLog
+    KnowledgeChangeLog, Typography
 )
 
 
@@ -104,6 +104,54 @@ class CustomFontAdmin(admin.ModelAdmin):
     list_filter = ['font_type', 'file_format']
     search_fields = ['name']
     readonly_fields = ['created_at']
+
+
+@admin.register(Typography)
+class TypographyAdmin(admin.ModelAdmin):
+    list_display = ['usage', 'font_source', 'get_font_name', 'get_font_weight', 'knowledge_base', 'updated_by', 'updated_at']
+    list_filter = ['font_source', 'usage', 'knowledge_base']
+    search_fields = ['usage', 'google_font_name', 'custom_font__name']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['knowledge_base', 'order', 'usage']
+    
+    fieldsets = (
+        ('Configuração', {
+            'fields': ('knowledge_base', 'usage', 'font_source', 'order')
+        }),
+        ('Google Fonts', {
+            'fields': ('google_font_name', 'google_font_weight', 'google_font_url'),
+            'classes': ('collapse',)
+        }),
+        ('Upload Customizado', {
+            'fields': ('custom_font',),
+            'classes': ('collapse',)
+        }),
+        ('Auditoria', {
+            'fields': ('created_at', 'updated_at', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_font_name(self, obj):
+        """Retorna nome da fonte (Google ou Custom)"""
+        if obj.font_source == 'google':
+            return obj.google_font_name
+        elif obj.custom_font:
+            return obj.custom_font.name
+        return '-'
+    get_font_name.short_description = 'Nome da Fonte'
+    
+    def get_font_weight(self, obj):
+        """Retorna peso da fonte"""
+        if obj.font_source == 'google':
+            return obj.google_font_weight or '400'
+        return '-'
+    get_font_weight.short_description = 'Peso'
+    
+    def save_model(self, request, obj, form, change):
+        if not change or not obj.updated_by:
+            obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(Logo)
