@@ -326,41 +326,8 @@ def knowledge_save_all(request):
         
         return redirect('knowledge:view')
     
-    # ========================================
-    # PROCESSAR CAMPO CONCORRENTES
-    # ========================================
-    import json
-    concorrentes_raw = request.POST.get('concorrentes', '[]')
-    print(f"🔍 DEBUG Concorrentes - Raw POST data: {concorrentes_raw}", flush=True)
-    
-    try:
-        concorrentes = json.loads(concorrentes_raw)
-        print(f"🔍 DEBUG Concorrentes - Parsed JSON: {concorrentes}", flush=True)
-        
-        # Validar estrutura
-        if not isinstance(concorrentes, list):
-            print(f"⚠️ DEBUG Concorrentes - Não é lista, convertendo para []", flush=True)
-            concorrentes = []
-        else:
-            # Validar cada item
-            validated_concorrentes = []
-            for item in concorrentes:
-                if isinstance(item, dict) and 'nome' in item:
-                    validated_concorrentes.append({
-                        'nome': str(item.get('nome', '')).strip(),
-                        'url': str(item.get('url', '')).strip()
-                    })
-            concorrentes = validated_concorrentes
-            print(f"✅ DEBUG Concorrentes - Validados: {concorrentes}", flush=True)
-        
-        # Salvar no KB
-        kb.concorrentes = concorrentes
-        kb.save(update_fields=['concorrentes'])
-        print(f"💾 DEBUG Concorrentes - Salvos no KB (id={kb.id})", flush=True)
-    except json.JSONDecodeError as e:
-        print(f"❌ DEBUG Concorrentes - Erro JSON: {e}", flush=True)
-        messages.warning(request, 'Erro ao processar concorrentes. Verifique os dados.')
-        concorrentes = []
+    # Campo concorrentes agora é processado pelo KnowledgeBaseBlock6Form
+    # Não precisa mais de processamento manual aqui
     
     # Se validação passou, usar Service Layer para salvar
     print("🔄 Chamando KnowledgeBaseService.save_all_blocks...", flush=True)

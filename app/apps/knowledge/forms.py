@@ -168,15 +168,16 @@ class KnowledgeBaseBlock5Form(forms.ModelForm):
 class KnowledgeBaseBlock6Form(forms.ModelForm):
     """
     Bloco 6: Sites e Redes Sociais
-    Campos: site_institucional, templates_redes
+    Campos: site_institucional, templates_redes, concorrentes
     
     Nota: SocialNetwork e SocialNetworkTemplate são gerenciados via models separados
     """
     templates_redes = forms.JSONField(required=False, widget=forms.HiddenInput())
+    concorrentes = forms.JSONField(required=False, widget=forms.HiddenInput())
     
     class Meta:
         model = KnowledgeBase
-        fields = ['site_institucional', 'templates_redes']
+        fields = ['site_institucional', 'templates_redes', 'concorrentes']
         widgets = {
             'site_institucional': forms.URLInput(attrs={
                 'class': 'form-control',
@@ -190,10 +191,38 @@ class KnowledgeBaseBlock6Form(forms.ModelForm):
             return {}
         if isinstance(data, str):
             try:
+                import json
                 data = json.loads(data)
             except json.JSONDecodeError:
-                return {}
+                raise forms.ValidationError('JSON inválido para templates de redes')
         return data
+    
+    def clean_concorrentes(self):
+        """Valida e limpa dados de concorrentes"""
+        data = self.cleaned_data.get('concorrentes')
+        if not data:
+            return []
+        if isinstance(data, str):
+            try:
+                import json
+                data = json.loads(data)
+            except json.JSONDecodeError:
+                raise forms.ValidationError('JSON inválido para concorrentes')
+        
+        # Validar estrutura
+        if not isinstance(data, list):
+            return []
+        
+        # Validar cada item
+        validated = []
+        for item in data:
+            if isinstance(item, dict) and 'nome' in item:
+                validated.append({
+                    'nome': str(item.get('nome', '')).strip(),
+                    'url': str(item.get('url', '')).strip()
+                })
+        
+        return validated
 
 
 class KnowledgeBaseBlock7Form(forms.ModelForm):
