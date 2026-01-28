@@ -14,35 +14,35 @@ import json
 class KnowledgeBaseBlock1Form(forms.ModelForm):
     """
     Bloco 1: Identidade Institucional
-    Campos: nome_empresa, missao, visao, valores, historia
+    Campos: nome_empresa, missao, visao, valores, descricao_produto
     """
     class Meta:
         model = KnowledgeBase
-        fields = ['nome_empresa', 'missao', 'visao', 'valores', 'historia']
+        fields = ['nome_empresa', 'missao', 'visao', 'valores', 'descricao_produto']
         widgets = {
             'nome_empresa': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nome oficial da empresa'
+                'placeholder': 'Nome da empresa'
             }),
             'missao': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Razão de existir da empresa'
+                'placeholder': 'Missão da empresa'
             }),
             'visao': forms.Textarea(attrs={
                 'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Onde a empresa quer chegar'
+                'rows': 4,
+                'placeholder': 'Visão da empresa'
             }),
             'valores': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
                 'placeholder': 'Valores fundamentais (um por linha)'
             }),
-            'historia': forms.Textarea(attrs={
+            'descricao_produto': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'História da empresa'
+                'placeholder': 'Descrição do produto ou serviço oferecido'
             }),
         }
 

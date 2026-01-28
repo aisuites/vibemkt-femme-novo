@@ -132,7 +132,7 @@ class KnowledgeBase(models.Model):
     missao = models.TextField(verbose_name='Missão')
     visao = models.TextField(blank=True, verbose_name='Visão')
     valores = models.TextField(verbose_name='Valores')
-    historia = models.TextField(blank=True, verbose_name='História')
+    descricao_produto = models.TextField(blank=True, verbose_name='Descrição do Produto/Serviço')
     
     # BLOCO 2: PÚBLICO E SEGMENTOS
     publico_externo = models.TextField(verbose_name='Público Externo')
@@ -169,9 +169,15 @@ class KnowledgeBase(models.Model):
     # Cores gerenciadas via ColorPalette model
     # Tipografia gerenciada via Typography model
     
-    # BLOCO 6: SITES E REDES SOCIAIS
+    # BLOCO 6: SITES, REDES SOCIAIS E CONCORRÊNCIA
     site_institucional = models.URLField(blank=True, verbose_name='Site Institucional')
     # Redes sociais gerenciadas via SocialNetwork model
+    concorrentes = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Concorrentes',
+        help_text='Lista de concorrentes: [{"nome": "Empresa X", "url": "https://..."}, ...]'
+    )
     templates_redes = models.JSONField(
         default=dict,
         blank=True,
@@ -231,6 +237,71 @@ class KnowledgeBase(models.Model):
         related_name='onboarding_completions',
         verbose_name='Onboarding Concluído Por',
         help_text='Usuário que completou o onboarding pela primeira vez'
+    )
+    
+    # ========================================
+    # ANÁLISE N8N
+    # ========================================
+    
+    # Análises N8N
+    n8n_analysis = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Análise N8N',
+        help_text='Payload completo retornado pelo N8N (primeira análise)'
+    )
+    n8n_compilation = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Compilação N8N',
+        help_text='Compilação final retornada pelo N8N (plano de marketing, avaliações)'
+    )
+    accepted_suggestions = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Sugestões Aceitas',
+        help_text='Campos onde usuário aceitou sugestão do agente'
+    )
+    
+    # Status e metadados
+    analysis_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pendente'),
+            ('processing', 'Processando'),
+            ('completed', 'Análise Concluída'),
+            ('compiling', 'Compilando'),
+            ('compiled', 'Compilado'),
+            ('error', 'Erro')
+        ],
+        default='pending',
+        verbose_name='Status da Análise'
+    )
+    analysis_revision_id = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='ID da Revisão N8N',
+        help_text='revision_id retornado pelo N8N'
+    )
+    analysis_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Análise Solicitada em'
+    )
+    analysis_completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Análise Concluída em'
+    )
+    compilation_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Compilação Solicitada em'
+    )
+    compilation_completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Compilação Concluída em'
     )
     
     # TIMESTAMPS
@@ -321,6 +392,216 @@ class KnowledgeBase(models.Model):
             score += 1
         
         return int((score / total_blocks) * 100)
+    
+    # ========================================
+    # HELPER METHODS - ANÁLISE N8N
+    # ========================================
+    
+    def get_field_analysis(self, field_name):
+        """
+        Retorna análise de um campo específico do N8N
+        
+        Args:
+            field_name (str): Nome do campo (ex: 'missao', 'visao')
+        
+        Returns:
+            dict: {
+                'informado_pelo_usuario': valor,
+                'avaliacao': texto,
+                'status': 'fraco'|'medio'|'bom',
+                'sugestao_do_agente_iamkt': texto ou lista
+            }
+        """
+        if not self.n8n_analysis or 'payload' not in self.n8n_analysis:
+            return {}
+        
+        return self.n8n_analysis['payload'].get(field_name, {})
+    
+    def set_n8n_response(self, n8n_data):
+        """
+        Processa e armazena resposta do N8N (primeira análise)
+        
+        Args:
+            n8n_data (dict): Resposta completa do N8N
+        """
+        from django.utils import timezone
+        
+        # Extrair payload[0] e armazenar como objeto
+        payload = n8n_data.get('payload', [{}])[0] if isinstance(n8n_data.get('payload'), list) else n8n_data.get('payload', {})
+        
+        self.n8n_analysis = {
+            'baseId': n8n_data.get('baseId'),
+            'revision_id': n8n_data.get('revision_id'),
+            'received_at': timezone.now().isoformat(),
+            'reference_images_analysis': n8n_data.get('reference_images_analysis', []),
+            'payload': payload
+        }
+        
+        self.analysis_revision_id = n8n_data.get('revision_id', '')
+        self.analysis_status = 'completed'
+        self.analysis_completed_at = timezone.now()
+        
+        self.save(update_fields=[
+            'n8n_analysis',
+            'analysis_revision_id',
+            'analysis_status',
+            'analysis_completed_at'
+        ])
+    
+    def set_n8n_compilation(self, n8n_data):
+        """
+        Processa e armazena compilação do N8N (segundo retorno)
+        
+        Args:
+            n8n_data (dict): Resposta de compilação do N8N
+        """
+        from django.utils import timezone
+        
+        self.n8n_compilation = {
+            'received_at': timezone.now().isoformat(),
+            'four_week_marketing_plan': n8n_data.get('four_week_marketing_plan', []),
+            'assessment_summary': n8n_data.get('assessment_summary', {}),
+            'improvements_summary': n8n_data.get('improvements_summary', {}),
+            'marketing_input_summary': n8n_data.get('marketing_input_summary', '')
+        }
+        
+        self.analysis_status = 'compiled'
+        self.compilation_completed_at = timezone.now()
+        
+        self.save(update_fields=[
+            'n8n_compilation',
+            'analysis_status',
+            'compilation_completed_at'
+        ])
+    
+    def get_overall_status_summary(self):
+        """
+        Retorna resumo das classificações da análise N8N
+        
+        Returns:
+            dict: {
+                'fraco': 10,
+                'medio': 3,
+                'bom': 2,
+                'total': 15,
+                'percentual_bom': 13.3
+            }
+        """
+        if not self.n8n_analysis or 'payload' not in self.n8n_analysis:
+            return {'fraco': 0, 'medio': 0, 'bom': 0, 'total': 0, 'percentual_bom': 0}
+        
+        counts = {'fraco': 0, 'medio': 0, 'bom': 0}
+        
+        for field_data in self.n8n_analysis['payload'].values():
+            if isinstance(field_data, dict) and 'status' in field_data:
+                status = field_data['status'].lower()
+                if status in counts:
+                    counts[status] += 1
+        
+        total = sum(counts.values())
+        percentual_bom = (counts['bom'] / total * 100) if total > 0 else 0
+        
+        return {
+            **counts,
+            'total': total,
+            'percentual_bom': round(percentual_bom, 1)
+        }
+    
+    def get_fields_by_status(self, status):
+        """
+        Retorna lista de campos com determinado status
+        
+        Args:
+            status (str): 'fraco', 'medio' ou 'bom'
+        
+        Returns:
+            list: ['missao', 'visao', ...]
+        """
+        if not self.n8n_analysis or 'payload' not in self.n8n_analysis:
+            return []
+        
+        fields = []
+        for field_name, field_data in self.n8n_analysis['payload'].items():
+            if isinstance(field_data, dict) and field_data.get('status', '').lower() == status.lower():
+                fields.append(field_name)
+        
+        return fields
+    
+    def has_analysis(self):
+        """Verifica se já tem análise do N8N"""
+        return bool(self.n8n_analysis and self.n8n_analysis.get('payload'))
+    
+    def has_compilation(self):
+        """Verifica se já tem compilação do N8N"""
+        return bool(self.n8n_compilation and self.n8n_compilation.get('four_week_marketing_plan'))
+    
+    def can_request_analysis(self):
+        """Verifica se pode solicitar análise"""
+        return self.analysis_status in ['pending', 'error', 'completed', 'compiled']
+    
+    def is_analysis_processing(self):
+        """Verifica se análise está sendo processada"""
+        return self.analysis_status == 'processing'
+    
+    def is_compilation_processing(self):
+        """Verifica se compilação está sendo processada"""
+        return self.analysis_status == 'compiling'
+    
+    def apply_accepted_suggestions(self, accepted_suggestions):
+        """
+        Atualiza campos da KB com sugestões aceitas pelo usuário
+        
+        Args:
+            accepted_suggestions (dict): {campo: True/False}
+        
+        Returns:
+            int: Número de sugestões aplicadas
+        """
+        if not self.n8n_analysis or 'payload' not in self.n8n_analysis:
+            return 0
+        
+        # Armazena decisões
+        self.accepted_suggestions = accepted_suggestions
+        
+        applied_count = 0
+        
+        # Para cada campo aceito, atualizar com sugestão
+        for field_name, accepted in accepted_suggestions.items():
+            if not accepted:
+                continue
+            
+            # Buscar sugestão no n8n_analysis
+            field_analysis = self.n8n_analysis['payload'].get(field_name, {})
+            suggestion = field_analysis.get('sugestao_do_agente_iamkt')
+            
+            if not suggestion:
+                continue
+            
+            # Atualizar campo correspondente na KB
+            if hasattr(self, field_name):
+                # Se sugestão é lista, converter para string ou manter como lista dependendo do campo
+                if isinstance(suggestion, list):
+                    # Campos que esperam lista (JSONField)
+                    if field_name in ['palavras_recomendadas', 'palavras_evitar', 'fontes_confiaveis', 
+                                     'canais_trends', 'palavras_chave_trends', 'concorrentes']:
+                        setattr(self, field_name, suggestion)
+                    else:
+                        # Campos de texto, juntar lista em string
+                        setattr(self, field_name, '\n'.join(suggestion) if suggestion else '')
+                else:
+                    setattr(self, field_name, suggestion)
+                
+                applied_count += 1
+        
+        self.save()
+        return applied_count
+    
+    def has_accepted_suggestions(self):
+        """Verifica se usuário aceitou alguma sugestão"""
+        if not self.accepted_suggestions:
+            return False
+        
+        return any(self.accepted_suggestions.values())
 
 
 class ReferenceImage(models.Model):

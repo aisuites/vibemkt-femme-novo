@@ -57,7 +57,7 @@ class KnowledgeBaseAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Bloco 1: Identidade Institucional', {
-            'fields': ('nome_empresa', 'missao', 'visao', 'valores', 'historia')
+            'fields': ('nome_empresa', 'missao', 'visao', 'valores', 'descricao_produto')
         }),
         ('Bloco 2: Público e Segmentos', {
             'fields': ('publico_externo', 'publico_interno')

@@ -107,7 +107,7 @@ def knowledge_view(request):
         return int((fields_filled / total_fields) * 100) if total_fields > 0 else 0
     
     # BLOCO 1: Identidade (5 campos)
-    bloco1_fields = [kb.nome_empresa, kb.missao, kb.visao, kb.valores, kb.historia]
+    bloco1_fields = [kb.nome_empresa, kb.missao, kb.visao, kb.valores, kb.descricao_produto]
     bloco1_filled = sum(1 for f in bloco1_fields if f)
     
     # BLOCO 2: Público (2 campos)
