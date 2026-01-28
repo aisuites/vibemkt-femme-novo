@@ -808,43 +808,52 @@ input[type="number"]:focus {
   font-size: 12px;
 }
 
-.btn-remove-color {
-  padding: 6px 10px;
-  background: rgba(193, 18, 58, 0.08);
-  color: #c1123a;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 11px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  font-family: inherit;
-  font-weight: 600;
+.concorrentes-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.btn-remove-color:hover {
-  background: rgba(193, 18, 58, 0.15);
+.concorrentes-inputs {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
 }
 
-.btn-add-color {
+.concorrente-input {
+  padding: 10px 14px;
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.btn-add-item {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 8px 12px;
   background: color-mix(in srgb, var(--color-primary) 8%, transparent);
-  color: var(--iamkt-purple);
   border: 1px dashed color-mix(in srgb, var(--color-primary) 30%, transparent);
   border-radius: var(--radius-sm);
+  color: var(--iamkt-purple);
   font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: inherit;
-  font-weight: 600;
+  width: 100%;
   margin-top: 4px;
 }
 
-.btn-add-color:hover {
+.btn-add-item:hover {
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   border-color: var(--iamkt-purple);
+}
+
+.btn-add-item svg {
+  flex-shrink: 0;
 }
 
 /* ========================================
@@ -992,27 +1001,6 @@ input[type="number"]:focus {
   font-size: 32px;
   color: var(--iamkt-gray-dark);
   margin: 0;
-}
-
-.btn-add-fonte {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
-  color: var(--iamkt-purple);
-  border: 1px dashed color-mix(in srgb, var(--color-primary) 30%, transparent);
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  font-weight: 600;
-}
-
-.btn-add-fonte:hover {
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  border-color: var(--iamkt-purple);
 }
 
 /* ========================================
