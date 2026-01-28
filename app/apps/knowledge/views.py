@@ -326,6 +326,34 @@ def knowledge_save_all(request):
         
         return redirect('knowledge:view')
     
+    # ========================================
+    # PROCESSAR CAMPO CONCORRENTES
+    # ========================================
+    import json
+    concorrentes_raw = request.POST.get('concorrentes', '[]')
+    try:
+        concorrentes = json.loads(concorrentes_raw)
+        # Validar estrutura
+        if not isinstance(concorrentes, list):
+            concorrentes = []
+        else:
+            # Validar cada item
+            validated_concorrentes = []
+            for item in concorrentes:
+                if isinstance(item, dict) and 'nome' in item:
+                    validated_concorrentes.append({
+                        'nome': str(item.get('nome', '')).strip(),
+                        'url': str(item.get('url', '')).strip()
+                    })
+            concorrentes = validated_concorrentes
+        
+        # Salvar no KB
+        kb.concorrentes = concorrentes
+        kb.save(update_fields=['concorrentes'])
+    except json.JSONDecodeError:
+        messages.warning(request, 'Erro ao processar concorrentes. Verifique os dados.')
+        concorrentes = []
+    
     # Se validação passou, usar Service Layer para salvar
     print("🔄 Chamando KnowledgeBaseService.save_all_blocks...", flush=True)
     success, errors = KnowledgeBaseService.save_all_blocks(request, kb, forms)

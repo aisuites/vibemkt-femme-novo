@@ -469,6 +469,49 @@
               Esta funcionalidade será desenvolvida em breve
             </div>
           </div>
+          
+          <!-- CONCORRENTES -->
+          <div class="field">
+            <div class="field-label-row">
+              <label>Concorrentes</label>
+            </div>
+            <div class="field-hint field-hint-spaced-sm">
+              Adicione os principais concorrentes da marca para análise competitiva
+            </div>
+            
+            <!-- Campo hidden para armazenar JSON -->
+            <input type="hidden" id="concorrentes_data" name="concorrentes" value="{{ kb.concorrentes|default:'[]'|safe }}">
+            
+            <!-- Formulário para adicionar concorrente -->
+            <div class="concorrentes-add-form">
+              <div class="concorrentes-inputs">
+                <input 
+                  type="text" 
+                  id="concorrente_nome" 
+                  placeholder="Nome do concorrente" 
+                  class="concorrente-input"
+                >
+                <input 
+                  type="url" 
+                  id="concorrente_url" 
+                  placeholder="https://site-concorrente.com.br (opcional)" 
+                  class="concorrente-input"
+                >
+              </div>
+              <button type="button" class="btn-add-concorrente" onclick="addConcorrente()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Adicionar Concorrente
+              </button>
+            </div>
+            
+            <!-- Lista de concorrentes adicionados -->
+            <div id="concorrentes-list" class="concorrentes-list">
+              <!-- Será preenchido dinamicamente via JavaScript -->
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -644,6 +687,7 @@ window.VALIDATION_ERRORS = {
 <script src="{% static 'js/uploads-simple.js' %}"></script>
 <script src="{% static 'js/knowledge-events.js' %}"></script>
 <script src="{% static 'js/knowledge-validation.js' %}"></script>
+<script src="{% static 'js/concorrentes.js' %}"></script>
 <!-- <script src="{% static 'js/uploads.js' %}"></script> --> <!-- Mock antigo - comentado para teste -->
 <script>
 // Carregar redes sociais existentes
