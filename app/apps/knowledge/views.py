@@ -331,10 +331,15 @@ def knowledge_save_all(request):
     # ========================================
     import json
     concorrentes_raw = request.POST.get('concorrentes', '[]')
+    print(f"🔍 DEBUG Concorrentes - Raw POST data: {concorrentes_raw}", flush=True)
+    
     try:
         concorrentes = json.loads(concorrentes_raw)
+        print(f"🔍 DEBUG Concorrentes - Parsed JSON: {concorrentes}", flush=True)
+        
         # Validar estrutura
         if not isinstance(concorrentes, list):
+            print(f"⚠️ DEBUG Concorrentes - Não é lista, convertendo para []", flush=True)
             concorrentes = []
         else:
             # Validar cada item
@@ -346,11 +351,14 @@ def knowledge_save_all(request):
                         'url': str(item.get('url', '')).strip()
                     })
             concorrentes = validated_concorrentes
+            print(f"✅ DEBUG Concorrentes - Validados: {concorrentes}", flush=True)
         
         # Salvar no KB
         kb.concorrentes = concorrentes
         kb.save(update_fields=['concorrentes'])
-    except json.JSONDecodeError:
+        print(f"💾 DEBUG Concorrentes - Salvos no KB (id={kb.id})", flush=True)
+    except json.JSONDecodeError as e:
+        print(f"❌ DEBUG Concorrentes - Erro JSON: {e}", flush=True)
         messages.warning(request, 'Erro ao processar concorrentes. Verifique os dados.')
         concorrentes = []
     
