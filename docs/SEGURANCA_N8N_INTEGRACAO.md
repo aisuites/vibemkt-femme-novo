@@ -635,20 +635,23 @@ return {
 2. Processar cada campo do payload
 3. Gerar avaliações e sugestões
 
-#### **Passo 5: Adicionar Nó de Resposta**
+#### **Passo 4: Adicionar Nó de Resposta Imediata**
 
 1. Adicionar nó "Respond to Webhook"
-2. Configurar:
+2. Conectar logo após o nó "Webhook"
+3. Configurar:
    - **Response Code:** 200
    - **Response Body:**
 
 ```json
 {
   "success": true,
-  "revision_id": "{{ $('Webhook').item.json.body.kb_id }}_{{ $now.toUnixInteger() }}",
+  "revision_id": "{{ $json.body.kb_id }}_{{ $now.toUnixInteger() }}",
   "message": "Analysis started"
 }
 ```
+
+**IMPORTANTE:** Este nó responde imediatamente ao Django para não bloquear. O processamento continua em paralelo.
 
 ---
 
@@ -668,14 +671,6 @@ return {
 - N8N **NÃO suporta** variáveis de ambiente em campos de URL
 - A URL precisa ser **hardcoded** no workflow
 - Para trocar de ambiente (dev → prod), você precisará:
-  1. Duplicar o workflow
-  2. Alterar a URL manualmente
-  3. Ou usar um nó "Switch" para escolher URL baseado em uma variável
-
-**🔒 SEGURANÇA:**
-- A URL exposta não é um problema de segurança
-- A proteção está nos **headers** (X-Signature, X-Timestamp, X-API-Key)
-- Sem os headers corretos, a requisição será rejeitada pelo Django
 
 #### **Passo 7: Configurar Headers de Segurança**
 
@@ -699,8 +694,8 @@ return {
 ```javascript
 const crypto = require('crypto');
 
-// Pegar dados do webhook original
-const webhookData = $('Webhook').item.json.body;
+// Pegar dados do webhook ORIGINAL
+const webhookData = $input.first().json.body;
 
 // Montar payload com IDENTIFICAÇÃO da empresa
 const payload = {
