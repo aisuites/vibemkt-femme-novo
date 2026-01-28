@@ -80,7 +80,14 @@ function addFonte(tipo = 'GOOGLE', nomeFonte = '', variante = '', uso = '', arqu
                 <span>Fonte #${fonteIndex + 1} - ${nomeFonte || 'Selecione...'} - ${usoLabel}</span>
             </div>
             <div class="fonte-item-actions" onclick="event.stopPropagation()">
-                <button type="button" class="btn-remove-fonte" onclick="removeFonte(${fonteIndex}, '${uso}')">Remover</button>
+                <button 
+          type="button" 
+          class="btn-remove-item" 
+          onclick="removeFonte(${fonteIndex}, '${uso}')"
+          title="Remover fonte"
+        >
+          Remover
+        </button>
             </div>
         </div>
         <div class="fonte-item-body">

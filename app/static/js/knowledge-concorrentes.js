@@ -140,18 +140,12 @@ function renderConcorrentes() {
     const item = document.createElement('div');
     item.className = 'concorrente-item';
     
-    const urlHtml = concorrente.url 
-      ? `<a href="${escapeHtml(concorrente.url)}" target="_blank" rel="noopener noreferrer" class="concorrente-url">${escapeHtml(concorrente.url)}</a>`
-      : `<span class="concorrente-sem-url">Sem URL informada</span>`;
-    
     item.innerHTML = `
-      <div class="concorrente-info">
-        <div class="concorrente-nome">${escapeHtml(concorrente.nome)}</div>
-        ${urlHtml}
-      </div>
+      <div class="concorrente-nome-display">${escapeHtml(concorrente.nome)}</div>
+      <div class="concorrente-url-display">${escapeHtml(concorrente.url || 'Sem URL')}</div>
       <button 
         type="button" 
-        class="btn-remove-concorrente" 
+        class="btn-remove-item" 
         onclick="removeConcorrente(${index})"
         title="Remover concorrente"
       >

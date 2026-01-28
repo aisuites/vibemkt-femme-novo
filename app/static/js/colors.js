@@ -33,9 +33,14 @@ function addColor(hexValue = '#7A3D8A', colorName = '') {
                    value="${colorName}"
                    placeholder="Nome da cor (ex: Roxo FEMME, Verde água)">
         </div>
-        <button type="button" class="btn-remove-color" onclick="removeColor(this)">
-            Remover
-        </button>
+        <button 
+        type="button" 
+        class="btn-remove-item" 
+        onclick="removeColor(${colorIndex})"
+        title="Remover cor"
+      >
+        Remover
+      </button>
     `;
     
     colorList.appendChild(colorItem);
