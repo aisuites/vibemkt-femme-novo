@@ -60,16 +60,38 @@ function addConcorrenteLine(nome = '', url = '') {
 }
 
 /**
- * Remove uma linha de concorrente
+ * Remove uma linha de concorrente (com modal de confirmação)
  */
 function removeConcorrenteLine(index) {
   const item = document.querySelector(`.concorrente-item[data-index="${index}"]`);
-  if (item) {
-    item.classList.add('removing');
-    setTimeout(() => {
-      item.remove();
-      syncConcorrentesToForm();
-    }, 200);
+  if (!item) return;
+  
+  const nomeInput = item.querySelector('.concorrente-nome-input');
+  const nome = nomeInput ? nomeInput.value.trim() : 'este concorrente';
+  
+  // Usar modal de confirmação se disponível
+  if (typeof showConfirmModal === 'function') {
+    showConfirmModal(
+      'Remover concorrente',
+      `Tem certeza que deseja remover ${nome ? `"${nome}"` : 'este concorrente'}?`,
+      () => {
+        // Confirmado - remover
+        item.classList.add('removing');
+        setTimeout(() => {
+          item.remove();
+          syncConcorrentesToForm();
+        }, 200);
+      }
+    );
+  } else {
+    // Fallback: confirmação nativa
+    if (confirm(`Tem certeza que deseja remover ${nome ? `"${nome}"` : 'este concorrente'}?`)) {
+      item.classList.add('removing');
+      setTimeout(() => {
+        item.remove();
+        syncConcorrentesToForm();
+      }, 200);
+    }
   }
 }
 
