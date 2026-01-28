@@ -12,7 +12,7 @@ def pautas_list(request):
     """Listar pautas da organization"""
     # CRÍTICO: Filtrar explicitamente por organization do request
     pautas_list = Pauta.objects.for_request(request).select_related(
-        'created_by', 'knowledge_base'
+        'user', 'area'
     ).order_by('-created_at')
     
     # Paginação
@@ -39,7 +39,7 @@ def posts_list(request):
     """Listar posts da organization"""
     # CRÍTICO: Filtrar explicitamente por organization do request
     posts_list = Post.objects.for_request(request).select_related(
-        'created_by', 'pauta', 'knowledge_base'
+        'user', 'pauta', 'area'
     ).prefetch_related('assets').order_by('-created_at')
     
     # Paginação
