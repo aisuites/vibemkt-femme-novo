@@ -211,6 +211,28 @@ class KnowledgeBase(models.Model):
         help_text='Indica se atende requisitos mínimos'
     )
     
+    # ONBOARDING
+    onboarding_completed = models.BooleanField(
+        default=False,
+        verbose_name='Onboarding Concluído',
+        help_text='True quando usuário clica em "Salvar Base IAMKT" pela primeira vez e envia dados para N8N'
+    )
+    onboarding_completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Data de Conclusão do Onboarding',
+        help_text='Timestamp de quando o onboarding foi concluído'
+    )
+    onboarding_completed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='onboarding_completions',
+        verbose_name='Onboarding Concluído Por',
+        help_text='Usuário que completou o onboarding pela primeira vez'
+    )
+    
     # TIMESTAMPS
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
