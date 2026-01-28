@@ -68,8 +68,10 @@ function updateColorPicker(index, hexValue) {
 }
 
 // Remover uma cor (com modal de confirmação)
-async function removeColor(button) {
-    const colorItem = button.closest('.color-item');
+async function removeColor(index) {
+    const colorItem = document.querySelector(`.color-item[data-index="${index}"]`);
+    if (!colorItem) return;
+    
     const nameInput = colorItem.querySelector('.color-name-input');
     const nome = nameInput ? nameInput.value.trim() : '';
     const mensagem = `Tem certeza que deseja remover ${nome ? `a cor "${nome}"` : 'esta cor'}?`;

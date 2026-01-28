@@ -286,7 +286,7 @@ async function removeFonte(indexOrButton, uso) {
     const tipo = fonteItem.dataset.tipo;  // Usar data-tipo ao invés de querySelector
     const isCustomFont = tipo === 'UPLOAD';
     
-    logger.debug('DEBUG removeFonte:', {
+    console.log('DEBUG removeFonte:', {
         fontId: fontId,
         tipo: tipo,
         isCustomFont: isCustomFont,
