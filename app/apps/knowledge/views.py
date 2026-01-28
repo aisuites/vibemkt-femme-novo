@@ -332,16 +332,37 @@ def knowledge_save_all(request):
     print(f"🔄 save_all_blocks retornou: success={success}, errors={errors}", flush=True)
     
     if success:
-        messages.success(request, '✅ Base de Conhecimento salva com sucesso!')
-        print("✅ Mensagem de sucesso adicionada", flush=True)
+        # ========================================
+        # ONBOARDING: Marcar como concluído
+        # ========================================
+        if not kb.onboarding_completed:
+            from django.utils import timezone
+            
+            kb.onboarding_completed = True
+            kb.onboarding_completed_at = timezone.now()
+            kb.onboarding_completed_by = request.user
+            kb.save(update_fields=['onboarding_completed', 'onboarding_completed_at', 'onboarding_completed_by'])
+            
+            # TODO: Integração N8N (implementar após definir payload e retorno)
+            # ========================================
+            # PLACEHOLDER: Envio de dados para N8N
+            # ========================================
+            # try:
+            #     n8n_payload = prepare_n8n_payload(kb)
+            #     n8n_response = send_to_n8n(n8n_payload, timeout=30)
+            #     process_company_profile(n8n_response, kb.organization)
+            # except N8NTimeoutError:
+            #     # Retry em background (Celery task)
+            #     retry_n8n_send.delay(kb.id)
+            # except Exception as e:
+            #     logger.error(f'Erro ao enviar para N8N: {e}')
+            # ========================================
+            
+            messages.success(request, '🎉 Base de Conhecimento salva com sucesso! Bem-vindo ao IAMKT!')
+            return redirect('core:dashboard')
         
-        # Limpar erros de validação da sessão
-        if 'validation_errors' in request.session:
-            del request.session['validation_errors']
-        
-        # Mostrar warnings se houver erros não-críticos
-        for error in errors:
-            messages.warning(request, error)
+        messages.success(request, '✅ Base de Conhecimento atualizada com sucesso!')
+        return redirect('knowledge:view')
     else:
         # Mostrar erros críticos
         print(f"❌ Salvamento falhou, adicionando mensagens de erro", flush=True)
