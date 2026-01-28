@@ -72,7 +72,7 @@ class KnowledgeBaseAdmin(admin.ModelAdmin):
             'fields': ()
         }),
         ('Bloco 6: Sites e Redes Sociais', {
-            'fields': ('site_institucional', 'templates_redes')
+            'fields': ('site_institucional', 'concorrentes', 'templates_redes')
         }),
         ('Bloco 7: Dados e Insights', {
             'fields': ('fontes_confiaveis', 'canais_trends', 'palavras_chave_trends')
