@@ -46,6 +46,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'apps.core.middleware.TenantMiddleware',  # Tenant detection
     'apps.core.middleware.TenantIsolationMiddleware',  # Tenant isolation
+    'apps.core.middleware_onboarding.OnboardingRequiredMiddleware',  # Onboarding restriction
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
