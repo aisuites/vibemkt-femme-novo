@@ -25,56 +25,61 @@ Implementar página "Perfil da Empresa" que:
 #### **1.1 Cadastro Inicial**
 - Usuário acessa `/signup`
 - Preenche: nome, email, senha, organização
-- Sistema cria conta e redireciona para dashboard
+- Sistema cria conta
+- **Equipe interna libera acesso** (aprovação manual)
 
-#### **1.2 Modal de Onboarding (Primeira Vez)**
-- Ao acessar dashboard pela primeira vez
-- Modal aparece automaticamente (`onboarding_completed = False`)
+#### **1.2 Primeiro Login**
+- Usuário faz login pela primeira vez
+- `onboarding_completed = False`
+- Redireciona para dashboard
+
+#### **1.3 Modal Welcome**
+- Modal aparece automaticamente
 - Título: "Bem-vindo! Vamos começar?"
-- Botão: "Iniciar Onboarding"
-- Link: "Pular por enquanto"
+- Botão: "Iniciar Onboarding" → Redireciona para `/knowledge/view/`
+- Link: "Pular por enquanto" → Fecha modal
 
-#### **1.3 Fluxo de Onboarding**
-- **Passo 1:** Informações básicas da empresa
-  - Nome da empresa
-  - Missão, visão, valores
-  - Descrição do produto/serviço
-  
-- **Passo 2:** Público e segmentos
-  - Público externo
-  - Público interno
-  - Segmentos internos (opcional)
+#### **1.4 Restrição de Acesso**
+- **Apenas página "Base de Conhecimento" está liberada**
+- Demais páginas bloqueadas até `onboarding_completed = True`
+- Menu sidebar mostra apenas "Base de Conhecimento"
 
-- **Passo 3:** Posicionamento
-  - Posicionamento de mercado
-  - Diferenciais competitivos
-  - Proposta de valor
+#### **1.5 Preenchimento da Base de Conhecimento**
 
-- **Passo 4:** Tom de voz
-  - Tom de voz externo
-  - Tom de voz interno
-  - Palavras recomendadas
-  - Palavras a evitar
+**IMPORTANTE:** Não há "passos" separados. Todos os campos estão em uma única página.
 
-- **Passo 5:** Identidade visual
-  - Cores da marca (hex + nome)
-  - Tipografia (Google Fonts ou upload)
-  - Logos (upload)
+**Campos Obrigatórios:**
+- ✅ **Descrição do produto/serviço** (único campo obrigatório)
 
-- **Passo 6:** Redes e concorrência
-  - Site institucional
-  - Redes sociais (Instagram, Facebook, LinkedIn, YouTube)
-  - Concorrentes (nome + URL)
-  - Templates de redes sociais
+**Campos Opcionais:**
+- Nome da empresa (já preenchido com dado do cadastro)
+- Missão, visão, valores
+- Público externo, público interno
+- Segmentos internos
+- Posicionamento de mercado
+- Diferenciais competitivos
+- Proposta de valor
+- Tom de voz externo, tom de voz interno
+- Palavras recomendadas, palavras a evitar
+- Cores da marca (hex + nome)
+- Tipografia (Google Fonts ou upload)
+- Logos (upload)
+- Site institucional
+- Redes sociais (Instagram, Facebook, LinkedIn, YouTube)
+- Concorrentes (nome + URL)
+- Templates de redes sociais
+- Fontes confiáveis (URLs)
+- Canais de trends
+- Palavras-chave para trends
+- Imagens de referência
 
-- **Passo 7:** Dados e insights
-  - Fontes confiáveis (URLs)
-  - Canais de trends
-  - Palavras-chave para trends
-
-#### **1.4 Finalização do Onboarding**
-- Ao completar todos os passos
-- Sistema marca `onboarding_completed = True`
+#### **1.6 Salvamento e Liberação de Acesso**
+- Usuário preenche campos (mínimo: descrição do produto)
+- Clica em "Salvar Base IAMKT"
+- Dados são salvos no banco
+- Arquivos (logos, fontes, imagens) são enviados ao S3
+- **Sistema marca `onboarding_completed = True`**
+- **Acesso liberado para toda a plataforma**
 - Redireciona para dashboard
 - Modal não aparece mais automaticamente
 
@@ -83,7 +88,9 @@ Implementar página "Perfil da Empresa" que:
 ### **2. PÁGINA "PERFIL DA EMPRESA"**
 
 #### **2.1 Acesso**
-- Menu sidebar: "Perfil da Empresa"
+- **Aparece no menu sidebar APÓS `onboarding_completed = True`**
+- Item "Base de Conhecimento" some do menu
+- Item "Perfil da Empresa" aparece
 - URL: `/knowledge/perfil/`
 - Badge de status no menu (opcional)
 
@@ -109,11 +116,15 @@ Implementar página "Perfil da Empresa" que:
 - Quando N8N retorna análise → ESTADO 4
 
 ##### **ESTADO 4: Modo Edição (Análise Recebida)**
+
+**IMPORTANTE:** Página fica em modo edição até que empresa complete fase de aprovar avaliação/sugestões.
+
 - Exibir análise por campo:
   - Campo: "Missão"
   - Informado pelo usuário: [texto]
-  - Avaliação: "Fraco" (badge vermelho)
-  - Sugestão: [texto sugerido]
+  - Avaliação: "A missão da marca não está definida."
+  - Status: "Fraco" (badge vermelho)
+  - Sugestão do agente IAMKT: [texto sugerido]
   - Checkbox: "Aceitar sugestão"
   
 - Resumo geral:
@@ -127,6 +138,8 @@ Implementar página "Perfil da Empresa" que:
   - Solicita compilação ao N8N
   - Status muda para 'compiling'
   - Redireciona para ESTADO 5
+
+**Sem aprovar sugestões:** Página não pode entrar no modo visualização
 
 ##### **ESTADO 5: Processando Compilação**
 - Loading state com animação
@@ -265,6 +278,171 @@ compilation_completed_at = DateTimeField(null=True)
 ---
 
 ## 🔄 INTEGRAÇÃO N8N
+
+### **Payload Real Enviado (Fluxo 1)**
+
+Após clicar "Salvar Base IAMKT", sistema envia:
+
+```json
+{
+  "mission": "",
+  "vision": "",
+  "value_proposition": "",
+  "differentials": "",
+  "phrase_10_words": "",
+  "target_audience": "moradores da região de Touros, Rio Grande do Norte",
+  "tone_of_voice": "",
+  "description": "papelaria de bairro",
+  "palette_colors": [],
+  "logo_files": [],
+  "fonts": [],
+  "website_url": "",
+  "social_networks": [],
+  "competitors": [],
+  "reference_images": [],
+  "payload_hash": "baf776eed59e421dd940ea36e80317a1279cde48afdb50b98ef3d922f6a8bc4c"
+}
+```
+
+**Webhook URL:** `https://n8n.srv1080437.hstgr.cloud/webhook/fundamentos-prod`  
+**Execution Mode:** `production`
+
+---
+
+### **Retorno Real do N8N**
+
+```json
+{
+  "baseId": 56,
+  "revision_id": "b3eacfbd025d45a8",
+  "reference_images_analysis": [
+    {"visual_knowledge_base": {"visual_knowledge_base": []}}
+  ],
+  "payload": [
+    {
+      "missao": {
+        "informado_pelo_usuario": "",
+        "avaliacao": "A missão da marca Fulanas não está definida.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": "Proposta: 'Oferecer materiais de papelaria de alta qualidade e acessíveis.'"
+      },
+      "visao": {
+        "informado_pelo_usuario": "",
+        "avaliacao": "A visão da marca Fulanas não está definida.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": "Proposta: 'Ser a papelaria de referência em Touros, oferecendo excelência.'"
+      },
+      "proposta_de_valor": {
+        "informado_pelo_usuario": "",
+        "avaliacao": "A proposta de valor da marca Fulanas não está definida.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": "Proposta: 'Atender às necessidades de papelaria dos moradores locais com qualidade.'"
+      },
+      "diferenciais": {
+        "informado_pelo_usuario": null,
+        "avaliacao": "Os diferenciais da marca Fulanas não estão definidos.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": [
+          "Variedade de produtos locais",
+          "Atendimento personalizado",
+          "Preços acessíveis"
+        ]
+      },
+      "frase_em_10_palavras": {
+        "informado_pelo_usuario": "",
+        "avaliacao": "A frase de 10 palavras da marca Fulanas não está definida.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": "Papelaria Fulanas: qualidade, simpatia e conveniência para você!"
+      },
+      "publico_alvo": {
+        "informado_pelo_usuario": ["moradores da região de Touros, Rio Grande do Norte"],
+        "avaliacao": "O público-alvo está definido, mas pode ser detalhado.",
+        "status": "médio",
+        "sugestao_do_agente_iamkt": [
+          {
+            "segmento": "Moradores locais",
+            "diretriz_de_conteudo": "Oferecer produtos e serviços que atendam diretamente às necessidades da comunidade."
+          },
+          {
+            "segmento": "Estudantes",
+            "diretriz_de_conteudo": "Produzir conteúdo educativo e promocional para estudantes da região."
+          }
+        ]
+      },
+      "tom_de_voz": {
+        "informado_pelo_usuario": "",
+        "avaliacao": "O tom de voz da marca Fulanas não está definido.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": "Proposta: 'Amigável e acessível, refletindo a relação com a comunidade.'"
+      },
+      "descricao_do_produto": {
+        "informado_pelo_usuario": "papelaria de bairro",
+        "avaliacao": "A descrição do produto é básica e pode ser expandida.",
+        "status": "médio",
+        "sugestao_do_agente_iamkt": "Proposta: 'Uma papelaria que oferece uma ampla gama de produtos, atendimento próximo e qualidade.'"
+      },
+      "paleta_de_cores": {
+        "informado_pelo_usuario": [],
+        "avaliacao": "A paleta de cores não está definida.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": "Sugestão de paleta: azul (confiança), verde (cuidado) e amarelo (otimismo)."
+      },
+      "logotipo": {
+        "informado_pelo_usuario": null,
+        "avaliacao": "O logotipo da marca Fulanas não está definido.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": "Desenvolver um logotipo que represente a identidade da papelaria e a comunidade."
+      },
+      "fontes": {
+        "informado_pelo_usuario": null,
+        "avaliacao": "As fontes da marca Fulanas não estão definidas.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": ["Roboto", "Open Sans"]
+      },
+      "website": {
+        "informado_pelo_usuario": "",
+        "avaliacao": "O website da marca Fulanas não está definido.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": "Criar um website simples e funcional para divulgação e vendas."
+      },
+      "redes_sociais": {
+        "informado_pelo_usuario": null,
+        "avaliacao": "As redes sociais da marca Fulanas não estão definidas.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": "Estabelecer perfis no Instagram e Facebook para engajamento local."
+      },
+      "concorrencia": {
+        "informado_pelo_usuario": null,
+        "observacao_informado_pelo_usuario": null,
+        "avaliacao": "A concorrência não está mapeada.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": [
+          "Papelaria Rio Grande",
+          "Escritório e Cia",
+          "Papelaria do Bairro"
+        ]
+      },
+      "imagens_de_referencia": {
+        "informado_pelo_usuario": null,
+        "avaliacao": "Imagens de referência não estão definidas.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": "Buscar inspiração em papelarias locais e modernas."
+      },
+      "sugestoes_estrategicas_de_ativacao_de_marca": {
+        "avaliacao": "Estratégias de ativação não estão definidas.",
+        "status": "fraco",
+        "sugestao_do_agente_iamkt": [
+          "Promoções para estudantes",
+          "Eventos comunitários",
+          "Parcerias com escolas locais"
+        ]
+      }
+    }
+  ]
+}
+```
+
+---
 
 ### **Fluxo de Comunicação**
 
