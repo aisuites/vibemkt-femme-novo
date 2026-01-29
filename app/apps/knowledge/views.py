@@ -609,7 +609,7 @@ def perfil_view(request):
     
     if not kb:
         messages.error(request, 'Base de Conhecimento não encontrada.')
-        return redirect('knowledge_view')
+        return redirect('knowledge:view')
     
     # Determinar estado atual
     analysis_status = kb.analysis_status
@@ -621,7 +621,7 @@ def perfil_view(request):
         
         if not payload or len(payload) == 0:
             messages.error(request, 'Dados de análise inválidos.')
-            return redirect('knowledge_view')
+            return redirect('knowledge:view')
         
         # Extrair campos analisados (payload[0] contém todos os campos)
         campos_raw = payload[0] if isinstance(payload, list) else {}
