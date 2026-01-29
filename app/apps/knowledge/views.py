@@ -379,14 +379,28 @@ def knowledge_save_all(request):
         # ========================================
         # ENVIAR PARA N8N: Análise de Fundamentos
         # ========================================
-        print("📤 Enviando dados para N8N...", flush=True)
-        n8n_result = N8NService.send_fundamentos(kb)
+        print("=" * 80, flush=True)
+        print("📤 [N8N] INICIANDO ENVIO DE DADOS", flush=True)
+        print(f"📤 [N8N] KB ID: {kb.id}", flush=True)
+        print(f"📤 [N8N] Organização: {kb.organization.name} (ID: {kb.organization_id})", flush=True)
+        print(f"📤 [N8N] Onboarding completo: {kb.onboarding_completed}", flush=True)
+        print(f"📤 [N8N] Status atual: {kb.analysis_status}", flush=True)
         
-        if n8n_result.get('success'):
-            print(f"✅ N8N: Dados enviados com sucesso. Revision ID: {n8n_result.get('revision_id')}", flush=True)
-        else:
-            print(f"⚠️ N8N: Falha ao enviar dados. Erro: {n8n_result.get('error')}", flush=True)
-            # Não bloquear o fluxo se N8N falhar
+        try:
+            n8n_result = N8NService.send_fundamentos(kb)
+            print(f"📤 [N8N] Resultado: {n8n_result}", flush=True)
+            
+            if n8n_result.get('success'):
+                print(f"✅ [N8N] SUCESSO! Revision ID: {n8n_result.get('revision_id')}", flush=True)
+            else:
+                print(f"⚠️ [N8N] FALHA! Erro: {n8n_result.get('error')}", flush=True)
+        except Exception as e:
+            print(f"❌ [N8N] EXCEÇÃO: {str(e)}", flush=True)
+            import traceback
+            print(traceback.format_exc(), flush=True)
+        
+        print("=" * 80, flush=True)
+        # Não bloquear o fluxo se N8N falhar
         
         # ========================================
         # ONBOARDING: Marcar como concluído
