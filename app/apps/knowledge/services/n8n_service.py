@@ -6,6 +6,7 @@ import hmac
 import hashlib
 import time
 import json
+import uuid
 import requests
 from django.conf import settings
 from django.core.cache import cache
@@ -90,11 +91,25 @@ class N8NService:
                     'error': 'Rate limit exceeded. Try again later.'
                 }
             
-            # 2. Montar payload
+            # 2. Gerar revision_id (UUID v4 truncado para 16 chars)
+            revision_id = uuid.uuid4().hex[:16]
+            
+            # 3. Atualizar KB com revision_id ANTES de enviar
+            kb_instance.analysis_status = 'processing'
+            kb_instance.analysis_revision_id = revision_id
+            kb_instance.analysis_requested_at = timezone.now()
+            kb_instance.save(update_fields=[
+                'analysis_status',
+                'analysis_revision_id',
+                'analysis_requested_at'
+            ])
+            
+            # 4. Montar payload com revision_id
             payload = {
                 'kb_id': kb_instance.id,
                 'organization_id': kb_instance.organization_id,
                 'organization_name': kb_instance.organization.name,
+                'revision_id': revision_id,
                 'mission': kb_instance.missao or '',
                 'vision': kb_instance.visao or '',
                 'value_proposition': kb_instance.proposta_valor or '',
@@ -145,21 +160,7 @@ class N8NService:
                     )
                     
                     if response.status_code == 200:
-                        data = response.json()
-                        
-                        # Gerar revision_id se N8N não retornar
-                        revision_id = data.get('revision_id') or f"{kb_instance.id}_{int(time.time())}"
-                        
-                        # Atualizar KB
-                        kb_instance.analysis_status = 'processing'
-                        kb_instance.analysis_revision_id = revision_id
-                        kb_instance.analysis_requested_at = timezone.now()
-                        kb_instance.save(update_fields=[
-                            'analysis_status',
-                            'analysis_revision_id',
-                            'analysis_requested_at'
-                        ])
-                        
+                        # KB já foi atualizada antes do envio
                         logger.info(
                             f"N8N fundamentos sent successfully. "
                             f"KB: {kb_instance.id}, "

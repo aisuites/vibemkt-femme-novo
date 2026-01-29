@@ -646,12 +646,15 @@ return {
 ```json
 {
   "success": true,
-  "revision_id": "{{ $json.body.kb_id }}_{{ $now.toUnixInteger() }}",
+  "revision_id": "{{ $json.body.revision_id }}",
   "message": "Analysis started"
 }
 ```
 
-**IMPORTANTE:** Este nó responde imediatamente ao Django para não bloquear. O processamento continua em paralelo.
+**IMPORTANTE:** 
+- O `revision_id` JÁ VEM do Django no payload (UUID v4 truncado, 16 chars)
+- Este nó apenas confirma o recebimento
+- O processamento continua em paralelo
 
 ---
 
@@ -692,8 +695,6 @@ return {
 3. Código:
 
 ```javascript
-const crypto = require('crypto');
-
 // Pegar dados do webhook ORIGINAL
 const webhookData = $input.first().json.body;
 
@@ -701,9 +702,19 @@ const webhookData = $input.first().json.body;
 const payload = {
   kb_id: webhookData.kb_id,                    // ✅ ID da Knowledge Base
   organization_id: webhookData.organization_id, // ✅ ID da Organização
-  revision_id: $('Responder Webhook').item.json.revision_id,
-  payload: $('Processar Análise').item.json.analysis,
-  reference_images_analysis: $('Processar Imagens').item.json.images || []
+  revision_id: webhookData.revision_id,         // ✅ Revision ID (vem do Django)
+  payload: [
+    {
+      missao: {
+        informado_pelo_usuario: webhookData.mission || '',
+        avaliacao: 'Sua análise aqui',
+        status: 'bom',
+        sugestao_do_agente_iamkt: 'Sua sugestão aqui'
+      }
+    }
+    // ... outros campos
+  ],
+  reference_images_analysis: []
 };
 
 // Gerar timestamp
