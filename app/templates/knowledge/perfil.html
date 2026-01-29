@@ -4,7 +4,8 @@
 {% block title %}Perfil da Empresa - IAMKT{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/perfil.css' %}">
+<link rel="stylesheet" href="{% static 'css/perfil.css' %}?v=20260128-1557">
+<link rel="stylesheet" href="{% static 'css/logo-upload-widget.css' %}?v=20260129-1605">
 {% endblock %}
 
 {% block content %}
@@ -42,10 +43,7 @@
         <!-- Header com Logo + Instruções -->
         <div class="perfil-header">
             <div class="perfil-header-left">
-                <!-- TODO: Área de upload de logo -->
-                <p class="text-muted-center">
-                    Área de upload de logotipo<br>(a implementar)
-                </p>
+                {% include 'components/logo_upload_widget.html' with logo=primary_logo widget_id='perfil-logo' show_label=False compact=True %}
             </div>
             <div class="perfil-header-right">
                 <h1 class="perfil-title">Perfil da Empresa</h1>
@@ -189,5 +187,147 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/logger.js' %}?v=20260128-1154"></script>
+<script src="{% static 'js/toaster.js' %}?v=20260128-1154"></script>
+<script src="{% static 'js/image-validator.js' %}?v=20260128-1154"></script>
+<script src="{% static 'js/image-preview-loader.js' %}?v=20260129-1605"></script>
+<script src="{% static 'js/uploads-simple.js' %}?v=20260128-1154"></script>
+<script src="{% static 'js/confirm-modal.js' %}?v=20260128-1557"></script>
 <script src="{% static 'js/perfil.js' %}"></script>
+<script>
+// Inicializar upload de logotipo no Perfil
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar image preview loader global
+    if (!window.imagePreviewLoader) {
+        window.imagePreviewLoader = new ImagePreviewLoader('/knowledge/preview-url/');
+    }
+    
+    // Inicializar validadores
+    if (!UploadConfig.validators.logos) {
+        UploadConfig.validators.logos = new ImageValidator('logos');
+    }
+    
+    // Input de upload
+    const logoInput = document.getElementById('perfil-logo-input');
+    if (logoInput) {
+        logoInput.addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            try {
+                // Validar
+                const validator = UploadConfig.validators.logos;
+                const validation = await validator.validate(file);
+                
+                if (!validation.valid) {
+                    toaster.error(validation.errors.join(', '));
+                    return;
+                }
+                
+                // Mostrar loading
+                const widget = document.getElementById('perfil-logo');
+                const placeholder = widget.querySelector('.logo-upload-placeholder');
+                if (placeholder) {
+                    placeholder.innerHTML = '<div class="spinner"></div><p>Enviando...</p>';
+                }
+                
+                // Upload imediato para S3
+                const result = await uploadFileToS3(
+                    file,
+                    'logo',
+                    UploadConfig.endpoints.logoUploadUrl,
+                    UploadConfig.endpoints.logoCreate
+                );
+                
+                toaster.success('Logotipo enviado com sucesso!');
+                
+                // Recarregar página para mostrar preview
+                setTimeout(() => window.location.reload(), 1000);
+                
+            } catch (error) {
+                console.error('Erro no upload:', error);
+                toaster.error(error.message || 'Erro ao enviar logotipo');
+                
+                // Restaurar UI
+                const widget = document.getElementById('perfil-logo');
+                const placeholder = widget.querySelector('.logo-upload-placeholder');
+                if (placeholder) {
+                    location.reload(); // Restaurar estado original
+                }
+            }
+            
+            e.target.value = '';
+        });
+    }
+    
+    // Botão "Escolher arquivo"
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('[data-action="select-logo"]') || e.target.closest('[data-action="select-logo"]')) {
+            e.preventDefault();
+            logoInput?.click();
+        }
+        
+        // Remover logotipo
+        if (e.target.matches('[data-action="remove-logo"]') || e.target.closest('[data-action="remove-logo"]')) {
+            e.preventDefault();
+            const button = e.target.closest('[data-action="remove-logo"]');
+            const logoId = button.dataset.logoId;
+            
+            if (!logoId) return;
+            
+            confirmModal.show({
+                title: 'Remover logotipo?',
+                message: 'Esta ação não pode ser desfeita.',
+                confirmText: 'Remover',
+                cancelText: 'Cancelar',
+                type: 'danger'
+            }).then(async (confirmed) => {
+                if (!confirmed) return;
+                
+                try {
+                    const response = await fetch(`/knowledge/logo/${logoId}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Erro ao remover logotipo');
+                    }
+                    
+                    toaster.success('Logotipo removido com sucesso!');
+                    setTimeout(() => window.location.reload(), 1000);
+                    
+                } catch (error) {
+                    console.error('Erro ao remover:', error);
+                    toaster.error('Erro ao remover logotipo');
+                }
+            });
+        }
+    });
+    
+    // Drag and drop
+    const uploadArea = document.querySelector('#perfil-logo .logo-upload-empty');
+    if (uploadArea && logoInput) {
+        setupDragAndDrop(uploadArea, 'perfil-logo-input');
+    }
+    
+    // Helper para CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
 {% endblock %}

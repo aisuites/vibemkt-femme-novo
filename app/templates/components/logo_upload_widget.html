@@ -1,0 +1,66 @@
+{% comment %}
+COMPONENTE REUTILIZÁVEL: Logo Upload Widget
+Exibe preview de logotipo existente ou área de upload
+
+Parâmetros:
+  - logo: Objeto Logo (opcional) - Se existir, mostra preview
+  - widget_id: ID único do widget (padrão: 'logo-widget')
+  - show_label: Mostrar label "Logotipo" (padrão: True)
+  - compact: Modo compacto para header (padrão: False)
+
+Uso:
+  {% include 'components/logo_upload_widget.html' with logo=primary_logo widget_id='perfil-logo' compact=True %}
+{% endcomment %}
+
+{% load static %}
+
+<div class="logo-upload-widget {% if compact %}logo-upload-widget-compact{% endif %}" id="{{ widget_id|default:'logo-widget' }}">
+  {% if show_label|default:True %}
+  <label class="logo-upload-label">Logotipo</label>
+  {% endif %}
+  
+  {% if logo %}
+  {# Preview de logotipo existente #}
+  <div class="logo-preview-container">
+    <div class="logo-preview-image">
+      <img src="#" 
+           alt="{{ logo.name }}" 
+           data-lazy-load="{{ logo.s3_key }}"
+           class="logo-img">
+    </div>
+    <div class="logo-preview-actions">
+      <button type="button" 
+              class="btn btn-sm btn-danger" 
+              data-action="remove-logo"
+              data-logo-id="{{ logo.id }}"
+              data-widget-id="{{ widget_id|default:'logo-widget' }}">
+        Remover logotipo
+      </button>
+    </div>
+  </div>
+  {% else %}
+  {# Área de upload (sem logotipo) #}
+  <div class="logo-upload-empty">
+    <div class="logo-upload-placeholder">
+      <div class="logo-upload-icon">🖼️</div>
+      <p class="logo-upload-text">Logotipo</p>
+      <p class="logo-upload-hint">Arraste e solte aqui, ou</p>
+      <button type="button" 
+              class="btn btn-primary btn-sm" 
+              data-action="select-logo"
+              data-widget-id="{{ widget_id|default:'logo-widget' }}">
+        Escolher arquivo
+      </button>
+      <p class="logo-upload-format">PNG/JPG • até 5 MB</p>
+    </div>
+  </div>
+  {% endif %}
+  
+  {# Input file oculto #}
+  <input type="file" 
+         id="{{ widget_id|default:'logo-widget' }}-input" 
+         accept="image/png,image/jpeg,image/jpg"
+         class="hidden-field"
+         data-upload-type="logo"
+         data-widget-id="{{ widget_id|default:'logo-widget' }}">
+</div>

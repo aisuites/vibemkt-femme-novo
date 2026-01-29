@@ -705,16 +705,23 @@ def perfil_view(request):
                 'sugestao': sugestao
             }
         
+        from apps.knowledge.models import Logo
+        primary_logo = Logo.objects.filter(
+            knowledge_base=kb,
+            is_primary=True
+        ).first()
+        
         context = {
             'kb': kb,
             'analysis_status': analysis_status,
             'campos_analise': campos_analise,
             'stats': stats,
             'kb_onboarding_completed': kb.onboarding_completed if kb else False,
-            'kb_suggestions_reviewed': kb.suggestions_reviewed if kb else False
+            'kb_suggestions_reviewed': kb.suggestions_reviewed if kb else False,
+            'primary_logo': primary_logo,
         }
         
-        print(f"✅ [PERFIL_VIEW] Contexto criado - onboarding: {context['kb_onboarding_completed']}, suggestions: {context['kb_suggestions_reviewed']}", flush=True)
+        print(f" [PERFIL_VIEW] Contexto criado - onboarding: {context['kb_onboarding_completed']}, suggestions: {context['kb_suggestions_reviewed']}", flush=True)
         
         return render(request, 'knowledge/perfil.html', context)
     
