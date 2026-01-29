@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!confirmed) return;
                 
                 try {
-                    const response = await fetch(`/knowledge/logo/${logoId}/`, {
+                    const response = await fetch(`/knowledge/logo/${logoId}/delete/`, {
                         method: 'DELETE',
                         headers: {
                             'X-CSRFToken': getCookie('csrftoken')
