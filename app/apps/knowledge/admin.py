@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils.html import format_html
+import json
 from .models import (
     KnowledgeBase, InternalSegment, ReferenceImage, CustomFont, Logo, 
     Competitor, ColorPalette, SocialNetwork, SocialNetworkTemplate,
@@ -51,8 +53,14 @@ class InternalSegmentAdmin(admin.ModelAdmin):
 
 @admin.register(KnowledgeBase)
 class KnowledgeBaseAdmin(admin.ModelAdmin):
-    list_display = ['nome_empresa', 'completude_percentual', 'is_complete', 'updated_at']
-    readonly_fields = ['completude_percentual', 'is_complete', 'created_at', 'updated_at']
+    list_display = ['nome_empresa', 'completude_percentual', 'is_complete', 'analysis_status', 'updated_at']
+    list_filter = ['analysis_status', 'is_complete']
+    readonly_fields = [
+        'completude_percentual', 'is_complete', 'created_at', 'updated_at',
+        'display_concorrentes', 'display_n8n_analysis', 'display_n8n_compilation',
+        'analysis_revision_id', 'analysis_requested_at', 'analysis_completed_at',
+        'compilation_requested_at', 'compilation_completed_at'
+    ]
     inlines = [InternalSegmentInline]
     
     fieldsets = (
@@ -72,10 +80,25 @@ class KnowledgeBaseAdmin(admin.ModelAdmin):
             'fields': ()
         }),
         ('Bloco 6: Sites e Redes Sociais', {
-            'fields': ('site_institucional', 'concorrentes', 'templates_redes')
+            'fields': ('site_institucional', 'display_concorrentes', 'templates_redes')
         }),
         ('Bloco 7: Dados e Insights', {
             'fields': ('fontes_confiaveis', 'canais_trends', 'palavras_chave_trends')
+        }),
+        ('Análise N8N', {
+            'fields': (
+                'analysis_status', 'analysis_revision_id',
+                'analysis_requested_at', 'analysis_completed_at',
+                'display_n8n_analysis'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Compilação N8N', {
+            'fields': (
+                'compilation_requested_at', 'compilation_completed_at',
+                'display_n8n_compilation'
+            ),
+            'classes': ('collapse',)
         }),
         ('Status', {
             'fields': ('completude_percentual', 'is_complete', 'last_updated_by', 'created_at', 'updated_at')
@@ -88,6 +111,69 @@ class KnowledgeBaseAdmin(admin.ModelAdmin):
     
     def has_delete_permission(self, request, obj=None):
         return False
+    
+    def display_concorrentes(self, obj):
+        """Exibe concorrentes de forma formatada"""
+        if not obj.concorrentes:
+            return format_html('<em style="color: #999;">Nenhum concorrente cadastrado</em>')
+        
+        html = '<div style="font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 4px;">'
+        for i, conc in enumerate(obj.concorrentes, 1):
+            nome = conc.get('nome', 'Sem nome')
+            url = conc.get('url', '')
+            html += f'<div style="margin-bottom: 8px; padding: 8px; background: white; border-left: 3px solid #7c3aed;">'
+            html += f'<strong>{i}. {nome}</strong>'
+            if url:
+                html += f'<br><a href="{url}" target="_blank" style="color: #7c3aed; font-size: 0.9em;">{url}</a>'
+            html += '</div>'
+        html += '</div>'
+        return format_html(html)
+    display_concorrentes.short_description = 'Concorrentes (Visualização)'
+    
+    def display_n8n_analysis(self, obj):
+        """Exibe análise N8N de forma formatada"""
+        if not obj.n8n_analysis:
+            return format_html('<em style="color: #999;">Nenhuma análise recebida</em>')
+        
+        try:
+            # Formatar JSON com indentação
+            json_str = json.dumps(obj.n8n_analysis, indent=2, ensure_ascii=False)
+            # Limitar tamanho para não sobrecarregar a página
+            if len(json_str) > 5000:
+                json_str = json_str[:5000] + '\n... (truncado)'
+            
+            html = f'<div style="font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 4px; max-height: 400px; overflow-y: auto;">'
+            html += f'<pre style="margin: 0; white-space: pre-wrap; word-wrap: break-word;">{json_str}</pre>'
+            html += '</div>'
+            
+            # Adicionar resumo
+            payload = obj.n8n_analysis.get('payload', [])
+            if payload and len(payload) > 0:
+                campos = len(payload[0].keys()) if isinstance(payload[0], dict) else 0
+                html = f'<p><strong>Resumo:</strong> {campos} campos analisados</p>' + html
+            
+            return format_html(html)
+        except Exception as e:
+            return format_html(f'<em style="color: #d32f2f;">Erro ao formatar JSON: {str(e)}</em>')
+    display_n8n_analysis.short_description = 'Análise N8N (JSON Formatado)'
+    
+    def display_n8n_compilation(self, obj):
+        """Exibe compilação N8N de forma formatada"""
+        if not obj.n8n_compilation:
+            return format_html('<em style="color: #999;">Nenhuma compilação recebida</em>')
+        
+        try:
+            json_str = json.dumps(obj.n8n_compilation, indent=2, ensure_ascii=False)
+            if len(json_str) > 5000:
+                json_str = json_str[:5000] + '\n... (truncado)'
+            
+            html = f'<div style="font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 4px; max-height: 400px; overflow-y: auto;">'
+            html += f'<pre style="margin: 0; white-space: pre-wrap; word-wrap: break-word;">{json_str}</pre>'
+            html += '</div>'
+            return format_html(html)
+        except Exception as e:
+            return format_html(f'<em style="color: #d32f2f;">Erro ao formatar JSON: {str(e)}</em>')
+    display_n8n_compilation.short_description = 'Compilação N8N (JSON Formatado)'
 
 
 @admin.register(ReferenceImage)
