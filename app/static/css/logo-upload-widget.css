@@ -4,6 +4,15 @@
  */
 
 /* ========================================
+   UTILITY: OCULTAR INPUT FILE
+   ======================================== */
+
+.hidden-field,
+input.hidden-field {
+  display: none !important;
+}
+
+/* ========================================
    CONTAINER PRINCIPAL
    ======================================== */
 
