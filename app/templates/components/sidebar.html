@@ -8,18 +8,29 @@
   {% endcomment %}
   
   {% if not kb_onboarding_completed %}
-    <!-- ONBOARDING NÃO CONCLUÍDO: Apenas Base IAMKT -->
+    <!-- FLUXO 1: ONBOARDING NÃO CONCLUÍDO - Apenas Base IAMKT -->
     <div>
-      <div class="sidebar-section-title">Configuração Inicial</div>
+      <div class="sidebar-section-title">Onboarding</div>
       <nav class="sidebar-nav">
-        <a href="{% url 'knowledge:view' %}" class="sidebar-link {% if 'knowledge' in request.resolver_match.namespace %}active{% endif %}">
-          <span class="icon">🧠</span>
+        <a href="{% url 'knowledge:view' %}" class="sidebar-link active">
+          <span class="icon">📋</span>
           <span>Base IAMKT</span>
         </a>
       </nav>
     </div>
+  {% elif kb_onboarding_completed and not kb_suggestions_reviewed %}
+    <!-- FLUXO 2: ONBOARDING COMPLETO MAS SUGESTÕES NÃO REVISADAS - Apenas Perfil -->
+    <div>
+      <div class="sidebar-section-title">Análise</div>
+      <nav class="sidebar-nav">
+        <a href="{% url 'knowledge:perfil_view' %}" class="sidebar-link {% if request.resolver_match.url_name == 'perfil_view' %}active{% endif %}">
+          <span class="icon">🏢</span>
+          <span>Perfil da Empresa</span>
+        </a>
+      </nav>
+    </div>
   {% else %}
-    <!-- ONBOARDING CONCLUÍDO: Menu completo -->
+    <!-- FLUXO 3: SUGESTÕES REVISADAS - Menu completo -->
     
     <!-- Navegação -->
     <div>

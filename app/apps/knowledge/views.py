@@ -701,10 +701,11 @@ def perfil_view(request):
             'analysis_status': analysis_status,
             'campos_analise': campos_analise,
             'stats': stats,
-            'kb_onboarding_completed': kb.onboarding_completed if kb else False
+            'kb_onboarding_completed': kb.onboarding_completed if kb else False,
+            'kb_suggestions_reviewed': kb.suggestions_reviewed if kb else False
         }
         
-        print(f"✅ [PERFIL_VIEW] Contexto criado - kb_onboarding_completed: {context['kb_onboarding_completed']}", flush=True)
+        print(f"✅ [PERFIL_VIEW] Contexto criado - onboarding: {context['kb_onboarding_completed']}, suggestions: {context['kb_suggestions_reviewed']}", flush=True)
         
         return render(request, 'knowledge/perfil.html', context)
     
@@ -712,9 +713,10 @@ def perfil_view(request):
     context = {
         'kb': kb,
         'analysis_status': analysis_status,
-        'kb_onboarding_completed': kb.onboarding_completed if kb else False
+        'kb_onboarding_completed': kb.onboarding_completed if kb else False,
+        'kb_suggestions_reviewed': kb.suggestions_reviewed if kb else False
     }
     
-    print(f"✅ [PERFIL_VIEW] Contexto criado (outros estados) - kb_onboarding_completed: {context['kb_onboarding_completed']}", flush=True)
+    print(f"✅ [PERFIL_VIEW] Contexto criado (outros estados) - onboarding: {context['kb_onboarding_completed']}, suggestions: {context['kb_suggestions_reviewed']}", flush=True)
     
     return render(request, 'knowledge/perfil.html', context)

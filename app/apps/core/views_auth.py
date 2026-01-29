@@ -67,7 +67,7 @@ def login_view(request):
                 print(f"🔄 [LOGIN] Redirecionando para 'next': {next_url}", flush=True)
                 return redirect(next_url)
             
-            # Verificar onboarding para decidir redirecionamento
+            # Verificar onboarding e suggestions_reviewed para decidir redirecionamento
             from apps.knowledge.models import KnowledgeBase
             try:
                 kb = KnowledgeBase.objects.filter(organization=org).first()
@@ -75,14 +75,23 @@ def login_view(request):
                 
                 if kb:
                     print(f"🔍 [LOGIN] Onboarding completo: {kb.onboarding_completed}", flush=True)
+                    print(f"🔍 [LOGIN] Sugestões revisadas: {kb.suggestions_reviewed}", flush=True)
                     print(f"🔍 [LOGIN] Analysis status: {kb.analysis_status}", flush=True)
                     
-                    if kb.onboarding_completed:
-                        # Onboarding completo: redirecionar para Perfil da Empresa
-                        print(f"🔄 [LOGIN] ✅ REDIRECIONANDO PARA PERFIL (knowledge:perfil_view)", flush=True)
+                    # FLUXO 1: Onboarding não concluído
+                    if not kb.onboarding_completed:
+                        print(f"🔄 [LOGIN] FLUXO 1: Redirecionando para Base de Conhecimento", flush=True)
+                        return redirect('knowledge:view')
+                    
+                    # FLUXO 2: Onboarding completo mas sugestões não revisadas
+                    elif kb.onboarding_completed and not kb.suggestions_reviewed:
+                        print(f"🔄 [LOGIN] FLUXO 2: Redirecionando para Perfil (Edição)", flush=True)
                         return redirect('knowledge:perfil_view')
+                    
+                    # FLUXO 3: Onboarding completo e sugestões revisadas
                     else:
-                        print(f"🔍 [LOGIN] Onboarding NÃO completo, vai para dashboard", flush=True)
+                        print(f"� [LOGIN] FLUXO 3: Redirecionando para Dashboard", flush=True)
+                        return redirect('core:dashboard')
                 else:
                     print(f"🔍 [LOGIN] KB não encontrado, vai para dashboard", flush=True)
             except Exception as e:
@@ -91,7 +100,7 @@ def login_view(request):
                 print(traceback.format_exc(), flush=True)
             
             # Padrão: redirecionar para dashboard
-            print(f"🔄 [LOGIN] REDIRECIONANDO PARA DASHBOARD (core:dashboard)", flush=True)
+            print(f"🔄 [LOGIN] REDIRECIONANDO PARA DASHBOARD (padrão)", flush=True)
             return redirect('core:dashboard')
         else:
             # Credenciais inválidas

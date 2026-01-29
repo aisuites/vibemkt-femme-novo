@@ -53,20 +53,31 @@ class OnboardingRequiredMiddleware(MiddlewareMixin):
                 
                 if kb:
                     print(f"🔍 [MIDDLEWARE] Onboarding completo: {kb.onboarding_completed}", flush=True)
+                    print(f"🔍 [MIDDLEWARE] Sugestões revisadas: {kb.suggestions_reviewed}", flush=True)
                     
-                    # Se onboarding não concluído, redirecionar para Base de Conhecimento
+                    # FLUXO 1: Onboarding não concluído - apenas Base de Conhecimento
                     if not kb.onboarding_completed:
-                        # Evitar loop de redirecionamento
                         if not request.path.startswith('/knowledge/'):
-                            print(f"🔄 [MIDDLEWARE] Redirecionando para knowledge:view (onboarding incompleto)", flush=True)
+                            print(f"🔄 [MIDDLEWARE] FLUXO 1: Redirecionando para Base de Conhecimento", flush=True)
                             return redirect('knowledge:view')
-                    else:
-                        # Onboarding concluído: redirecionar para Perfil se tentar acessar raiz ou dashboard
-                        if request.path in ['/', '/dashboard/', '/dashboard']:
-                            print(f"🔄 [MIDDLEWARE] Redirecionando para perfil (onboarding completo)", flush=True)
+                    
+                    # FLUXO 2: Onboarding completo mas sugestões não revisadas - apenas Perfil
+                    elif kb.onboarding_completed and not kb.suggestions_reviewed:
+                        # Permitir acesso apenas a /knowledge/perfil/ e URLs permitidas
+                        if not request.path.startswith('/knowledge/perfil'):
+                            print(f"🔄 [MIDDLEWARE] FLUXO 2: Redirecionando para Perfil (Edição)", flush=True)
                             return redirect('knowledge:perfil_view')
                         else:
-                            print(f"✅ [MIDDLEWARE] Permitindo acesso a {request.path} (onboarding completo)", flush=True)
+                            print(f"✅ [MIDDLEWARE] FLUXO 2: Permitindo acesso a Perfil", flush=True)
+                    
+                    # FLUXO 3: Onboarding completo e sugestões revisadas - acesso total
+                    else:
+                        # Redirecionar para dashboard se tentar acessar raiz
+                        if request.path in ['/', '/dashboard/', '/dashboard']:
+                            print(f"🔄 [MIDDLEWARE] FLUXO 3: Redirecionando para Dashboard", flush=True)
+                            return redirect('core:dashboard')
+                        else:
+                            print(f"✅ [MIDDLEWARE] FLUXO 3: Permitindo acesso a {request.path}", flush=True)
             except Exception as e:
                 # Em caso de erro, permitir acesso (fail-safe)
                 print(f"❌ [MIDDLEWARE] Erro: {e}", flush=True)

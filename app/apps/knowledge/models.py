@@ -239,6 +239,28 @@ class KnowledgeBase(models.Model):
         help_text='Usuário que completou o onboarding pela primeira vez'
     )
     
+    # APROVAÇÃO DE SUGESTÕES
+    suggestions_reviewed = models.BooleanField(
+        default=False,
+        verbose_name='Sugestões Revisadas',
+        help_text='True quando usuário clica em "Aplicar Sugestões Selecionadas" pela primeira vez'
+    )
+    suggestions_reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Data de Revisão das Sugestões',
+        help_text='Timestamp de quando as sugestões foram revisadas'
+    )
+    suggestions_reviewed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='suggestions_reviews',
+        verbose_name='Sugestões Revisadas Por',
+        help_text='Usuário que revisou as sugestões pela primeira vez'
+    )
+    
     # ========================================
     # ANÁLISE N8N
     # ========================================
