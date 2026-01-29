@@ -54,9 +54,25 @@ def login_view(request):
             # (a flag será setada no dashboard após exibir o modal)
             request.session['show_welcome_modal'] = True
             
-            # Redirecionar para página solicitada ou dashboard
-            next_url = request.GET.get('next', 'core:dashboard')
-            return redirect(next_url)
+            # Verificar se tem parâmetro 'next' na URL
+            next_url = request.GET.get('next')
+            if next_url:
+                return redirect(next_url)
+            
+            # Verificar onboarding para decidir redirecionamento
+            from apps.knowledge.models import KnowledgeBase
+            try:
+                kb = KnowledgeBase.objects.filter(organization=org).first()
+                if kb and kb.onboarding_completed:
+                    # Onboarding completo: redirecionar para Perfil da Empresa
+                    print(f"🔄 [LOGIN] Onboarding completo, redirecionando para perfil", flush=True)
+                    return redirect('knowledge:perfil_view')
+            except Exception as e:
+                print(f"❌ [LOGIN] Erro ao verificar onboarding: {e}", flush=True)
+            
+            # Padrão: redirecionar para dashboard
+            print(f"🔄 [LOGIN] Redirecionando para dashboard", flush=True)
+            return redirect('core:dashboard')
         else:
             # Credenciais inválidas
             messages.error(request, 'E-mail ou senha incorretos. Tente novamente.')
