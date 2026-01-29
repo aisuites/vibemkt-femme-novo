@@ -61,8 +61,8 @@ class OnboardingRequiredMiddleware(MiddlewareMixin):
                             print(f"🔄 [MIDDLEWARE] Redirecionando para knowledge:view (onboarding incompleto)", flush=True)
                             return redirect('knowledge:view')
                     else:
-                        # Onboarding concluído: redirecionar para Perfil se tentar acessar dashboard
-                        if request.path == '/':
+                        # Onboarding concluído: redirecionar para Perfil se tentar acessar raiz ou dashboard
+                        if request.path in ['/', '/dashboard/', '/dashboard']:
                             print(f"🔄 [MIDDLEWARE] Redirecionando para perfil (onboarding completo)", flush=True)
                             return redirect('knowledge:perfil_view')
                         else:

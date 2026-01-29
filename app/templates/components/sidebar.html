@@ -29,6 +29,10 @@
           <span class="icon">🏠</span>
           <span>Dashboard</span>
         </a>
+        <a href="{% url 'knowledge:perfil_view' %}" class="sidebar-link {% if request.resolver_match.url_name == 'perfil_view' %}active{% endif %}">
+          <span class="icon">🏢</span>
+          <span>Perfil da Empresa</span>
+        </a>
       </nav>
     </div>
 
