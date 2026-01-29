@@ -213,7 +213,7 @@ async function uploadFileToS3(file, type, uploadUrlEndpoint, createRecordEndpoin
                 s3Key: urlData.data.s3_key,
                 name: file.name.replace(/\.[^/.]+$/, ''),
                 fileFormat: file.type.split('/')[1],
-                ...(type === 'logo' ? {logoType: 'principal'} : {category: 'geral'})
+                ...(type === 'logo' ? {logoType: 'principal', isPrimary: 'true'} : {category: 'geral'})
             })
         });
         
