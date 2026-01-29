@@ -30,15 +30,20 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         
         if user is not None:
+            print(f"🔍 [LOGIN] Usuário autenticado: {user.email}", flush=True)
+            
             # Verificar se usuário tem organização
             if not hasattr(user, 'organization') or user.organization is None:
+                print(f"❌ [LOGIN] Usuário sem organização: {user.email}", flush=True)
                 messages.error(request, 'Sua conta não está associada a nenhuma organização. Entre em contato com o suporte.')
                 return render(request, 'auth/login.html')
             
             # Verificar status da organização
             org = user.organization
+            print(f"🔍 [LOGIN] Organização: {org.name} (id={org.id}, active={org.is_active})", flush=True)
             
             if not org.is_active:
+                print(f"❌ [LOGIN] Organização inativa: {org.name}", flush=True)
                 if org.approved_at:
                     # Organização foi suspensa
                     messages.error(request, 'Sua organização está suspensa. Para mais detalhes, entre em contato com o suporte: suporte@aisuites.com.br')
@@ -49,6 +54,7 @@ def login_view(request):
             
             # Login bem-sucedido - organização ativa
             auth_login(request, user)
+            print(f"✅ [LOGIN] Login bem-sucedido: {user.email}", flush=True)
             
             # Sempre mostrar modal de boas-vindas no primeiro login da sessão
             # (a flag será setada no dashboard após exibir o modal)
@@ -56,22 +62,36 @@ def login_view(request):
             
             # Verificar se tem parâmetro 'next' na URL
             next_url = request.GET.get('next')
+            print(f"🔍 [LOGIN] Parâmetro 'next': {next_url}", flush=True)
             if next_url:
+                print(f"🔄 [LOGIN] Redirecionando para 'next': {next_url}", flush=True)
                 return redirect(next_url)
             
             # Verificar onboarding para decidir redirecionamento
             from apps.knowledge.models import KnowledgeBase
             try:
                 kb = KnowledgeBase.objects.filter(organization=org).first()
-                if kb and kb.onboarding_completed:
-                    # Onboarding completo: redirecionar para Perfil da Empresa
-                    print(f"🔄 [LOGIN] Onboarding completo, redirecionando para perfil", flush=True)
-                    return redirect('knowledge:perfil_view')
+                print(f"🔍 [LOGIN] KB encontrado: {kb is not None}", flush=True)
+                
+                if kb:
+                    print(f"🔍 [LOGIN] Onboarding completo: {kb.onboarding_completed}", flush=True)
+                    print(f"🔍 [LOGIN] Analysis status: {kb.analysis_status}", flush=True)
+                    
+                    if kb.onboarding_completed:
+                        # Onboarding completo: redirecionar para Perfil da Empresa
+                        print(f"🔄 [LOGIN] ✅ REDIRECIONANDO PARA PERFIL (knowledge:perfil_view)", flush=True)
+                        return redirect('knowledge:perfil_view')
+                    else:
+                        print(f"🔍 [LOGIN] Onboarding NÃO completo, vai para dashboard", flush=True)
+                else:
+                    print(f"🔍 [LOGIN] KB não encontrado, vai para dashboard", flush=True)
             except Exception as e:
                 print(f"❌ [LOGIN] Erro ao verificar onboarding: {e}", flush=True)
+                import traceback
+                print(traceback.format_exc(), flush=True)
             
             # Padrão: redirecionar para dashboard
-            print(f"🔄 [LOGIN] Redirecionando para dashboard", flush=True)
+            print(f"🔄 [LOGIN] REDIRECIONANDO PARA DASHBOARD (core:dashboard)", flush=True)
             return redirect('core:dashboard')
         else:
             # Credenciais inválidas
