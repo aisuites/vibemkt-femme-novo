@@ -161,32 +161,4 @@ document.addEventListener('DOMContentLoaded', function() {
         return cookieValue;
     }
     
-    /**
-     * Polling para verificar status de compilação
-     */
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('status') === 'compiling') {
-        checkCompilationStatus();
-    }
-    
-    async function checkCompilationStatus() {
-        try {
-            const response = await fetch('/knowledge/perfil/status/');
-            const data = await response.json();
-            
-            if (data.status === 'compiled') {
-                // Compilação concluída, redirecionar para modo visualização
-                window.location.href = '/knowledge/perfil/?status=compiled';
-            } else if (data.status === 'error') {
-                alert('Erro ao gerar compilação. Por favor, tente novamente.');
-                window.location.href = '/knowledge/perfil/';
-            } else {
-                // Ainda processando, verificar novamente em 10 segundos
-                setTimeout(checkCompilationStatus, 10000);
-            }
-        } catch (error) {
-            console.error('Erro ao verificar status:', error);
-            setTimeout(checkCompilationStatus, 10000);
-        }
-    }
 });

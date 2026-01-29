@@ -25,12 +25,15 @@
     
     {% elif analysis_status == 'processing' %}
         <!-- ESTADO 3: Processando Análise -->
-        <div class="perfil-loading">
-            <div class="perfil-loading-spinner"></div>
-            <h2 class="perfil-loading-text">Analisando seus dados...</h2>
-            <p style="color: var(--color-text-muted); margin-top: var(--spacing-2);">
-                Isso pode levar alguns minutos. A página será atualizada automaticamente.
+        <div class="perfil-empty">
+            <div class="perfil-empty-icon">⏳</div>
+            <h2 class="perfil-empty-title">BASE EM PROCESSAMENTO</h2>
+            <p class="perfil-empty-text">
+                Sua Base está sendo analisada pelo nosso agente de IA e estará disponível em breve.
             </p>
+            <button id="btn-check-analysis" class="btn btn-primary" onclick="window.location.reload()">
+                Verificar se está Disponível
+            </button>
         </div>
     
     {% elif analysis_status == 'completed' %}

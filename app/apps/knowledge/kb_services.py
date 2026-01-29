@@ -494,6 +494,12 @@ class KnowledgeBaseService:
                 # Processar redes sociais
                 networks_updated, network_errors = SocialNetworkService.process_social_networks(request, kb)
                 all_errors.extend(network_errors)
+                
+                # Alterar status para 'processing' se ainda estiver 'pending'
+                if kb.analysis_status == 'pending':
+                    kb.analysis_status = 'processing'
+                    kb.save(update_fields=['analysis_status'])
+                    print(f"📊 Status alterado para 'processing'", flush=True)
             
             # Transação foi commitada com sucesso aqui
             print(f"✅ save_all_blocks SUCESSO - Erros: {all_errors}", flush=True)

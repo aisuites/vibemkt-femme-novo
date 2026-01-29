@@ -377,23 +377,10 @@ def knowledge_save_all(request):
             kb.onboarding_completed_by = request.user
             kb.save(update_fields=['onboarding_completed', 'onboarding_completed_at', 'onboarding_completed_by'])
             
-            # TODO: Integração N8N (implementar após definir payload e retorno)
-            # ========================================
-            # PLACEHOLDER: Envio de dados para N8N
-            # ========================================
-            # try:
-            #     n8n_payload = prepare_n8n_payload(kb)
-            #     n8n_response = send_to_n8n(n8n_payload, timeout=30)
-            #     process_company_profile(n8n_response, kb.organization)
-            # except N8NTimeoutError:
-            #     # Retry em background (Celery task)
-            #     retry_n8n_send.delay(kb.id)
-            # except Exception as e:
-            #     logger.error(f'Erro ao enviar para N8N: {e}')
-            # ========================================
-            
-            messages.success(request, '🎉 Base de Conhecimento salva com sucesso! Bem-vindo ao IAMKT!')
-            return redirect('core:dashboard')
+            # Redirecionar para página Perfil da Empresa
+            # O status já foi alterado para 'processing' pelo Service Layer
+            messages.success(request, '🎉 Base de Conhecimento salva com sucesso! Redirecionando para análise...')
+            return redirect('knowledge:perfil_view')
         
         messages.success(request, '✅ Base de Conhecimento atualizada com sucesso!')
         return redirect('knowledge:view')
@@ -592,8 +579,19 @@ def knowledge_upload_font(request):
             
             return JsonResponse({
                 'success': True,
-                'message': 'Fonte removida com sucesso'
+                'message': 'Fonte enviada com sucesso'
             })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Erro: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'success': False,
+            'errors': form.errors
+        }, status=400)
 
 
 @never_cache
