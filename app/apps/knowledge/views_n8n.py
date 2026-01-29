@@ -45,18 +45,20 @@ def n8n_webhook_fundamentos(request):
             'error': 'Unauthorized'
         }, status=401)
     
-    # CAMADA 1.5: Validação de IP (opcional, mas recomendado)
+    # CAMADA 1.5: Validação de IP (TEMPORARIAMENTE DESABILITADA PARA TESTE)
     client_ip = request.META.get('REMOTE_ADDR')
-    allowed_ips = settings.N8N_ALLOWED_IPS.split(',')
+    # allowed_ips = settings.N8N_ALLOWED_IPS.split(',')
     
-    if client_ip not in allowed_ips:
-        logger.warning(
-            f"Unauthorized IP attempting to access webhook: {client_ip}"
-        )
-        return JsonResponse({
-            'success': False,
-            'error': 'Unauthorized IP'
-        }, status=401)
+    # if client_ip not in allowed_ips:
+    #     logger.warning(
+    #         f"Unauthorized IP attempting to access webhook: {client_ip}"
+    #     )
+    #     return JsonResponse({
+    #         'success': False,
+    #         'error': 'Unauthorized IP'
+    #     }, status=401)
+    
+    logger.info(f"Webhook request from IP: {client_ip}")
     
     # CAMADA 2: Rate Limiting por IP
     cache_key = f"n8n_webhook_rate_limit_{client_ip}"
