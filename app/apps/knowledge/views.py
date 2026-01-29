@@ -20,6 +20,7 @@ from .forms import (
     LogoUploadForm, CustomFontUploadForm
 )
 from .kb_services import KnowledgeBaseService
+from .services.n8n_service import N8NService
 from apps.utils.s3 import upload_to_s3, get_signed_url
 from apps.utils.image_hash import (
     calculate_perceptual_hash, 
@@ -385,6 +386,18 @@ def knowledge_save_all(request):
             kb.onboarding_completed_at = timezone.now()
             kb.onboarding_completed_by = request.user
             kb.save(update_fields=['onboarding_completed', 'onboarding_completed_at', 'onboarding_completed_by'])
+            
+            # ========================================
+            # ENVIAR PARA N8N: Análise de Fundamentos
+            # ========================================
+            print("📤 Enviando dados para N8N...", flush=True)
+            n8n_result = N8NService.send_fundamentos(kb)
+            
+            if n8n_result.get('success'):
+                print(f"✅ N8N: Dados enviados com sucesso. Revision ID: {n8n_result.get('revision_id')}", flush=True)
+            else:
+                print(f"⚠️ N8N: Falha ao enviar dados. Erro: {n8n_result.get('error')}", flush=True)
+                # Não bloquear o fluxo se N8N falhar
             
             # Redirecionar para página Perfil da Empresa
             # O status já foi alterado para 'processing' pelo Service Layer
