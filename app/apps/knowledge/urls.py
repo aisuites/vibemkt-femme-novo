@@ -13,6 +13,7 @@ app_name = 'knowledge'
 urlpatterns = [
     # Visualização e edição (página única)
     path('', views.knowledge_view, name='view'),
+    path('perfil/', views.perfil_view, name='perfil_view'),
     
     # Salvamento
     path('save-block/<int:block_number>/', views.knowledge_save_block, name='save_block'),

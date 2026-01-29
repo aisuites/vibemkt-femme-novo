@@ -1,0 +1,190 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Perfil da Empresa - IAMKT{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/perfil.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="perfil-container">
+    
+    {% if analysis_status == 'pending' %}
+        <!-- ESTADO 1: Pendente - Redirecionar para Base IAMKT -->
+        <div class="perfil-empty">
+            <div class="perfil-empty-icon">📋</div>
+            <h2 class="perfil-empty-title">Base IAMKT Incompleta</h2>
+            <p class="perfil-empty-text">
+                Complete sua Base de Conhecimento para solicitar a análise do agente IAMKT.
+            </p>
+            <a href="{% url 'knowledge_view' %}" class="btn btn-primary">
+                Ir para Base IAMKT
+            </a>
+        </div>
+    
+    {% elif analysis_status == 'processing' %}
+        <!-- ESTADO 3: Processando Análise -->
+        <div class="perfil-loading">
+            <div class="perfil-loading-spinner"></div>
+            <h2 class="perfil-loading-text">Analisando seus dados...</h2>
+            <p style="color: var(--color-text-muted); margin-top: var(--spacing-2);">
+                Isso pode levar alguns minutos. A página será atualizada automaticamente.
+            </p>
+        </div>
+    
+    {% elif analysis_status == 'completed' %}
+        <!-- ESTADO 4: Modo Edição (Análise Recebida) -->
+        
+        <!-- Header com Logo + Instruções -->
+        <div class="perfil-header">
+            <div class="perfil-header-left">
+                <!-- TODO: Área de upload de logo -->
+                <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); text-align: center;">
+                    Área de upload de logotipo<br>(a implementar)
+                </p>
+            </div>
+            <div class="perfil-header-right">
+                <h1 class="perfil-title">Perfil da Empresa</h1>
+                <p class="perfil-instructions">
+                    Revise os blocos abaixo: compare o que foi <strong>informado</strong> 
+                    com a <strong>avaliação</strong> do agente e, quando houver, 
+                    analise a <strong>sugestão</strong>. Você pode seguir mesmo sem 
+                    aceitar ou editar nenhum campo. Caso edite ou aceite alguma sugestão, 
+                    enviaremos apenas o que mudou para o agente.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Resumo Geral -->
+        <div class="analysis-summary">
+            <h3 class="analysis-summary-title">📊 Resumo da Análise</h3>
+            <div class="analysis-summary-stats">
+                <div class="stat-item stat-danger">
+                    <span class="stat-number">{{ stats.fraco }}</span>
+                    <span class="stat-label">campos fracos</span>
+                </div>
+                <div class="stat-item stat-warning">
+                    <span class="stat-number">{{ stats.medio }}</span>
+                    <span class="stat-label">campos médios</span>
+                </div>
+                <div class="stat-item stat-success">
+                    <span class="stat-number">{{ stats.bom }}</span>
+                    <span class="stat-label">campos bons</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lista de Cards de Análise -->
+        <div class="analysis-cards-list">
+            {% for campo_nome, campo_data in campos_analise.items %}
+            <div class="analysis-card" data-field="{{ campo_nome }}">
+                <div class="analysis-card-header">
+                    <div>
+                        <h3 class="analysis-card-title">{{ campo_data.label }}</h3>
+                        <p class="analysis-card-subtitle">Bloco avaliado pelo agente</p>
+                    </div>
+                    {% if campo_data.status == 'fraco' %}
+                        <span class="badge badge-danger">fraco</span>
+                    {% elif campo_data.status == 'médio' %}
+                        <span class="badge badge-warning">médio</span>
+                    {% elif campo_data.status == 'bom' %}
+                        <span class="badge badge-success">bom</span>
+                    {% endif %}
+                </div>
+                
+                <div class="analysis-card-body">
+                    <div class="analysis-section">
+                        <label class="analysis-label">INFORMADO</label>
+                        <div class="analysis-content">{{ campo_data.informado|default:"" }}</div>
+                    </div>
+                    
+                    <div class="analysis-section">
+                        <label class="analysis-label">AVALIAÇÃO</label>
+                        <div class="analysis-content">{{ campo_data.avaliacao }}</div>
+                    </div>
+                    
+                    {% if campo_data.sugestao %}
+                    <div class="analysis-section analysis-section-full">
+                        <label class="analysis-label">SUGESTÃO DO AGENTE</label>
+                        <div class="analysis-content">{{ campo_data.sugestao }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if campo_data.sugestao %}
+                <div class="analysis-card-actions">
+                    <button class="btn-action btn-action-accept">
+                        ✓ Aceitar
+                    </button>
+                    <button class="btn-action btn-action-reject">
+                        ✗ Rejeitar
+                    </button>
+                </div>
+                
+                <div class="analysis-feedback analysis-feedback-accepted">
+                    Você marcou esta sugestão como ACEITA.
+                </div>
+                <div class="analysis-feedback analysis-feedback-rejected">
+                    Você rejeitou esta sugestão.
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Botão Final -->
+        <div class="perfil-actions">
+            <button id="btn-submit-suggestions" class="btn btn-primary btn-lg" disabled>
+                Aplicar Sugestões Selecionadas <span class="counter">0</span>
+            </button>
+        </div>
+    
+    {% elif analysis_status == 'compiling' %}
+        <!-- ESTADO 5: Processando Compilação -->
+        <div class="perfil-loading">
+            <div class="perfil-loading-spinner"></div>
+            <h2 class="perfil-loading-text">Gerando seu plano de marketing...</h2>
+            <p style="color: var(--color-text-muted); margin-top: var(--spacing-2);">
+                Quase lá! Estamos compilando todas as informações.
+            </p>
+        </div>
+    
+    {% elif analysis_status == 'compiled' %}
+        <!-- ESTADO 6: Modo Visualização (Compilação Recebida) -->
+        <div class="perfil-empty">
+            <div class="perfil-empty-icon">✅</div>
+            <h2 class="perfil-empty-title">Plano de Marketing Gerado!</h2>
+            <p class="perfil-empty-text">
+                Modo visualização será implementado na próxima fase.
+            </p>
+        </div>
+    
+    {% elif analysis_status == 'error' %}
+        <!-- ESTADO: Erro -->
+        <div class="perfil-empty">
+            <div class="perfil-empty-icon">⚠️</div>
+            <h2 class="perfil-empty-title">Erro ao Processar</h2>
+            <p class="perfil-empty-text">
+                Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente.
+            </p>
+            <a href="{% url 'knowledge_view' %}" class="btn btn-primary">
+                Voltar para Base IAMKT
+            </a>
+        </div>
+    
+    {% else %}
+        <!-- Estado desconhecido -->
+        <div class="perfil-empty">
+            <div class="perfil-empty-icon">❓</div>
+            <h2 class="perfil-empty-title">Estado Desconhecido</h2>
+            <p class="perfil-empty-text">Status: {{ analysis_status }}</p>
+        </div>
+    {% endif %}
+    
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/perfil.js' %}"></script>
+{% endblock %}

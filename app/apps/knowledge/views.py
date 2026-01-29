@@ -592,21 +592,118 @@ def knowledge_upload_font(request):
             
             return JsonResponse({
                 'success': True,
-                'message': 'Fonte enviada com sucesso!',
-                'font': {
-                    'id': font.id,
-                    'name': font.name,
-                    'url': get_signed_url(s3_key)
-                }
+                'message': 'Fonte removida com sucesso'
             })
+
+
+@never_cache
+@login_required
+def perfil_view(request):
+    """
+    Página "Perfil da Empresa" - Exibe análise N8N e permite aceitar/rejeitar sugestões
+    Estados: pending, processing, completed, compiling, compiled, error
+    """
+    # Buscar KnowledgeBase da organization
+    try:
+        kb = KnowledgeBase.objects.for_request(request).first()
+    except Exception:
+        kb = None
+    
+    if not kb:
+        messages.error(request, 'Base de Conhecimento não encontrada.')
+        return redirect('knowledge_view')
+    
+    # Determinar estado atual
+    analysis_status = kb.analysis_status
+    
+    # ESTADO 4: Modo Edição (Análise Completa)
+    if analysis_status == 'completed' and kb.n8n_analysis:
+        # Processar dados da análise N8N
+        payload = kb.n8n_analysis.get('payload', [])
+        
+        if not payload or len(payload) == 0:
+            messages.error(request, 'Dados de análise inválidos.')
+            return redirect('knowledge_view')
+        
+        # Extrair campos analisados (payload[0] contém todos os campos)
+        campos_raw = payload[0] if isinstance(payload, list) else {}
+        
+        # Mapear nomes técnicos para labels amigáveis
+        field_labels = {
+            'missao': 'Missão',
+            'visao': 'Visão',
+            'valores': 'Valores',
+            'descricao_do_produto': 'Descrição do Produto/Serviço',
+            'publico_alvo': 'Público-Alvo',
+            'posicionamento': 'Posicionamento',
+            'diferenciais': 'Diferenciais',
+            'proposta_de_valor': 'Proposta de Valor',
+            'tom_de_voz': 'Tom de Voz',
+            'paleta_de_cores': 'Paleta de Cores',
+            'fontes': 'Fontes Tipográficas',
+            'logotipo': 'Logotipo',
+            'imagens_de_referencia': 'Imagens de Referência',
+            'website': 'Website',
+            'redes_sociais': 'Redes Sociais',
+            'concorrencia': 'Concorrência',
+            'frase_em_10_palavras': 'Frase em 10 Palavras',
+            'sugestoes_estrategicas_de_ativacao_de_marca': 'Sugestões Estratégicas'
+        }
+        
+        # Processar campos para o template
+        campos_analise = {}
+        stats = {'fraco': 0, 'medio': 0, 'bom': 0}
+        
+        for campo_nome, campo_data in campos_raw.items():
+            if not isinstance(campo_data, dict):
+                continue
             
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': f'Erro: {str(e)}'
-            }, status=500)
-    else:
-        return JsonResponse({
-            'success': False,
-            'errors': form.errors
-        }, status=400)
+            status = campo_data.get('status', '')
+            
+            # Contar estatísticas
+            if status == 'fraco':
+                stats['fraco'] += 1
+            elif status == 'médio':
+                stats['medio'] += 1
+            elif status == 'bom':
+                stats['bom'] += 1
+            
+            # Preparar dados do campo
+            informado = campo_data.get('informado_pelo_usuario', '')
+            
+            # Converter listas/dicts em string legível
+            if isinstance(informado, list):
+                informado = ', '.join(str(i) for i in informado) if informado else ''
+            elif isinstance(informado, dict):
+                informado = json.dumps(informado, ensure_ascii=False, indent=2)
+            
+            sugestao = campo_data.get('sugestao_do_agente_iamkt', '')
+            if isinstance(sugestao, list):
+                sugestao = '\n'.join(f"• {s}" for s in sugestao)
+            elif isinstance(sugestao, dict):
+                sugestao = json.dumps(sugestao, ensure_ascii=False, indent=2)
+            
+            campos_analise[campo_nome] = {
+                'label': field_labels.get(campo_nome, campo_nome.replace('_', ' ').title()),
+                'status': status,
+                'informado': informado,
+                'avaliacao': campo_data.get('avaliacao', ''),
+                'sugestao': sugestao
+            }
+        
+        context = {
+            'kb': kb,
+            'analysis_status': analysis_status,
+            'campos_analise': campos_analise,
+            'stats': stats
+        }
+        
+        return render(request, 'knowledge/perfil.html', context)
+    
+    # Outros estados: apenas passar status
+    context = {
+        'kb': kb,
+        'analysis_status': analysis_status
+    }
+    
+    return render(request, 'knowledge/perfil.html', context)
