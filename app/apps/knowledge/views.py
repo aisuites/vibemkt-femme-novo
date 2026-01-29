@@ -159,6 +159,11 @@ def knowledge_view(request):
         'bloco7': calc_bloco_percent(bloco7_filled, len(bloco7_fields)),
     }
     
+    # Modal welcome - aparece se onboarding não foi concluído (FLUXO 1)
+    show_welcome_modal = False
+    if kb and not kb.onboarding_completed:
+        show_welcome_modal = True
+    
     context = {
         'kb': kb,
         'forms': forms,
@@ -172,6 +177,10 @@ def knowledge_view(request):
         'completude_blocos': completude_blocos,
         'completude_total': kb.completude_percentual,
         'validation_errors': validation_errors,
+        'show_welcome_modal': show_welcome_modal,
+        'user_name': request.user.first_name or request.user.username,
+        'kb_exists': kb is not None,
+        'kb_completude': kb.completude_percentual if kb else 0,
     }
     
     return render(request, 'knowledge/view.html', context)
