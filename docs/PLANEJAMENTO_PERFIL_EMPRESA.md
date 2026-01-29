@@ -277,6 +277,188 @@ compilation_completed_at = DateTimeField(null=True)
 
 ---
 
+## 🎨 DESIGN SYSTEM E UI/UX
+
+### **DECISÃO DE DESIGN (29/01/2026)**
+
+**IMPORTANTE:**
+- ✅ **Estrutura das imagens de referência será seguida**
+- ❌ **Cores das imagens de referência NÃO serão usadas**
+- ✅ **Usar design system existente** (`base.css` + `components.css`)
+- ✅ **Criar componentes reutilizáveis** para outras páginas
+
+### **Paleta de Cores da Aplicação**
+
+```css
+/* Cores Primárias */
+--color-primary: #7a3d8a;           /* Roxo IAMKT */
+--color-primary-hover: #9b59b6;     /* Roxo claro */
+--color-secondary: #7ab2ca;         /* Teal */
+--color-accent: #00bca4;            /* Teal escuro */
+
+/* Estados (usar para badges) */
+--color-success: #22c55e;           /* Verde - "Bom" */
+--color-warning: #f59e0b;           /* Amarelo - "Médio" */
+--color-error: #ef4444;             /* Vermelho - "Fraco" */
+
+/* Texto e Backgrounds */
+--color-text: #34343a;
+--color-text-muted: #77767c;
+--color-surface: #f5f5f7;
+```
+
+### **Componentes Reutilizáveis**
+
+#### **1. Card de Análise** (`.analysis-card`)
+
+Adicionar em `static/css/components.css`:
+
+```css
+.analysis-card {
+  background: var(--white-90);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-subtle);
+  padding: var(--spacing-6);
+  margin-bottom: var(--spacing-4);
+}
+
+.analysis-card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-4);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text-muted) 20%, transparent);
+}
+
+.analysis-card-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
+}
+
+.analysis-section-full {
+  grid-column: 1 / -1;
+}
+
+.btn-action {
+  flex: 1;
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.btn-action-accept {
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  color: var(--color-success);
+}
+
+.btn-action-accept.active {
+  background: var(--color-success);
+  color: var(--color-white);
+}
+
+.btn-action-reject {
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  color: var(--color-error);
+}
+
+.btn-action-reject.active {
+  background: var(--color-error);
+  color: var(--color-white);
+}
+
+@media (max-width: 768px) {
+  .analysis-card-body { grid-template-columns: 1fr; }
+}
+```
+
+#### **2. Resumo Geral** (`.analysis-summary`)
+
+```css
+.analysis-summary {
+  background: var(--white-90);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-6);
+  margin-bottom: var(--spacing-6);
+}
+
+.analysis-summary-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-4);
+}
+
+.stat-item {
+  padding: var(--spacing-4);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.stat-item.stat-danger {
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+}
+
+.stat-item.stat-warning {
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+}
+
+.stat-item.stat-success {
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+}
+
+@media (max-width: 768px) {
+  .analysis-summary-stats { grid-template-columns: 1fr; }
+}
+```
+
+#### **3. Badges de Status** (reutilizar existentes)
+
+- Status "bom" → `.badge.badge-success`
+- Status "médio" → `.badge.badge-warning`
+- Status "fraco" → `.badge.badge-danger`
+
+### **Layout da Página**
+
+Arquivo: `templates/knowledge/perfil.html`
+
+```html
+<div class="perfil-container">
+  <div class="perfil-header">
+    <div class="perfil-header-left">
+      <!-- Upload de logo -->
+    </div>
+    <div class="perfil-header-right">
+      <h1>Perfil da Empresa</h1>
+      <p>Instruções...</p>
+    </div>
+  </div>
+  
+  <div class="analysis-summary">...</div>
+  
+  <div class="analysis-cards-list">
+    <!-- Cards de análise -->
+  </div>
+  
+  <div class="perfil-actions">
+    <button class="btn btn-primary btn-lg">
+      Aplicar Sugestões Selecionadas
+    </button>
+  </div>
+</div>
+```
+
+### **Arquivos a Criar/Modificar**
+
+1. `static/css/components.css` - Adicionar componentes
+2. `static/css/perfil.css` - Layout específico
+3. `templates/knowledge/perfil.html` - Template
+4. `static/js/perfil.js` - Interações
+
+---
+
 ## 🔄 INTEGRAÇÃO N8N
 
 ### **📚 Documentação Completa de Segurança**
