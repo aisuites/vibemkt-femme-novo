@@ -660,15 +660,19 @@ def perfil_view(request):
     
     # ESTADO 4: Modo Edição (Análise Completa)
     if analysis_status == 'completed' and kb.n8n_analysis:
+        print(f"🔍 [PERFIL_VIEW] Entrando no processamento de análise completa", flush=True)
         # Processar dados da análise N8N
         payload = kb.n8n_analysis.get('payload', [])
+        print(f"🔍 [PERFIL_VIEW] Payload type: {type(payload)}, length: {len(payload) if isinstance(payload, list) else 'N/A'}", flush=True)
         
         if not payload or len(payload) == 0:
+            print(f"❌ [PERFIL_VIEW] Payload vazio ou inválido", flush=True)
             messages.error(request, 'Dados de análise inválidos.')
             return redirect('knowledge:view')
         
         # Extrair campos analisados (payload[0] contém todos os campos)
         campos_raw = payload[0] if isinstance(payload, list) else {}
+        print(f"🔍 [PERFIL_VIEW] campos_raw keys: {list(campos_raw.keys())[:5] if campos_raw else 'vazio'}...", flush=True)
         
         # Mapear nomes técnicos para labels amigáveis
         # IMPORTANTE: Usar os mesmos títulos da página Base de Conhecimento
@@ -799,6 +803,9 @@ def perfil_view(request):
                     'titulo': bloco['titulo'],
                     'campos': campos_bloco
                 })
+        
+        print(f"🔍 [PERFIL_VIEW] Total de blocos processados: {len(blocos_analise)}", flush=True)
+        print(f"🔍 [PERFIL_VIEW] Stats: {stats}", flush=True)
         
         from apps.knowledge.models import Logo
         primary_logo = Logo.objects.filter(
