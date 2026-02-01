@@ -142,7 +142,7 @@ class N8NService:
                 
                 # BLOCO 6: Sites e Redes Sociais
                 'website_url': kb_instance.site_institucional or '',
-                'social_networks': [{'platform': s.platform, 'url': s.url} for s in kb_instance.social_networks.all()],
+                'social_networks': [{'platform': s.network_type, 'url': s.url} for s in kb_instance.social_networks.all()],
                 'competitors': kb_instance.concorrentes or [],
                 
                 # BLOCO 7: Dados & Insights
@@ -315,7 +315,7 @@ class N8NService:
                 
                 # BLOCO 6: Sites e Redes Sociais
                 'website_url': kb_instance.site_institucional or '',
-                'social_networks': [{'platform': s.platform, 'url': s.url} for s in kb_instance.social_networks.all()],
+                'social_networks': [{'platform': s.network_type, 'url': s.url} for s in kb_instance.social_networks.all()],
                 'competitors': kb_instance.concorrentes or [],
                 
                 # BLOCO 7: Dados & Insights
