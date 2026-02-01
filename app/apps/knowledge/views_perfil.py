@@ -202,6 +202,12 @@ def perfil_apply_suggestions(request):
         # Senão, enviar direto para compilação
         if fields_for_reevaluation:
             print(f"🔄 [PERFIL_APPLY] Enviando para FUNDAMENTOS (reavaliação de {len(fields_for_reevaluation)} campos)", flush=True)
+            
+            # Resetar compilation_status para pending (vai recompilar após fundamentos)
+            kb.compilation_status = 'pending'
+            kb.save(update_fields=['compilation_status'])
+            print(f"🔄 [PERFIL_APPLY] compilation_status resetado para 'pending'", flush=True)
+            
             n8n_result = N8NService.send_fundamentos(kb)
             flow_type = 'fundamentos_reevaluation'
         else:
