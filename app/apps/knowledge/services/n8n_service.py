@@ -260,10 +260,10 @@ class N8NService:
             
             # 2. Escolher endpoint baseado em sugestões aceitas
             if has_accepted_suggestions:
-                webhook_url = settings.N8N_WEBHOOK_COMPILE_COMSUGEST
+                webhook_url = settings.N8N_WEBHOOK_COMPILA_COM_SUGEST
                 flow_type = "comsugest"
             else:
-                webhook_url = settings.N8N_WEBHOOK_COMPILE_SEMSUGEST
+                webhook_url = settings.N8N_WEBHOOK_COMPILA_SEM_SUGEST
                 flow_type = "semsugest"
             
             if not webhook_url:

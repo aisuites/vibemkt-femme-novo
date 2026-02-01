@@ -202,13 +202,6 @@ def perfil_apply_suggestions(request):
         # Senão, enviar direto para compilação
         if fields_for_reevaluation:
             print(f"🔄 [PERFIL_APPLY] Enviando para FUNDAMENTOS (reavaliação de {len(fields_for_reevaluation)} campos)", flush=True)
-            
-            # Resetar compilation_status para mostrar "aguarde compilação"
-            kb.compilation_status = 'processing'
-            kb.compilation_requested_at = timezone.now()
-            kb.save(update_fields=['compilation_status', 'compilation_requested_at'])
-            print(f"🔄 [PERFIL_APPLY] compilation_status resetado para 'processing'", flush=True)
-            
             n8n_result = N8NService.send_fundamentos(kb)
             flow_type = 'fundamentos_reevaluation'
         else:
@@ -223,20 +216,12 @@ def perfil_apply_suggestions(request):
             logger.info(f"✅ [PERFIL_APPLY] Enviado para N8N - Fluxo: {flow_type}")
         
         # 6. RETORNAR SUCESSO (frontend redireciona)
-        # Se houver reavaliação, redirecionar para página de perfil (mostra "aguarde")
-        # Senão, redirecionar para visualização (compilação já concluída)
-        if fields_for_reevaluation:
-            redirect_url = '/knowledge/perfil/'
-            message = f'{len(updated_fields)} campo(s) atualizado(s)! Aguarde a reavaliação...'
-        else:
-            redirect_url = '/knowledge/perfil-visualizacao/'
-            message = f'{len(updated_fields)} campo(s) atualizado(s) com sucesso!'
-        
+        # Sempre redirecionar para perfil - middleware detectará compilation_status
         return JsonResponse({
             'success': True,
             'updated_fields': updated_fields,
-            'message': message,
-            'redirect_url': redirect_url,
+            'message': f'{len(updated_fields)} campo(s) atualizado(s) com sucesso!',
+            'redirect_url': '/knowledge/perfil/',
             'n8n_status': n8n_result['success'],
             'flow_type': flow_type,
             'is_reevaluation': bool(fields_for_reevaluation)

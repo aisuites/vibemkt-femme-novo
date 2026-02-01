@@ -42,6 +42,19 @@
             </button>
         </div>
     
+    {% elif compilation_status == 'processing' %}
+        <!-- ESTADO 3.5: Aguardando Compilação (após aplicar sugestões) -->
+        <div class="perfil-empty">
+            <div class="perfil-empty-icon">🔄</div>
+            <h2 class="perfil-empty-title">COMPILANDO SUA BASE</h2>
+            <p class="perfil-empty-text">
+                Suas alterações estão sendo processadas e sua base está sendo compilada. Isso pode levar alguns minutos.
+            </p>
+            <button id="btn-check-compilation" class="btn btn-primary" onclick="window.location.reload()">
+                Verificar se está Pronto
+            </button>
+        </div>
+    
     {% elif analysis_status == 'completed' %}
         <!-- ESTADO 4: Modo Edição (Análise Recebida) -->
         

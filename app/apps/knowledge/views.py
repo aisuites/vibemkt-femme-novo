@@ -1095,6 +1095,7 @@ def perfil_view(request):
         context = {
             'kb': kb,
             'analysis_status': analysis_status,
+            'compilation_status': kb.compilation_status,
             'blocos_analise': blocos_analise,
             'stats': stats,
             'kb_onboarding_completed': kb.onboarding_completed if kb else False,
