@@ -195,18 +195,20 @@ def n8n_webhook_fundamentos(request):
     
     # CAMADA 6: Processar Análise
     try:
-        # Verificar se é reavaliação (campos aceitos/editados)
+        # DEBUG 1: Verificar se é reavaliação (campos aceitos/editados)
         is_reevaluation = bool(kb.accepted_suggestion_fields)
+        
+        logger.info(f"🔍 [DEBUG 1] accepted_suggestion_fields: {kb.accepted_suggestion_fields}")
+        logger.info(f"🔍 [DEBUG 1] is_reevaluation: {is_reevaluation}")
         
         if is_reevaluation:
             # MERGE SELETIVO: Atualizar apenas campos aceitos/editados
-            # Motivo: Preservar avaliações de campos que usuário já aprovou
             logger.info(
                 f"🔄 [N8N_WEBHOOK] Reavaliação detectada. "
                 f"Campos para atualizar: {kb.accepted_suggestion_fields}"
             )
             
-            # Obter análise atual
+            # DEBUG 2: JSON original antes do retorno N8N
             current_analysis = kb.n8n_analysis or {}
             current_payload = current_analysis.get('payload', [])
             
@@ -216,6 +218,13 @@ def n8n_webhook_fundamentos(request):
             elif not isinstance(current_payload, dict):
                 current_payload = {}
             
+            logger.info(f"🔍 [DEBUG 2] JSON ORIGINAL - Total de campos: {len(current_payload)}")
+            logger.info(f"🔍 [DEBUG 2] JSON ORIGINAL - Keys: {list(current_payload.keys())}")
+            
+            # Guardar cópia do original para comparação
+            import copy
+            original_payload_backup = copy.deepcopy(current_payload)
+            
             # Normalizar novo payload
             new_payload = analysis_payload
             if isinstance(new_payload, list) and len(new_payload) > 0:
@@ -223,15 +232,31 @@ def n8n_webhook_fundamentos(request):
             elif not isinstance(new_payload, dict):
                 new_payload = {}
             
-            # Atualizar APENAS campos aceitos/editados
+            logger.info(f"🔍 [DEBUG 3] RETORNO N8N - Total de campos: {len(new_payload)}")
+            logger.info(f"🔍 [DEBUG 3] RETORNO N8N - Keys: {list(new_payload.keys())}")
+            
+            # DEBUG 3: Comparar campos originais vs retorno N8N
+            for field_name in kb.accepted_suggestion_fields:
+                logger.info(f"🔍 [DEBUG 3] Comparando campo: {field_name}")
+                logger.info(f"   - Existe no original? {field_name in original_payload_backup}")
+                logger.info(f"   - Existe no retorno N8N? {field_name in new_payload}")
+                
+                if field_name in original_payload_backup:
+                    original_data = original_payload_backup[field_name]
+                    logger.info(f"   - Original: classificacao={original_data.get('classificacao', 'N/A')}, sugestao={bool(original_data.get('sugestao'))}")
+                
+                if field_name in new_payload:
+                    new_data = new_payload[field_name]
+                    logger.info(f"   - N8N: status={new_data.get('status', 'N/A')}, sugestao_do_agente_iamkt={new_data.get('sugestao_do_agente_iamkt')}")
+            
+            # DEBUG 4: Fazer merge seletivo
+            logger.info(f"🔍 [DEBUG 4] Iniciando MERGE SELETIVO")
             updated_count = 0
             for field_name in kb.accepted_suggestion_fields:
                 if field_name in new_payload:
                     new_field_data = new_payload[field_name]
                     
                     # Normalizar nomes dos campos do N8N para padrão do frontend
-                    # N8N usa: informado_pelo_usuario, status, sugestao_do_agente_iamkt
-                    # Frontend espera: informado, classificacao, sugestao
                     normalized_field = {
                         'informado': new_field_data.get('informado_pelo_usuario', ''),
                         'classificacao': new_field_data.get('status', ''),
@@ -239,11 +264,44 @@ def n8n_webhook_fundamentos(request):
                         'sugestao': new_field_data.get('sugestao_do_agente_iamkt', '')
                     }
                     
+                    logger.info(f"   ✅ Atualizando {field_name}:")
+                    logger.info(f"      - informado: {normalized_field['informado'][:50]}...")
+                    logger.info(f"      - classificacao: {normalized_field['classificacao']}")
+                    logger.info(f"      - avaliacao: {normalized_field['avaliacao'][:50]}...")
+                    logger.info(f"      - sugestao: {normalized_field['sugestao'][:50] if normalized_field['sugestao'] else 'null/vazio'}")
+                    
                     current_payload[field_name] = normalized_field
                     updated_count += 1
-                    logger.info(f"   ✅ Campo atualizado: {field_name} (classificacao: {normalized_field['classificacao']})")
                 else:
                     logger.warning(f"   ⚠️ Campo não encontrado no retorno N8N: {field_name}")
+            
+            # DEBUG 5: Verificar JSON final após merge
+            logger.info(f"🔍 [DEBUG 5] JSON FINAL após merge - Total de campos: {len(current_payload)}")
+            logger.info(f"🔍 [DEBUG 5] Verificando campos atualizados:")
+            for field_name in kb.accepted_suggestion_fields:
+                if field_name in current_payload:
+                    final_data = current_payload[field_name]
+                    logger.info(f"   - {field_name}:")
+                    logger.info(f"     * classificacao: {final_data.get('classificacao', 'N/A')}")
+                    logger.info(f"     * sugestao: {final_data.get('sugestao', 'N/A')[:50] if final_data.get('sugestao') else 'vazio/null'}")
+            
+            # DEBUG 6: Verificar campos NÃO alterados (devem estar idênticos ao original)
+            logger.info(f"🔍 [DEBUG 6] Verificando campos NÃO alterados (devem estar idênticos):")
+            unchanged_fields = [k for k in original_payload_backup.keys() if k not in kb.accepted_suggestion_fields]
+            logger.info(f"   - Total de campos não alterados: {len(unchanged_fields)}")
+            logger.info(f"   - Campos: {unchanged_fields[:5]}...")  # Mostrar apenas primeiros 5
+            
+            # Verificar se estão idênticos
+            all_identical = True
+            for field_name in unchanged_fields[:3]:  # Verificar apenas 3 para não poluir log
+                if field_name in original_payload_backup and field_name in current_payload:
+                    original = original_payload_backup[field_name]
+                    current = current_payload[field_name]
+                    is_identical = original == current
+                    all_identical = all_identical and is_identical
+                    logger.info(f"   - {field_name}: {'✅ IDÊNTICO' if is_identical else '❌ DIFERENTE'}")
+            
+            logger.info(f"🔍 [DEBUG 6] Campos não alterados estão preservados? {'✅ SIM' if all_identical else '❌ NÃO'}")
             
             # Salvar análise com merge
             kb.n8n_analysis = {
