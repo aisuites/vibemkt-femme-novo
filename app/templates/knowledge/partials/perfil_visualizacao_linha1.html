@@ -9,20 +9,46 @@
                 {% if compilation_data.base_consolidada %}
                     <div class="block-content">
                         
-                        {# Identidade #}
-                        {% if compilation_data.base_consolidada.identidade %}
+                        {# Identidade e Essência - mapear de identity_essence #}
+                        {% if compilation_data.base_consolidada.identity_essence %}
                         <div class="content-item">
-                            <h3 class="item-title">Identidade Institucional</h3>
+                            <h3 class="item-title">Identidade e Essência</h3>
                             <div class="item-content">
-                                {% if compilation_data.base_consolidada.identidade.missao %}
-                                <p><strong>Missão:</strong> {{ compilation_data.base_consolidada.identidade.missao }}</p>
-                                {% endif %}
-                                {% if compilation_data.base_consolidada.identidade.visao %}
-                                <p><strong>Visão:</strong> {{ compilation_data.base_consolidada.identidade.visao }}</p>
-                                {% endif %}
-                                {% if compilation_data.base_consolidada.identidade.valores %}
-                                <p><strong>Valores:</strong> {{ compilation_data.base_consolidada.identidade.valores }}</p>
-                                {% endif %}
+                                <p>{{ compilation_data.base_consolidada.identity_essence }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Público-Alvo - mapear de audience #}
+                        {% if compilation_data.base_consolidada.audience %}
+                        <div class="content-item">
+                            <h3 class="item-title">Público-Alvo</h3>
+                            <div class="item-content">
+                                <p>{{ compilation_data.base_consolidada.audience }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Canais Estratégicos - mapear de strategy_channels #}
+                        {% if compilation_data.base_consolidada.strategy_channels %}
+                        <div class="content-item">
+                            <h3 class="item-title">Canais Estratégicos</h3>
+                            <div class="item-content">
+                                <p>{{ compilation_data.base_consolidada.strategy_channels }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Mensagens-Chave - mapear de key_messages #}
+                        {% if compilation_data.base_consolidada.key_messages %}
+                        <div class="content-item">
+                            <h3 class="item-title">Mensagens-Chave</h3>
+                            <div class="item-content">
+                                <ul>
+                                    {% for message in compilation_data.base_consolidada.key_messages %}
+                                    <li>{{ message }}</li>
+                                    {% endfor %}
+                                </ul>
                             </div>
                         </div>
                         {% endif %}
