@@ -286,7 +286,7 @@ def n8n_webhook_fundamentos(request):
             from apps.knowledge.services.n8n_service import N8NService
             
             try:
-                compilation_result = N8NService.send_compilation(kb)
+                compilation_result = N8NService.send_for_compilation(kb, has_accepted_suggestions=True)
                 if compilation_result['success']:
                     logger.info(f"✅ [N8N_WEBHOOK] Compilação enviada com sucesso")
                 else:
