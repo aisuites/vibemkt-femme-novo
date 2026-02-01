@@ -295,8 +295,18 @@ def n8n_compilation_webhook(request):
             'error': 'Invalid JSON'
         }, status=400)
     
-    # Extrair revision_id
-    revision_id = data.get('revision_id')
+    # N8N pode enviar array ou objeto - normalizar para objeto
+    if isinstance(data, list):
+        if len(data) == 0:
+            logger.warning("❌ [N8N_COMPILATION_WEBHOOK] Array vazio recebido")
+            return JsonResponse({
+                'success': False,
+                'error': 'Empty array received'
+            }, status=400)
+        data = data[0]  # Pegar primeiro elemento do array
+    
+    # Extrair revision_id do payload (enviado pelo Django no payload original)
+    revision_id = data.get('revision_id') or request.headers.get('X-Revision-ID')
     if not revision_id:
         logger.warning("❌ [N8N_COMPILATION_WEBHOOK] revision_id ausente")
         return JsonResponse({
