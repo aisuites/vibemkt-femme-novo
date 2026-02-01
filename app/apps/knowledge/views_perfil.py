@@ -183,20 +183,24 @@ def perfil_apply_suggestions(request):
                 print(f"   └─ Sugestões aceitas: {[f for f in fields_for_reevaluation if f in accepted_suggestions]}", flush=True)
             
             # 3. MARCAR COMO REVISADO
+            fields_to_save = updated_fields.copy()  # Campos editados/aceitos
             if not kb.suggestions_reviewed:
                 kb.suggestions_reviewed = True
                 kb.suggestions_reviewed_at = timezone.now()
                 kb.suggestions_reviewed_by = request.user
+                fields_to_save.extend(['suggestions_reviewed', 'suggestions_reviewed_at', 'suggestions_reviewed_by'])
                 print(f"✅ [PERFIL_APPLY] Primeira revisão de sugestões marcada", flush=True)
             
-            # 4. SALVAR ALTERAÇÕES
-            kb.save()
+            # Adicionar accepted_suggestion_fields à lista de campos para salvar
+            if fields_for_reevaluation:
+                fields_to_save.append('accepted_suggestion_fields')
             
-            # Verificar no banco
-            kb.refresh_from_db()
-            print(f"✅ [PERFIL_APPLY] Total de campos atualizados: {len(updated_fields)}", flush=True)
-            print(f"✅ [PERFIL_APPLY] Campos: {updated_fields}", flush=True)
-            print(f"💾 [PERFIL_APPLY] Dados salvos no banco (KB id={kb.id})", flush=True)
+            # 4. SALVAR ALTERAÇÕES (especificar campos para garantir persistência)
+            if fields_to_save:
+                kb.save(update_fields=fields_to_save)
+                print(f"✅ [PERFIL_APPLY] Total de campos atualizados: {len(updated_fields)}", flush=True)
+                print(f"✅ [PERFIL_APPLY] Campos salvos: {updated_fields}", flush=True)
+                print(f"💾 [PERFIL_APPLY] Dados salvos no banco (KB id={kb.id})", flush=True)
         
         # 5. ENVIAR PARA N8N (fora da transação)
         # Se houver campos para reavaliar, enviar para fundamentos primeiro
