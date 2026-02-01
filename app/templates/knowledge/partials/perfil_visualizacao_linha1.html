@@ -103,26 +103,26 @@
                 {% if compilation_data.presenca_digital %}
                     <div class="block-content">
                         
-                        {# Site #}
-                        {% if compilation_data.presenca_digital.site %}
+                        {# Site - mapear de website_url #}
+                        {% if compilation_data.presenca_digital.website_url %}
                         <div class="content-item">
                             <h3 class="item-title">Site Institucional</h3>
                             <div class="item-content">
-                                <a href="{{ compilation_data.presenca_digital.site }}" target="_blank" class="link-external">
-                                    {{ compilation_data.presenca_digital.site }}
+                                <a href="{{ compilation_data.presenca_digital.website_url }}" target="_blank" class="link-external">
+                                    {{ compilation_data.presenca_digital.website_url }}
                                 </a>
                             </div>
                         </div>
                         {% endif %}
                         
-                        {# Redes Sociais #}
-                        {% if compilation_data.presenca_digital.redes_sociais %}
+                        {# Redes Sociais - mapear de social_networks #}
+                        {% if compilation_data.presenca_digital.social_networks %}
                         <div class="content-item">
                             <h3 class="item-title">Redes Sociais</h3>
                             <div class="item-content social-networks">
-                                {% for rede in compilation_data.presenca_digital.redes_sociais %}
+                                {% for rede in compilation_data.presenca_digital.social_networks %}
                                 <div class="social-item">
-                                    <span class="social-platform">{{ rede.plataforma }}</span>
+                                    <span class="social-platform">{{ rede.network|title }}</span>
                                     <a href="{{ rede.url }}" target="_blank" class="link-external">
                                         {{ rede.url }}
                                     </a>
@@ -132,19 +132,14 @@
                         </div>
                         {% endif %}
                         
-                        {# Concorrentes #}
-                        {% if compilation_data.presenca_digital.concorrentes %}
+                        {# Concorrentes - mapear de competitors (array de strings) #}
+                        {% if compilation_data.presenca_digital.competitors %}
                         <div class="content-item">
                             <h3 class="item-title">Concorrentes</h3>
                             <div class="item-content">
                                 <ul class="competitors-list">
-                                    {% for concorrente in compilation_data.presenca_digital.concorrentes %}
-                                    <li>
-                                        <strong>{{ concorrente.nome }}</strong>
-                                        {% if concorrente.url %}
-                                        - <a href="{{ concorrente.url }}" target="_blank" class="link-external">{{ concorrente.url }}</a>
-                                        {% endif %}
-                                    </li>
+                                    {% for concorrente in compilation_data.presenca_digital.competitors %}
+                                    <li>{{ concorrente }}</li>
                                     {% endfor %}
                                 </ul>
                             </div>
