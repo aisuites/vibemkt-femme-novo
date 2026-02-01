@@ -319,8 +319,8 @@ def n8n_webhook_fundamentos(request):
                 f"{updated_count} campos atualizados de {len(kb.accepted_suggestion_fields)}"
             )
             
-            # Limpar lista de campos aceitos
-            kb.accepted_suggestion_fields = []
+            # NÃO limpar accepted_suggestion_fields - será sobrescrito na próxima rodada
+            # O campo mantém o histórico até a próxima aplicação de sugestões
             
         else:
             # PRIMEIRA VEZ: Armazenar análise completa
@@ -338,8 +338,7 @@ def n8n_webhook_fundamentos(request):
         kb.save(update_fields=[
             'n8n_analysis',
             'analysis_status',
-            'analysis_completed_at',
-            'accepted_suggestion_fields'
+            'analysis_completed_at'
         ])
         
         # Log sucesso
