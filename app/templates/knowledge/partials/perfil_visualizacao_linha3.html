@@ -9,43 +9,59 @@
                 {% if compilation_data.avaliacao %}
                     <div class="block-content">
                         
-                        {# Pontos Fortes #}
-                        {% if compilation_data.avaliacao.pontos_fortes %}
+                        {# Assessment Summary - mapear de assessment_summary #}
+                        {% if compilation_data.avaliacao.summary %}
                         <div class="content-item">
-                            <h3 class="item-title">Pontos Fortes</h3>
+                            <h3 class="item-title">Resumo da Avaliação</h3>
                             <div class="item-content">
-                                <ul class="evaluation-list positive">
-                                    {% for ponto in compilation_data.avaliacao.pontos_fortes %}
-                                    <li>{{ ponto }}</li>
-                                    {% endfor %}
-                                </ul>
+                                {% if compilation_data.avaliacao.summary.base %}
+                                <p><strong>Base:</strong> {{ compilation_data.avaliacao.summary.base }}</p>
+                                {% endif %}
+                                {% if compilation_data.avaliacao.summary.digital_presence %}
+                                <p><strong>Presença Digital:</strong> {{ compilation_data.avaliacao.summary.digital_presence }}</p>
+                                {% endif %}
+                                {% if compilation_data.avaliacao.summary.visual_identity %}
+                                <p><strong>Identidade Visual:</strong> {{ compilation_data.avaliacao.summary.visual_identity }}</p>
+                                {% endif %}
                             </div>
                         </div>
                         {% endif %}
                         
-                        {# Pontos de Atenção #}
-                        {% if compilation_data.avaliacao.pontos_atencao %}
+                        {# Scores - mapear de scores #}
+                        {% if compilation_data.avaliacao.scores %}
                         <div class="content-item">
-                            <h3 class="item-title">Pontos de Atenção</h3>
+                            <h3 class="item-title">Pontuações</h3>
                             <div class="item-content">
-                                <ul class="evaluation-list warning">
-                                    {% for ponto in compilation_data.avaliacao.pontos_atencao %}
-                                    <li>{{ ponto }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                        {% endif %}
-                        
-                        {# Score Geral #}
-                        {% if compilation_data.avaliacao.score %}
-                        <div class="content-item">
-                            <h3 class="item-title">Score Geral</h3>
-                            <div class="item-content">
-                                <div class="score-display">
-                                    <span class="score-value">{{ compilation_data.avaliacao.score }}</span>
-                                    <span class="score-max">/10</span>
+                                <div class="scores-grid">
+                                    {% if compilation_data.avaliacao.scores.area_a %}
+                                    <div class="score-item">
+                                        <span class="score-label">Área A:</span>
+                                        <span class="score-value">{{ compilation_data.avaliacao.scores.area_a }}/100</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if compilation_data.avaliacao.scores.area_b %}
+                                    <div class="score-item">
+                                        <span class="score-label">Área B:</span>
+                                        <span class="score-value">{{ compilation_data.avaliacao.scores.area_b }}/100</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if compilation_data.avaliacao.scores.area_c %}
+                                    <div class="score-item">
+                                        <span class="score-label">Área C:</span>
+                                        <span class="score-value">{{ compilation_data.avaliacao.scores.area_c }}/100</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Evaluation - mapear de evaluation #}
+                        {% if compilation_data.avaliacao.evaluation %}
+                        <div class="content-item">
+                            <h3 class="item-title">Avaliação Geral</h3>
+                            <div class="item-content">
+                                <p class="evaluation-status">{{ compilation_data.avaliacao.evaluation }}</p>
                             </div>
                         </div>
                         {% endif %}
@@ -62,33 +78,33 @@
             <div class="content-block">
                 <h2 class="block-title">💡 Melhorias Sugeridas</h2>
                 
-                {% if compilation_data.melhorias %}
+                {% if compilation_data._raw.improvements_summary %}
                     <div class="block-content">
                         
-                        {# Curto Prazo #}
-                        {% if compilation_data.melhorias.curto_prazo %}
+                        {# Improvements Summary - mapear de improvements_summary #}
+                        {% if compilation_data._raw.improvements_summary.base %}
                         <div class="content-item">
-                            <h3 class="item-title">Curto Prazo (0-3 meses)</h3>
+                            <h3 class="item-title">Base de Conhecimento</h3>
                             <div class="item-content">
-                                <ul class="improvements-list priority-high">
-                                    {% for melhoria in compilation_data.melhorias.curto_prazo %}
-                                    <li>{{ melhoria }}</li>
-                                    {% endfor %}
-                                </ul>
+                                <p>{{ compilation_data._raw.improvements_summary.base }}</p>
                             </div>
                         </div>
                         {% endif %}
                         
-                        {# Médio Prazo #}
-                        {% if compilation_data.melhorias.medio_prazo %}
+                        {% if compilation_data._raw.improvements_summary.digital_presence %}
                         <div class="content-item">
-                            <h3 class="item-title">Médio Prazo (3-6 meses)</h3>
+                            <h3 class="item-title">Presença Digital</h3>
                             <div class="item-content">
-                                <ul class="improvements-list priority-medium">
-                                    {% for melhoria in compilation_data.melhorias.medio_prazo %}
-                                    <li>{{ melhoria }}</li>
-                                    {% endfor %}
-                                </ul>
+                                <p>{{ compilation_data._raw.improvements_summary.digital_presence }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if compilation_data._raw.improvements_summary.visual_identity %}
+                        <div class="content-item">
+                            <h3 class="item-title">Identidade Visual</h3>
+                            <div class="item-content">
+                                <p>{{ compilation_data._raw.improvements_summary.visual_identity }}</p>
                             </div>
                         </div>
                         {% endif %}

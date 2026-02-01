@@ -7,20 +7,25 @@
             {% if compilation_data.lacunas %}
                 <div class="block-content">
                     
-                    {# Lacunas Críticas #}
-                    {% if compilation_data.lacunas.criticas %}
+                    {# Gaps - mapear de gaps array #}
                     <div class="content-item">
-                        <h3 class="item-title">Críticas (Ação Imediata)</h3>
                         <div class="item-content">
-                            <ul class="gaps-list critical">
-                                {% for lacuna in compilation_data.lacunas.criticas %}
-                                <li>
-                                    <span class="gap-icon">🔴</span>
+                            <ul class="gaps-list">
+                                {% for gap in compilation_data.lacunas %}
+                                <li class="gap-item">
+                                    <div class="gap-header">
+                                        <span class="gap-score">Score: {{ gap.score }}/100</span>
+                                        <span class="gap-area">{{ gap.area|title }}</span>
+                                        <span class="gap-field">{{ gap.field }}</span>
+                                    </div>
                                     <div class="gap-info">
-                                        <strong>{{ lacuna.campo }}</strong>
-                                        <p>{{ lacuna.descricao }}</p>
-                                        {% if lacuna.impacto %}
-                                        <span class="gap-impact">Impacto: {{ lacuna.impacto }}</span>
+                                        <p class="gap-issue"><strong>Problema:</strong> {{ gap.issue }}</p>
+                                        <p class="gap-suggestion"><strong>Sugestão:</strong> {{ gap.suggestion }}</p>
+                                        {% if gap.why %}
+                                        <p class="gap-why"><strong>Por quê:</strong> {{ gap.why }}</p>
+                                        {% endif %}
+                                        {% if gap.rewrite_example %}
+                                        <p class="gap-example"><strong>Exemplo:</strong> {{ gap.rewrite_example }}</p>
                                         {% endif %}
                                     </div>
                                 </li>
@@ -28,50 +33,6 @@
                             </ul>
                         </div>
                     </div>
-                    {% endif %}
-                    
-                    {# Lacunas Importantes #}
-                    {% if compilation_data.lacunas.importantes %}
-                    <div class="content-item">
-                        <h3 class="item-title">Importantes (Atenção Necessária)</h3>
-                        <div class="item-content">
-                            <ul class="gaps-list important">
-                                {% for lacuna in compilation_data.lacunas.importantes %}
-                                <li>
-                                    <span class="gap-icon">🟡</span>
-                                    <div class="gap-info">
-                                        <strong>{{ lacuna.campo }}</strong>
-                                        <p>{{ lacuna.descricao }}</p>
-                                        {% if lacuna.impacto %}
-                                        <span class="gap-impact">Impacto: {{ lacuna.impacto }}</span>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {# Lacunas Menores #}
-                    {% if compilation_data.lacunas.menores %}
-                    <div class="content-item">
-                        <h3 class="item-title">Menores (Melhoria Contínua)</h3>
-                        <div class="item-content">
-                            <ul class="gaps-list minor">
-                                {% for lacuna in compilation_data.lacunas.menores %}
-                                <li>
-                                    <span class="gap-icon">🟢</span>
-                                    <div class="gap-info">
-                                        <strong>{{ lacuna.campo }}</strong>
-                                        <p>{{ lacuna.descricao }}</p>
-                                    </div>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    {% endif %}
                     
                 </div>
             {% else %}

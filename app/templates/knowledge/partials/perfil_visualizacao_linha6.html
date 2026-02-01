@@ -7,47 +7,29 @@
             {% if compilation_data.links_verificados %}
                 <div class="block-content">
                     
-                    {# Links Ativos #}
-                    {% if compilation_data.links_verificados.ativos %}
+                    {# Link Checks - mapear de link_checks array #}
                     <div class="content-item">
-                        <h3 class="item-title">Links Ativos ✅</h3>
                         <div class="item-content">
-                            <ul class="links-list active">
-                                {% for link in compilation_data.links_verificados.ativos %}
-                                <li>
-                                    <span class="link-status">✅</span>
-                                    <div class="link-info">
+                            <ul class="links-list">
+                                {% for link in compilation_data.links_verificados %}
+                                <li class="link-item">
+                                    <div class="link-header">
+                                        <span class="link-status-badge status-{{ link.status_hint }}">
+                                            {% if link.status_hint == 'ok' %}✅{% elif link.status_hint == 'invalid_format' %}⚠️{% else %}❌{% endif %}
+                                        </span>
                                         <a href="{{ link.url }}" target="_blank" class="link-url">{{ link.url }}</a>
-                                        <span class="link-type">{{ link.tipo }}</span>
-                                        {% if link.status_code %}
-                                        <span class="link-code">Status: {{ link.status_code }}</span>
-                                        {% endif %}
                                     </div>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {# Links com Problemas #}
-                    {% if compilation_data.links_verificados.problemas %}
-                    <div class="content-item">
-                        <h3 class="item-title">Links com Problemas ⚠️</h3>
-                        <div class="item-content">
-                            <ul class="links-list problems">
-                                {% for link in compilation_data.links_verificados.problemas %}
-                                <li>
-                                    <span class="link-status">⚠️</span>
                                     <div class="link-info">
-                                        <a href="{{ link.url }}" target="_blank" class="link-url">{{ link.url }}</a>
-                                        <span class="link-type">{{ link.tipo }}</span>
-                                        {% if link.erro %}
-                                        <span class="link-error">Erro: {{ link.erro }}</span>
+                                        {% if link.title %}
+                                        <p class="link-title"><strong>{{ link.title }}</strong></p>
                                         {% endif %}
-                                        {% if link.status_code %}
-                                        <span class="link-code">Status: {{ link.status_code }}</span>
+                                        {% if link.summary %}
+                                        <p class="link-summary">{{ link.summary }}</p>
                                         {% endif %}
+                                        {% if link.notes %}
+                                        <p class="link-notes"><em>{{ link.notes }}</em></p>
+                                        {% endif %}
+                                        <p class="link-verification">Verificação: {{ link.verification }}</p>
                                     </div>
                                 </li>
                                 {% endfor %}

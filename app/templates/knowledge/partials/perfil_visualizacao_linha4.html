@@ -7,45 +7,49 @@
             {% if compilation_data.plano_marketing %}
                 <div class="block-content">
                     
-                    {# Tabela de Plano de Marketing #}
+                    {# Tabela de Plano de Marketing - mapear de marketing_plan_4w #}
                     <div class="marketing-plan-table">
                         <table class="plan-table">
                             <thead>
                                 <tr>
-                                    <th>Ação</th>
-                                    <th>Objetivo</th>
-                                    <th>Canal</th>
-                                    <th>Prazo</th>
-                                    <th>Prioridade</th>
+                                    <th>Semana</th>
+                                    <th>Foco</th>
+                                    <th>Ações</th>
+                                    <th>Canais</th>
+                                    <th>KPIs</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for acao in compilation_data.plano_marketing %}
+                                {% for week_plan in compilation_data.plano_marketing %}
                                 <tr>
-                                    <td class="plan-action">{{ acao.acao }}</td>
-                                    <td class="plan-objective">{{ acao.objetivo }}</td>
-                                    <td class="plan-channel">{{ acao.canal }}</td>
-                                    <td class="plan-deadline">{{ acao.prazo }}</td>
-                                    <td class="plan-priority">
-                                        <span class="priority-badge priority-{{ acao.prioridade|lower }}">
-                                            {{ acao.prioridade }}
-                                        </span>
+                                    <td class="plan-week">Semana {{ week_plan.week }}</td>
+                                    <td class="plan-focus">{{ week_plan.focus }}</td>
+                                    <td class="plan-actions">
+                                        <ul>
+                                            {% for action in week_plan.actions %}
+                                            <li>{{ action }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </td>
+                                    <td class="plan-channels">
+                                        {% if week_plan.channels %}
+                                        {{ week_plan.channels|join:", " }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="plan-kpis">
+                                        {% if week_plan.kpis %}
+                                        <ul>
+                                            {% for kpi in week_plan.kpis %}
+                                            <li>{{ kpi }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    
-                    {# Resumo do Plano #}
-                    {% if compilation_data.plano_marketing_resumo %}
-                    <div class="content-item marketing-summary">
-                        <h3 class="item-title">Resumo Executivo</h3>
-                        <div class="item-content">
-                            <p>{{ compilation_data.plano_marketing_resumo }}</p>
-                        </div>
-                    </div>
-                    {% endif %}
                     
                 </div>
             {% else %}
