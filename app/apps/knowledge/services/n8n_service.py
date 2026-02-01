@@ -331,7 +331,7 @@ class N8NService:
             # 6. Preparar headers
             headers = {
                 'Content-Type': 'application/json',
-                'X-INTERNAL-TOKEN': settings.N8N_INTERNAL_TOKEN,
+                'X-INTERNAL-TOKEN': settings.N8N_WEBHOOK_SECRET,
                 'X-Signature': signature,
                 'X-Timestamp': str(timestamp),
                 'X-Organization-ID': str(kb_instance.organization_id),
