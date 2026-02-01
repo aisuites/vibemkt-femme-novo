@@ -141,15 +141,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (submitBtn) {
-            submitBtn.disabled = totalChanges === 0;
+            // SEMPRE habilitar o botão (mesmo com 0 alterações)
+            // Usuário pode querer apenas enviar dados para N8N sem fazer mudanças
+            submitBtn.disabled = false;
             
             // Atualizar texto do botão
-            if (editedCount > 0 && acceptedCount > 0) {
-                submitBtn.innerHTML = `Salvar Alterações <span class="counter">${totalChanges}</span>`;
-            } else if (editedCount > 0) {
-                submitBtn.innerHTML = `Salvar Edições <span class="counter">${totalChanges}</span>`;
+            if (totalChanges > 0) {
+                if (editedCount > 0 && acceptedCount > 0) {
+                    submitBtn.innerHTML = `Salvar Alterações <span class="counter">${totalChanges}</span>`;
+                } else if (editedCount > 0) {
+                    submitBtn.innerHTML = `Salvar Edições <span class="counter">${totalChanges}</span>`;
+                } else {
+                    submitBtn.innerHTML = `Aplicar Sugestões Selecionadas <span class="counter">${totalChanges}</span>`;
+                }
             } else {
-                submitBtn.innerHTML = `Aplicar Sugestões Selecionadas <span class="counter">${totalChanges}</span>`;
+                submitBtn.innerHTML = `Aplicar Sugestões`;
             }
         }
     }
@@ -172,27 +178,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const editedCount = Object.keys(editedFields).length;
             const totalChanges = acceptedFields.length + editedCount;
             
-            if (totalChanges === 0) {
-                // Usar modal de confirmação ao invés de alert
-                if (window.confirmModal) {
-                    await window.confirmModal.show(
-                        'Você precisa aceitar pelo menos uma sugestão ou editar um campo antes de aplicar as alterações.',
-                        'Nenhuma alteração'
-                    );
-                }
-                return;
-            }
-            
             // Preparar mensagem de confirmação
             let message = '';
-            if (editedCount > 0 && acceptedFields.length > 0) {
+            if (totalChanges === 0) {
+                message = 'Você não fez nenhuma alteração.\n\n';
+                message += 'Os dados atuais serão enviados para processamento no N8N.\n\nDeseja continuar?';
+            } else if (editedCount > 0 && acceptedFields.length > 0) {
                 message = `Você editou ${editedCount} campo(s) e aceitou ${acceptedFields.length} sugestão(ões).\n\n`;
+                message += 'Isso irá atualizar os campos da sua Base de Conhecimento.\n\nDeseja continuar?';
             } else if (editedCount > 0) {
                 message = `Você editou ${editedCount} campo(s).\n\n`;
+                message += 'Isso irá atualizar os campos da sua Base de Conhecimento.\n\nDeseja continuar?';
             } else {
                 message = `Você aceitou ${acceptedFields.length} sugestão(ões).\n\n`;
+                message += 'Isso irá atualizar os campos da sua Base de Conhecimento.\n\nDeseja continuar?';
             }
-            message += 'Isso irá atualizar os campos da sua Base de Conhecimento.\n\nDeseja continuar?';
             
             // Usar modal de confirmação
             if (!window.confirmModal) {
