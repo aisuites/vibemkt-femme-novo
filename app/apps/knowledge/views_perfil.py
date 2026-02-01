@@ -155,7 +155,8 @@ def perfil_apply_suggestions(request):
                             if possible_key in campos_raw:
                                 campo_data = campos_raw[possible_key]
                                 if isinstance(campo_data, dict):
-                                    sugestao = campo_data.get('sugestao_do_agente_iamkt')
+                                    # Buscar 'sugestao' (após merge) ou 'sugestao_do_agente_iamkt' (primeira análise)
+                                    sugestao = campo_data.get('sugestao', campo_data.get('sugestao_do_agente_iamkt'))
                                     if sugestao:
                                         print(f"✅ [PERFIL_APPLY] Sugestão encontrada em '{possible_key}'", flush=True)
                                         break
