@@ -1,0 +1,116 @@
+<div class="perfil-section linha-6">
+    <div class="section-row full-width">
+        
+        <div class="content-block">
+            <h2 class="block-title">🔗 Links Verificados</h2>
+            
+            {% if compilation_data.links_verificados %}
+                <div class="block-content">
+                    
+                    {# Links Ativos #}
+                    {% if compilation_data.links_verificados.ativos %}
+                    <div class="content-item">
+                        <h3 class="item-title">Links Ativos ✅</h3>
+                        <div class="item-content">
+                            <ul class="links-list active">
+                                {% for link in compilation_data.links_verificados.ativos %}
+                                <li>
+                                    <span class="link-status">✅</span>
+                                    <div class="link-info">
+                                        <a href="{{ link.url }}" target="_blank" class="link-url">{{ link.url }}</a>
+                                        <span class="link-type">{{ link.tipo }}</span>
+                                        {% if link.status_code %}
+                                        <span class="link-code">Status: {{ link.status_code }}</span>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {# Links com Problemas #}
+                    {% if compilation_data.links_verificados.problemas %}
+                    <div class="content-item">
+                        <h3 class="item-title">Links com Problemas ⚠️</h3>
+                        <div class="item-content">
+                            <ul class="links-list problems">
+                                {% for link in compilation_data.links_verificados.problemas %}
+                                <li>
+                                    <span class="link-status">⚠️</span>
+                                    <div class="link-info">
+                                        <a href="{{ link.url }}" target="_blank" class="link-url">{{ link.url }}</a>
+                                        <span class="link-type">{{ link.tipo }}</span>
+                                        {% if link.erro %}
+                                        <span class="link-error">Erro: {{ link.erro }}</span>
+                                        {% endif %}
+                                        {% if link.status_code %}
+                                        <span class="link-code">Status: {{ link.status_code }}</span>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {# Links Inativos #}
+                    {% if compilation_data.links_verificados.inativos %}
+                    <div class="content-item">
+                        <h3 class="item-title">Links Inativos ❌</h3>
+                        <div class="item-content">
+                            <ul class="links-list inactive">
+                                {% for link in compilation_data.links_verificados.inativos %}
+                                <li>
+                                    <span class="link-status">❌</span>
+                                    <div class="link-info">
+                                        <span class="link-url">{{ link.url }}</span>
+                                        <span class="link-type">{{ link.tipo }}</span>
+                                        {% if link.erro %}
+                                        <span class="link-error">Erro: {{ link.erro }}</span>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {# Resumo da Verificação #}
+                    {% if compilation_data.links_verificados.resumo %}
+                    <div class="content-item links-summary">
+                        <h3 class="item-title">Resumo da Verificação</h3>
+                        <div class="item-content">
+                            <div class="summary-stats">
+                                <div class="stat-item">
+                                    <span class="stat-value">{{ compilation_data.links_verificados.resumo.total }}</span>
+                                    <span class="stat-label">Total</span>
+                                </div>
+                                <div class="stat-item success">
+                                    <span class="stat-value">{{ compilation_data.links_verificados.resumo.ativos }}</span>
+                                    <span class="stat-label">Ativos</span>
+                                </div>
+                                <div class="stat-item warning">
+                                    <span class="stat-value">{{ compilation_data.links_verificados.resumo.problemas }}</span>
+                                    <span class="stat-label">Problemas</span>
+                                </div>
+                                <div class="stat-item error">
+                                    <span class="stat-value">{{ compilation_data.links_verificados.resumo.inativos }}</span>
+                                    <span class="stat-label">Inativos</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                </div>
+            {% else %}
+                <p class="no-data">Verificação de links não disponível</p>
+            {% endif %}
+        </div>
+        
+    </div>
+</div>

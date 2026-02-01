@@ -1,0 +1,136 @@
+<div class="perfil-section linha-1">
+    <div class="section-row two-columns">
+        
+        {# Coluna 1: Base Consolidada #}
+        <div class="section-column">
+            <div class="content-block">
+                <h2 class="block-title">📋 Base de Conhecimento Consolidada</h2>
+                
+                {% if compilation_data.base_consolidada %}
+                    <div class="block-content">
+                        
+                        {# Identidade #}
+                        {% if compilation_data.base_consolidada.identidade %}
+                        <div class="content-item">
+                            <h3 class="item-title">Identidade Institucional</h3>
+                            <div class="item-content">
+                                {% if compilation_data.base_consolidada.identidade.missao %}
+                                <p><strong>Missão:</strong> {{ compilation_data.base_consolidada.identidade.missao }}</p>
+                                {% endif %}
+                                {% if compilation_data.base_consolidada.identidade.visao %}
+                                <p><strong>Visão:</strong> {{ compilation_data.base_consolidada.identidade.visao }}</p>
+                                {% endif %}
+                                {% if compilation_data.base_consolidada.identidade.valores %}
+                                <p><strong>Valores:</strong> {{ compilation_data.base_consolidada.identidade.valores }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Público #}
+                        {% if compilation_data.base_consolidada.publico %}
+                        <div class="content-item">
+                            <h3 class="item-title">Público-Alvo</h3>
+                            <div class="item-content">
+                                {% if compilation_data.base_consolidada.publico.externo %}
+                                <p><strong>Externo:</strong> {{ compilation_data.base_consolidada.publico.externo }}</p>
+                                {% endif %}
+                                {% if compilation_data.base_consolidada.publico.interno %}
+                                <p><strong>Interno:</strong> {{ compilation_data.base_consolidada.publico.interno }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Posicionamento #}
+                        {% if compilation_data.base_consolidada.posicionamento %}
+                        <div class="content-item">
+                            <h3 class="item-title">Posicionamento</h3>
+                            <div class="item-content">
+                                <p>{{ compilation_data.base_consolidada.posicionamento }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Tom de Voz #}
+                        {% if compilation_data.base_consolidada.tom_voz %}
+                        <div class="content-item">
+                            <h3 class="item-title">Tom de Voz</h3>
+                            <div class="item-content">
+                                <p>{{ compilation_data.base_consolidada.tom_voz }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                    </div>
+                {% else %}
+                    <p class="no-data">Dados não disponíveis</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# Coluna 2: Presença Digital #}
+        <div class="section-column">
+            <div class="content-block">
+                <h2 class="block-title">🌐 Presença Digital</h2>
+                
+                {% if compilation_data.presenca_digital %}
+                    <div class="block-content">
+                        
+                        {# Site #}
+                        {% if compilation_data.presenca_digital.site %}
+                        <div class="content-item">
+                            <h3 class="item-title">Site Institucional</h3>
+                            <div class="item-content">
+                                <a href="{{ compilation_data.presenca_digital.site }}" target="_blank" class="link-external">
+                                    {{ compilation_data.presenca_digital.site }}
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Redes Sociais #}
+                        {% if compilation_data.presenca_digital.redes_sociais %}
+                        <div class="content-item">
+                            <h3 class="item-title">Redes Sociais</h3>
+                            <div class="item-content social-networks">
+                                {% for rede in compilation_data.presenca_digital.redes_sociais %}
+                                <div class="social-item">
+                                    <span class="social-platform">{{ rede.plataforma }}</span>
+                                    <a href="{{ rede.url }}" target="_blank" class="link-external">
+                                        {{ rede.url }}
+                                    </a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Concorrentes #}
+                        {% if compilation_data.presenca_digital.concorrentes %}
+                        <div class="content-item">
+                            <h3 class="item-title">Concorrentes</h3>
+                            <div class="item-content">
+                                <ul class="competitors-list">
+                                    {% for concorrente in compilation_data.presenca_digital.concorrentes %}
+                                    <li>
+                                        <strong>{{ concorrente.nome }}</strong>
+                                        {% if concorrente.url %}
+                                        - <a href="{{ concorrente.url }}" target="_blank" class="link-external">{{ concorrente.url }}</a>
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                    </div>
+                {% else %}
+                    <p class="no-data">Dados não disponíveis</p>
+                {% endif %}
+            </div>
+        </div>
+        
+    </div>
+</div>

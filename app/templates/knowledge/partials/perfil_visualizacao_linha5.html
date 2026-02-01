@@ -1,0 +1,83 @@
+<div class="perfil-section linha-5">
+    <div class="section-row full-width">
+        
+        <div class="content-block">
+            <h2 class="block-title">🔍 Lacunas Encontradas</h2>
+            
+            {% if compilation_data.lacunas %}
+                <div class="block-content">
+                    
+                    {# Lacunas Críticas #}
+                    {% if compilation_data.lacunas.criticas %}
+                    <div class="content-item">
+                        <h3 class="item-title">Críticas (Ação Imediata)</h3>
+                        <div class="item-content">
+                            <ul class="gaps-list critical">
+                                {% for lacuna in compilation_data.lacunas.criticas %}
+                                <li>
+                                    <span class="gap-icon">🔴</span>
+                                    <div class="gap-info">
+                                        <strong>{{ lacuna.campo }}</strong>
+                                        <p>{{ lacuna.descricao }}</p>
+                                        {% if lacuna.impacto %}
+                                        <span class="gap-impact">Impacto: {{ lacuna.impacto }}</span>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {# Lacunas Importantes #}
+                    {% if compilation_data.lacunas.importantes %}
+                    <div class="content-item">
+                        <h3 class="item-title">Importantes (Atenção Necessária)</h3>
+                        <div class="item-content">
+                            <ul class="gaps-list important">
+                                {% for lacuna in compilation_data.lacunas.importantes %}
+                                <li>
+                                    <span class="gap-icon">🟡</span>
+                                    <div class="gap-info">
+                                        <strong>{{ lacuna.campo }}</strong>
+                                        <p>{{ lacuna.descricao }}</p>
+                                        {% if lacuna.impacto %}
+                                        <span class="gap-impact">Impacto: {{ lacuna.impacto }}</span>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {# Lacunas Menores #}
+                    {% if compilation_data.lacunas.menores %}
+                    <div class="content-item">
+                        <h3 class="item-title">Menores (Melhoria Contínua)</h3>
+                        <div class="item-content">
+                            <ul class="gaps-list minor">
+                                {% for lacuna in compilation_data.lacunas.menores %}
+                                <li>
+                                    <span class="gap-icon">🟢</span>
+                                    <div class="gap-info">
+                                        <strong>{{ lacuna.campo }}</strong>
+                                        <p>{{ lacuna.descricao }}</p>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                </div>
+            {% else %}
+                <p class="no-data">Nenhuma lacuna identificada</p>
+            {% endif %}
+        </div>
+        
+    </div>
+</div>

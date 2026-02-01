@@ -1,0 +1,118 @@
+<div class="perfil-section linha-3">
+    <div class="section-row two-columns">
+        
+        {# Coluna 1: Avaliação #}
+        <div class="section-column">
+            <div class="content-block">
+                <h2 class="block-title">⭐ Avaliação da Base</h2>
+                
+                {% if compilation_data.avaliacao %}
+                    <div class="block-content">
+                        
+                        {# Pontos Fortes #}
+                        {% if compilation_data.avaliacao.pontos_fortes %}
+                        <div class="content-item">
+                            <h3 class="item-title">Pontos Fortes</h3>
+                            <div class="item-content">
+                                <ul class="evaluation-list positive">
+                                    {% for ponto in compilation_data.avaliacao.pontos_fortes %}
+                                    <li>{{ ponto }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Pontos de Atenção #}
+                        {% if compilation_data.avaliacao.pontos_atencao %}
+                        <div class="content-item">
+                            <h3 class="item-title">Pontos de Atenção</h3>
+                            <div class="item-content">
+                                <ul class="evaluation-list warning">
+                                    {% for ponto in compilation_data.avaliacao.pontos_atencao %}
+                                    <li>{{ ponto }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Score Geral #}
+                        {% if compilation_data.avaliacao.score %}
+                        <div class="content-item">
+                            <h3 class="item-title">Score Geral</h3>
+                            <div class="item-content">
+                                <div class="score-display">
+                                    <span class="score-value">{{ compilation_data.avaliacao.score }}</span>
+                                    <span class="score-max">/10</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                    </div>
+                {% else %}
+                    <p class="no-data">Avaliação não disponível</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# Coluna 2: Melhorias Sugeridas #}
+        <div class="section-column">
+            <div class="content-block">
+                <h2 class="block-title">💡 Melhorias Sugeridas</h2>
+                
+                {% if compilation_data.melhorias %}
+                    <div class="block-content">
+                        
+                        {# Curto Prazo #}
+                        {% if compilation_data.melhorias.curto_prazo %}
+                        <div class="content-item">
+                            <h3 class="item-title">Curto Prazo (0-3 meses)</h3>
+                            <div class="item-content">
+                                <ul class="improvements-list priority-high">
+                                    {% for melhoria in compilation_data.melhorias.curto_prazo %}
+                                    <li>{{ melhoria }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Médio Prazo #}
+                        {% if compilation_data.melhorias.medio_prazo %}
+                        <div class="content-item">
+                            <h3 class="item-title">Médio Prazo (3-6 meses)</h3>
+                            <div class="item-content">
+                                <ul class="improvements-list priority-medium">
+                                    {% for melhoria in compilation_data.melhorias.medio_prazo %}
+                                    <li>{{ melhoria }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# Longo Prazo #}
+                        {% if compilation_data.melhorias.longo_prazo %}
+                        <div class="content-item">
+                            <h3 class="item-title">Longo Prazo (6+ meses)</h3>
+                            <div class="item-content">
+                                <ul class="improvements-list priority-low">
+                                    {% for melhoria in compilation_data.melhorias.longo_prazo %}
+                                    <li>{{ melhoria }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                    </div>
+                {% else %}
+                    <p class="no-data">Melhorias não disponíveis</p>
+                {% endif %}
+            </div>
+        </div>
+        
+    </div>
+</div>

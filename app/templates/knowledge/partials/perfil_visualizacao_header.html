@@ -1,0 +1,28 @@
+<div class="perfil-header">
+    <div class="header-content">
+        <div class="header-logo">
+            {% if primary_logo %}
+                <img src="{{ primary_logo.s3_url }}" alt="Logo {{ kb.nome_empresa }}" class="company-logo lazy-load">
+            {% else %}
+                <div class="logo-placeholder">
+                    <span class="logo-initial">{{ kb.nome_empresa|first|upper }}</span>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="header-text">
+            <h1 class="company-name">{{ kb.nome_empresa }}</h1>
+            <p class="header-intro">
+                Perfil completo da empresa com análise consolidada, identidade visual, 
+                avaliação de presença digital e plano de marketing estratégico.
+            </p>
+        </div>
+        
+        <div class="header-actions">
+            <a href="{% url 'knowledge:perfil_view' %}" class="btn btn-primary">
+                <span class="btn-icon">✏️</span>
+                Editar Base
+            </a>
+        </div>
+    </div>
+</div>

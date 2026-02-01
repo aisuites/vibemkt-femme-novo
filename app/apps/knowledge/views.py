@@ -1117,3 +1117,50 @@ def perfil_view(request):
     print(f"✅ [PERFIL_VIEW] Contexto criado (outros estados) - onboarding: {context['kb_onboarding_completed']}, suggestions: {context['kb_suggestions_reviewed']}", flush=True)
     
     return render(request, 'knowledge/perfil.html', context)
+
+
+@never_cache
+@login_required
+def perfil_visualizacao_view(request):
+    """
+    Página de Visualização do Perfil da Empresa (Modo Leitura)
+    Exibe dados compilados retornados pelo N8N
+    """
+    # Buscar KnowledgeBase
+    try:
+        kb = KnowledgeBase.objects.for_request(request).first()
+    except Exception:
+        kb = None
+    
+    if not kb:
+        messages.error(request, 'Base de Conhecimento não encontrada.')
+        return redirect('knowledge:view')
+    
+    # Verificar se onboarding foi concluído
+    if not kb.onboarding_completed:
+        messages.warning(request, 'Complete o onboarding primeiro.')
+        return redirect('knowledge:view')
+    
+    # Verificar se sugestões foram revisadas
+    if not kb.suggestions_reviewed:
+        messages.warning(request, 'Revise as sugestões primeiro.')
+        return redirect('knowledge:perfil_view')
+    
+    # Buscar logo primário
+    primary_logo = Logo.objects.filter(
+        knowledge_base=kb,
+        is_primary=True
+    ).first()
+    
+    # Determinar estado da compilação
+    compilation_status = kb.compilation_status
+    
+    # Preparar contexto
+    context = {
+        'kb': kb,
+        'compilation_status': compilation_status,
+        'primary_logo': primary_logo,
+        'compilation_data': kb.n8n_compilation if kb.n8n_compilation else {},
+    }
+    
+    return render(request, 'knowledge/perfil_visualizacao.html', context)

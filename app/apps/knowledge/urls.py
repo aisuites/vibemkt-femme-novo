@@ -17,6 +17,7 @@ urlpatterns = [
     # Visualização e edição (página única)
     path('', views.knowledge_view, name='view'),
     path('perfil/', views.perfil_view, name='perfil_view'),
+    path('perfil-visualizacao/', views.perfil_visualizacao_view, name='perfil_visualizacao_view'),
     path('perfil/apply-suggestions/', views_perfil.perfil_apply_suggestions, name='perfil_apply_suggestions'),
     path('perfil/add-color/', views_perfil_colors.perfil_add_color, name='perfil_add_color'),
     path('perfil/remove-color/', views_perfil_colors.perfil_remove_color, name='perfil_remove_color'),

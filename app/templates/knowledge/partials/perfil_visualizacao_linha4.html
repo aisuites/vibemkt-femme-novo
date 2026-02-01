@@ -1,0 +1,57 @@
+<div class="perfil-section linha-4">
+    <div class="section-row full-width">
+        
+        <div class="content-block">
+            <h2 class="block-title">📊 Plano de Marketing Estratégico</h2>
+            
+            {% if compilation_data.plano_marketing %}
+                <div class="block-content">
+                    
+                    {# Tabela de Plano de Marketing #}
+                    <div class="marketing-plan-table">
+                        <table class="plan-table">
+                            <thead>
+                                <tr>
+                                    <th>Ação</th>
+                                    <th>Objetivo</th>
+                                    <th>Canal</th>
+                                    <th>Prazo</th>
+                                    <th>Prioridade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for acao in compilation_data.plano_marketing %}
+                                <tr>
+                                    <td class="plan-action">{{ acao.acao }}</td>
+                                    <td class="plan-objective">{{ acao.objetivo }}</td>
+                                    <td class="plan-channel">{{ acao.canal }}</td>
+                                    <td class="plan-deadline">{{ acao.prazo }}</td>
+                                    <td class="plan-priority">
+                                        <span class="priority-badge priority-{{ acao.prioridade|lower }}">
+                                            {{ acao.prioridade }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {# Resumo do Plano #}
+                    {% if compilation_data.plano_marketing_resumo %}
+                    <div class="content-item marketing-summary">
+                        <h3 class="item-title">Resumo Executivo</h3>
+                        <div class="item-content">
+                            <p>{{ compilation_data.plano_marketing_resumo }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                </div>
+            {% else %}
+                <p class="no-data">Plano de marketing não disponível</p>
+            {% endif %}
+        </div>
+        
+    </div>
+</div>

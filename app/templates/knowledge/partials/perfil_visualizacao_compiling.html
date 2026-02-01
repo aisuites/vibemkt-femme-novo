@@ -1,0 +1,57 @@
+<div class="compilation-pending-state">
+    <div class="compiling-animation">
+        <div class="spinner-large"></div>
+    </div>
+    
+    <h2>Compilando Perfil da Empresa</h2>
+    <p class="compiling-message">
+        Estamos processando e organizando todas as informações da sua empresa.<br>
+        Este processo pode levar alguns minutos.
+    </p>
+    
+    <div class="compiling-progress">
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+        <p class="progress-text">Aguarde enquanto processamos...</p>
+    </div>
+    
+    <div class="compiling-actions">
+        <button type="button" class="btn btn-secondary" id="checkStatusBtn">
+            <span class="btn-icon">🔄</span>
+            Verificar Status
+        </button>
+        <a href="{% url 'knowledge:perfil_view' %}" class="btn btn-outline">
+            Voltar para Edição
+        </a>
+    </div>
+    
+    <div class="compiling-info">
+        <p class="info-text">
+            <strong>Dica:</strong> Você pode fechar esta página e voltar mais tarde. 
+            Enviaremos uma notificação quando a compilação estiver pronta.
+        </p>
+    </div>
+</div>
+
+<script>
+// Auto-refresh a cada 10 segundos
+let autoRefreshInterval;
+
+function checkCompilationStatus() {
+    location.reload();
+}
+
+// Botão manual
+document.getElementById('checkStatusBtn')?.addEventListener('click', checkCompilationStatus);
+
+// Auto-refresh (apenas no estado compilando)
+autoRefreshInterval = setInterval(checkCompilationStatus, 10000);
+
+// Limpar interval ao sair da página
+window.addEventListener('beforeunload', () => {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+});
+</script>

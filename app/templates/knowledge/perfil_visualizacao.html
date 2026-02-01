@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Perfil da Empresa - Visualização{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/perfil-visualizacao.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="perfil-visualizacao-container">
+    
+    {% if compilation_status == 'pending' or compilation_status == 'processing' %}
+        {# Estado: Compilando #}
+        {% include 'knowledge/partials/perfil_visualizacao_compiling.html' %}
+    
+    {% elif compilation_status == 'error' %}
+        {# Estado: Erro #}
+        <div class="compilation-error-state">
+            <div class="error-icon">⚠️</div>
+            <h2>Erro na Compilação</h2>
+            <p>Ocorreu um erro ao processar os dados. Por favor, tente novamente.</p>
+            <div class="error-actions">
+                <a href="{% url 'knowledge:perfil_view' %}" class="btn btn-primary">
+                    Voltar para Edição
+                </a>
+            </div>
+        </div>
+    
+    {% elif compilation_status == 'completed' and compilation_data %}
+        {# Estado: Compilado - Exibir conteúdo completo #}
+        
+        {# Header com Logo #}
+        {% include 'knowledge/partials/perfil_visualizacao_header.html' %}
+        
+        {# Linha 1: Base Consolidada + Presença Digital #}
+        {% include 'knowledge/partials/perfil_visualizacao_linha1.html' %}
+        
+        {# Linha 2: Paleta/Tipografias + Logos/Referências #}
+        {% include 'knowledge/partials/perfil_visualizacao_linha2.html' %}
+        
+        {# Linha 3: Avaliação + Melhorias #}
+        {% include 'knowledge/partials/perfil_visualizacao_linha3.html' %}
+        
+        {# Linha 4: Plano de Marketing #}
+        {% include 'knowledge/partials/perfil_visualizacao_linha4.html' %}
+        
+        {# Linha 5: Lacunas Encontradas #}
+        {% include 'knowledge/partials/perfil_visualizacao_linha5.html' %}
+        
+        {# Linha 6: Links Verificados #}
+        {% include 'knowledge/partials/perfil_visualizacao_linha6.html' %}
+        
+    {% else %}
+        {# Estado: Sem dados #}
+        <div class="no-data-state">
+            <div class="info-icon">ℹ️</div>
+            <h2>Nenhum Dado Disponível</h2>
+            <p>Complete o processo de revisão de sugestões para visualizar o perfil compilado.</p>
+            <div class="no-data-actions">
+                <a href="{% url 'knowledge:perfil_view' %}" class="btn btn-primary">
+                    Ir para Edição
+                </a>
+            </div>
+        </div>
+    {% endif %}
+    
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/perfil-visualizacao.js' %}"></script>
+{% endblock %}
