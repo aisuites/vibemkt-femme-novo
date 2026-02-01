@@ -43,11 +43,12 @@ def perfil_apply_suggestions(request):
         print(f"📝 [PERFIL_APPLY] Sugestões aceitas: {accepted_suggestions}", flush=True)
         print(f"✏️ [PERFIL_APPLY] Campos editados: {list(edited_fields.keys())}", flush=True)
         
-        if not accepted_suggestions and not edited_fields:
-            return JsonResponse({
-                'success': False,
-                'error': 'Nenhuma alteração foi enviada.'
-            }, status=400)
+        # PERMITIR envio mesmo sem alterações (para enviar dados atuais ao N8N)
+        # if not accepted_suggestions and not edited_fields:
+        #     return JsonResponse({
+        #         'success': False,
+        #         'error': 'Nenhuma alteração foi enviada.'
+        #     }, status=400)
         
         # Mapeamento SIMPLES: nome frontend (EN) → campo do modelo Django
         # NOTA: site, redes sociais e concorrentes podem ser EDITADOS manualmente
