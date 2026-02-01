@@ -16,6 +16,9 @@ function addConcorrenteLine(nome = '', url = '') {
   item.className = 'concorrente-item';
   item.dataset.index = concorrenteIndex;
   
+  // Remover https:// do URL para exibição (se presente)
+  const urlDisplay = url ? url.replace(/^https?:\/\//, '') : '';
+  
   item.innerHTML = `
     <div class="concorrente-inputs-wrapper">
       <input type="text" 
@@ -24,11 +27,14 @@ function addConcorrenteLine(nome = '', url = '') {
              value="${escapeHtml(nome)}"
              placeholder="Nome do concorrente"
              required>
-      <input type="url" 
-             class="concorrente-url-input" 
-             name="concorrentes[${concorrenteIndex}][url]"
-             value="${escapeHtml(url)}"
-             placeholder="https://site-concorrente.com.br (opcional)">
+      <div class="website-field-wrapper">
+        <span class="website-prefix">https://</span>
+        <input type="text" 
+               class="concorrente-url-input" 
+               name="concorrentes[${concorrenteIndex}][url]"
+               value="${escapeHtml(urlDisplay)}"
+               placeholder="site-concorrente.com.br (opcional)">
+      </div>
     </div>
     <button 
       type="button" 
@@ -115,7 +121,12 @@ function syncConcorrentesToForm() {
     if (nomeInput) {
       nomeInput.name = `concorrentes[${newIndex}][nome]`;
       const nome = nomeInput.value.trim();
-      const url = urlInput ? urlInput.value.trim() : '';
+      let url = urlInput ? urlInput.value.trim() : '';
+      
+      // Adicionar https:// se URL foi preenchida e não começa com http:// ou https://
+      if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+        url = `https://${url}`;
+      }
       
       console.log(`  Linha ${newIndex}: nome="${nome}", url="${url}"`);
       

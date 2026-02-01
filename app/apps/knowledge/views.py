@@ -234,6 +234,48 @@ def knowledge_save_block(request, block_number):
                 # Salvar
                 kb = form.save(commit=False)
                 kb.last_updated_by = request.user
+                
+                # Processar campo site_institucional_domain (Bloco 6)
+                if block_number == 6:
+                    site_domain = request.POST.get('site_institucional_domain', '').strip()
+                    if site_domain:
+                        # Adicionar https:// se não estiver presente
+                        if not site_domain.startswith(('http://', 'https://')):
+                            kb.site_institucional = f'https://{site_domain}'
+                        else:
+                            kb.site_institucional = site_domain
+                    else:
+                        kb.site_institucional = ''
+                    
+                    # Processar campos de redes sociais (social_*_domain)
+                    social_fields = {
+                        'social_instagram_domain': 'instagram',
+                        'social_facebook_domain': 'facebook',
+                        'social_linkedin_domain': 'linkedin',
+                        'social_youtube_domain': 'youtube'
+                    }
+                    
+                    for field_name, network_type in social_fields.items():
+                        domain = request.POST.get(field_name, '').strip()
+                        if domain:
+                            # Adicionar https:// se não estiver presente
+                            if not domain.startswith(('http://', 'https://')):
+                                url = f'https://{domain}'
+                            else:
+                                url = domain
+                            
+                            # Atualizar ou criar SocialNetwork
+                            from apps.knowledge.models import SocialNetwork
+                            SocialNetwork.objects.update_or_create(
+                                knowledge_base=kb,
+                                network_type=network_type,
+                                defaults={
+                                    'name': network_type.capitalize(),
+                                    'url': url,
+                                    'is_active': True
+                                }
+                            )
+                
                 kb.save()
                 
                 # Registrar no histórico (simplificado)
@@ -675,39 +717,53 @@ def perfil_view(request):
         campos_raw = payload[0] if isinstance(payload, list) else {}
         print(f"🔍 [PERFIL_VIEW] campos_raw keys: {list(campos_raw.keys())[:5] if campos_raw else 'vazio'}...", flush=True)
         
+        # Mapeamento: nome em português do payload N8N → nome em inglês (usado no frontend)
+        # IMPORTANTE: Payload N8N usa nomes em português com underscore
+        field_n8n_to_english = {
+            'missao': 'mission',
+            'visao': 'vision',
+            'valores': 'values',
+            'descricao_do_produto': 'description',
+            'publico_alvo': 'target_audience',
+            'publico_interno': 'internal_audience',
+            'posicionamento': 'positioning',
+            'proposta_de_valor': 'value_proposition',
+            'diferenciais': 'differentials',
+            'tom_de_voz': 'tone_of_voice',
+            'tom_de_voz_interno': 'internal_tone_of_voice',
+            'palavras_recomendadas': 'recommended_words',
+            'palavras_a_evitar': 'words_to_avoid',
+            'paleta_de_cores': 'palette_colors',
+            'fontes': 'fonts',
+            'logotipo': 'logo_files',
+            'imagens_de_referencia': 'reference_images',
+            'website': 'website_url',
+            'redes_sociais': 'social_networks',
+            'concorrencia': 'competitors',
+            'frase_em_10_palavras': 'phrase_in_10_words',
+            'sugestoes_estrategicas_de_ativacao_de_marca': 'strategic_suggestions_for_brand_activation'
+        }
+        
         # Mapear nomes técnicos para labels amigáveis
-        # IMPORTANTE: Usar os mesmos títulos da página Base de Conhecimento
         field_labels = {
-            # BLOCO 1: Identidade Institucional
-            'company_name': 'Nome da empresa',
             'mission': 'Missão',
             'vision': 'Visão',
             'values': 'Valores & princípios',
             'description': 'Descrição do Produto/Serviço',
-            
-            # BLOCO 2: Públicos & Segmentos
             'target_audience': 'Público externo',
             'internal_audience': 'Público interno',
             'internal_segments': 'Segmentos internos',
-            
-            # BLOCO 3: Posicionamento & Diferenciais
             'positioning': 'Posicionamento de mercado',
             'value_proposition': 'Proposta de valor',
             'differentials': 'Diferenciais competitivos',
-            
-            # BLOCO 4: Tom de Voz & Linguagem
             'tone_of_voice': 'Tom de voz externo',
             'internal_tone_of_voice': 'Tom de voz interno',
             'recommended_words': 'Palavras recomendadas',
             'words_to_avoid': 'Palavras a evitar',
-            
-            # BLOCO 5: Identidade Visual
             'palette_colors': 'Cores da identidade visual',
             'fonts': 'Tipografia da marca',
             'logo_files': 'Logotipos',
             'reference_images': 'Imagens de referência',
-            
-            # BLOCO 6: Sites e Redes Sociais
             'website_url': 'Site institucional',
             'social_networks': 'Redes sociais',
             'competitors': 'Concorrentes',
@@ -715,37 +771,98 @@ def perfil_view(request):
             'strategic_suggestions_for_brand_activation': 'Sugestões Estratégicas'
         }
         
-        # Ordem dos campos por bloco (mesma ordem da Base de Conhecimento)
+        # Ordem dos campos por bloco (nomes em português do payload N8N)
         blocos_estrutura = [
             {
                 'numero': 1,
                 'titulo': 'Identidade institucional',
-                'campos': ['company_name', 'mission', 'vision', 'values', 'description']
+                'campos': ['missao', 'visao', 'valores', 'descricao_do_produto']
             },
             {
                 'numero': 2,
                 'titulo': 'Públicos & segmentos',
-                'campos': ['target_audience', 'internal_audience', 'internal_segments']
+                'campos': ['publico_alvo', 'publico_interno']
             },
             {
                 'numero': 3,
                 'titulo': 'Posicionamento & diferenciais',
-                'campos': ['positioning', 'value_proposition', 'differentials']
+                'campos': ['posicionamento', 'proposta_de_valor', 'diferenciais']
             },
             {
                 'numero': 4,
                 'titulo': 'Tom de voz & linguagem',
-                'campos': ['tone_of_voice', 'internal_tone_of_voice', 'recommended_words', 'words_to_avoid']
+                'campos': ['tom_de_voz', 'tom_de_voz_interno', 'palavras_recomendadas', 'palavras_a_evitar']
             },
             {
                 'numero': 5,
                 'titulo': 'Identidade visual',
-                'campos': ['palette_colors', 'fonts', 'logo_files', 'reference_images']
+                'campos': ['paleta_de_cores', 'fontes', 'logotipo', 'imagens_de_referencia']
             },
             {
                 'numero': 6,
                 'titulo': 'Sites e redes sociais',
-                'campos': ['website_url', 'social_networks', 'competitors']
+                'campos': ['website', 'redes_sociais', 'concorrencia']
+            }
+        ]
+        
+        # Definir estrutura de campos da Base de Conhecimento
+        # IMPORTANTE: Exibir TODOS os campos, independente do payload N8N
+        campos_kb_estrutura = [
+            {
+                'numero': 1,
+                'titulo': 'Identidade institucional',
+                'campos': [
+                    {'nome': 'mission', 'label': 'Missão', 'campo_modelo': 'missao'},
+                    {'nome': 'vision', 'label': 'Visão', 'campo_modelo': 'visao'},
+                    {'nome': 'values', 'label': 'Valores & princípios', 'campo_modelo': 'valores'},
+                    {'nome': 'description', 'label': 'Descrição do Produto/Serviço', 'campo_modelo': 'descricao_produto'},
+                ]
+            },
+            {
+                'numero': 2,
+                'titulo': 'Públicos & segmentos',
+                'campos': [
+                    {'nome': 'target_audience', 'label': 'Público externo', 'campo_modelo': 'publico_externo'},
+                    {'nome': 'internal_audience', 'label': 'Público interno', 'campo_modelo': 'publico_interno'},
+                ]
+            },
+            {
+                'numero': 3,
+                'titulo': 'Posicionamento & diferenciais',
+                'campos': [
+                    {'nome': 'positioning', 'label': 'Posicionamento de mercado', 'campo_modelo': 'posicionamento'},
+                    {'nome': 'value_proposition', 'label': 'Proposta de valor', 'campo_modelo': 'proposta_valor'},
+                    {'nome': 'differentials', 'label': 'Diferenciais competitivos', 'campo_modelo': 'diferenciais'},
+                ]
+            },
+            {
+                'numero': 4,
+                'titulo': 'Tom de voz & linguagem',
+                'campos': [
+                    {'nome': 'tone_of_voice', 'label': 'Tom de voz externo', 'campo_modelo': 'tom_voz_externo'},
+                    {'nome': 'internal_tone_of_voice', 'label': 'Tom de voz interno', 'campo_modelo': 'tom_voz_interno'},
+                    {'nome': 'recommended_words', 'label': 'Palavras recomendadas', 'campo_modelo': 'palavras_recomendadas'},
+                    {'nome': 'words_to_avoid', 'label': 'Palavras a evitar', 'campo_modelo': 'palavras_evitar'},
+                ]
+            },
+            {
+                'numero': 5,
+                'titulo': 'Identidade visual',
+                'campos': [
+                    {'nome': 'palette_colors', 'label': 'Cores da marca', 'campo_modelo': 'colors', 'readonly': True, 'type': 'colors'},
+                    {'nome': 'fonts', 'label': 'Tipografia', 'campo_modelo': 'typography_settings', 'readonly': True, 'type': 'fonts'},
+                    {'nome': 'logo_files', 'label': 'Logotipos', 'campo_modelo': 'logos', 'readonly': True, 'type': 'logos'},
+                    {'nome': 'reference_images', 'label': 'Imagens de referência', 'campo_modelo': 'reference_images', 'readonly': True, 'type': 'references'},
+                ]
+            },
+            {
+                'numero': 6,
+                'titulo': 'Sites e redes sociais',
+                'campos': [
+                    {'nome': 'website_url', 'label': 'Site institucional', 'campo_modelo': 'site_institucional', 'type': 'website', 'readonly': False, 'no_suggestions': True},
+                    {'nome': 'social_networks', 'label': 'Redes sociais', 'campo_modelo': 'social_networks', 'type': 'social_networks', 'readonly': False, 'no_suggestions': True},
+                    {'nome': 'competitors', 'label': 'Concorrentes', 'campo_modelo': 'concorrentes', 'type': 'competitors', 'readonly': False, 'no_suggestions': True},
+                ]
             }
         ]
         
@@ -753,57 +870,218 @@ def perfil_view(request):
         blocos_analise = []
         stats = {'fraco': 0, 'medio': 0, 'bom': 0}
         
-        for bloco in blocos_estrutura:
+        for bloco in campos_kb_estrutura:
             campos_bloco = []
             
-            for campo_nome in bloco['campos']:
-                if campo_nome not in campos_raw:
-                    continue
+            for campo_def in bloco['campos']:
+                campo_nome = campo_def['nome']
+                campo_modelo = campo_def['campo_modelo']
                 
-                campo_data = campos_raw[campo_nome]
-                if not isinstance(campo_data, dict):
-                    continue
+                # 1. BUSCAR VALOR INFORMADO PELO USUÁRIO (do banco de dados)
+                informado = ''
+                colors_data = None  # Para campos de cores
+                fonts_data = None  # Para campos de fontes
+                logos_data = None  # Para campos de logos
+                references_data = None  # Para imagens de referência
+                social_networks_data = None  # Para redes sociais
+                competitors_data = None  # Para concorrentes
                 
-                status = campo_data.get('status', '')
+                # Tratamento especial para campo colors (relacionamento)
+                if campo_modelo == 'colors':
+                    colors_queryset = kb.colors.all().order_by('order')
+                    if colors_queryset.exists():
+                        colors_data = list(colors_queryset.values('id', 'name', 'hex_code', 'color_type'))
+                        informado = f"{colors_queryset.count()} cor(es) cadastrada(s)"
                 
-                # Contar estatísticas
-                if status == 'fraco':
-                    stats['fraco'] += 1
-                elif status == 'médio':
-                    stats['medio'] += 1
-                elif status == 'bom':
-                    stats['bom'] += 1
+                # Tratamento especial para campo typography_settings (relacionamento)
+                elif campo_modelo == 'typography_settings':
+                    fonts_data = []
+                    
+                    # 1. Buscar Typography (configurações de tipografia)
+                    fonts_queryset = kb.typography_settings.all().order_by('order')
+                    for font in fonts_queryset:
+                        font_dict = {
+                            'id': font.id,
+                            'usage': font.usage,
+                            'font_source': font.font_source,
+                        }
+                        if font.font_source == 'google':
+                            font_dict['font_name'] = font.google_font_name
+                            font_dict['font_weight'] = font.google_font_weight
+                        else:  # upload
+                            if font.custom_font:
+                                font_dict['font_name'] = font.custom_font.name
+                                font_dict['custom_font_id'] = font.custom_font.id
+                        fonts_data.append(font_dict)
+                    
+                    # 2. Buscar CustomFont (fontes customizadas independentes)
+                    custom_fonts_queryset = kb.custom_fonts.all().order_by('-created_at')
+                    for custom_font in custom_fonts_queryset:
+                        # Verificar se já não está em Typography
+                        already_in_typography = any(
+                            f.get('custom_font_id') == custom_font.id 
+                            for f in fonts_data
+                        )
+                        if not already_in_typography:
+                            fonts_data.append({
+                                'id': f'custom_{custom_font.id}',
+                                'font_name': custom_font.name,
+                                'usage': custom_font.font_type.upper(),
+                                'font_source': 'upload',
+                                'custom_font_id': custom_font.id,
+                            })
+                    
+                    if fonts_data:
+                        informado = f"{len(fonts_data)} fonte(s) cadastrada(s)"
                 
-                # Preparar dados do campo
-                informado = campo_data.get('informado_pelo_usuario', '')
+                # Tratamento especial para campo logos (relacionamento)
+                elif campo_modelo == 'logos':
+                    from apps.knowledge.models import Logo
+                    logos_queryset = kb.logos.all().order_by('-is_primary', 'logo_type')
+                    if logos_queryset.exists():
+                        logos_data = list(logos_queryset.values('id', 'name', 's3_key', 's3_url', 'logo_type', 'is_primary'))
+                        informado = f"{logos_queryset.count()} logo(s) cadastrado(s)"
                 
-                # Converter listas/dicts em string legível
-                if isinstance(informado, list):
-                    informado = ', '.join(str(i) for i in informado) if informado else ''
-                elif isinstance(informado, dict):
-                    informado = json.dumps(informado, ensure_ascii=False, indent=2)
+                # Tratamento especial para campo reference_images (relacionamento)
+                elif campo_modelo == 'reference_images':
+                    from apps.knowledge.models import ReferenceImage
+                    references_queryset = kb.reference_images.all().order_by('-created_at')
+                    if references_queryset.exists():
+                        references_data = list(references_queryset.values('id', 'title', 's3_key', 's3_url'))
+                        informado = f"{references_queryset.count()} imagem(ns) de referência"
                 
-                sugestao = campo_data.get('sugestao_do_agente_iamkt', '')
-                if isinstance(sugestao, list):
-                    sugestao = '\n'.join(f"• {s}" for s in sugestao)
-                elif isinstance(sugestao, dict):
-                    sugestao = json.dumps(sugestao, ensure_ascii=False, indent=2)
+                # Tratamento especial para campo social_networks (relacionamento)
+                elif campo_modelo == 'social_networks':
+                    from apps.knowledge.models import SocialNetwork
+                    socials_queryset = kb.social_networks.filter(is_active=True).order_by('order')
+                    social_networks_data = {}
+                    if socials_queryset.exists():
+                        for social in socials_queryset:
+                            social_networks_data[social.network_type] = social.url
+                        informado = f"{socials_queryset.count()} rede(s) social(is) cadastrada(s)"
                 
-                campos_bloco.append({
+                # Tratamento especial para campo concorrentes (JSONField)
+                elif campo_modelo == 'concorrentes':
+                    competitors_data = kb.concorrentes if kb.concorrentes else []
+                    if competitors_data and isinstance(competitors_data, list):
+                        informado = f"{len(competitors_data)} concorrente(s) cadastrado(s)"
+                
+                elif hasattr(kb, campo_modelo):
+                    valor_banco = getattr(kb, campo_modelo, '')
+                    if valor_banco:
+                        if isinstance(valor_banco, list):
+                            informado = ', '.join(str(i) for i in valor_banco)
+                        elif isinstance(valor_banco, dict):
+                            informado = json.dumps(valor_banco, ensure_ascii=False, indent=2)
+                        else:
+                            informado = str(valor_banco)
+                
+                # 2. BUSCAR DADOS DO PAYLOAD N8N (se existir)
+                status = ''
+                avaliacao = ''
+                sugestao = ''
+                
+                # Tentar encontrar no payload (pode estar em PT ou EN)
+                campo_data = None
+                for possivel_nome in [campo_nome, campo_modelo, campo_def.get('nome_pt', '')]:
+                    if possivel_nome and possivel_nome in campos_raw:
+                        campo_data = campos_raw[possivel_nome]
+                        break
+                
+                if campo_data and isinstance(campo_data, dict):
+                    status = campo_data.get('status', '')
+                    avaliacao = campo_data.get('avaliacao', '')
+                    
+                    # Contar estatísticas
+                    if status == 'fraco':
+                        stats['fraco'] += 1
+                    elif status == 'médio':
+                        stats['medio'] += 1
+                    elif status == 'bom':
+                        stats['bom'] += 1
+                    
+                    sugestao_raw = campo_data.get('sugestao_do_agente_iamkt', '')
+                    if isinstance(sugestao_raw, list):
+                        # Verificar se é lista de strings ou lista de objetos
+                        if sugestao_raw and isinstance(sugestao_raw[0], dict):
+                            # Lista de objetos (ex: fontes)
+                            sugestao_parts = []
+                            for item in sugestao_raw:
+                                # Para fontes, exibir apenas o nome de forma amigável
+                                if 'name' in item:
+                                    sugestao_parts.append(f"• {item['name']}")
+                                else:
+                                    # Fallback: exibir todos os campos
+                                    item_str = ', '.join(f"{k}: {v}" for k, v in item.items())
+                                    sugestao_parts.append(f"• {item_str}")
+                            sugestao = '\n'.join(sugestao_parts)
+                        else:
+                            # Lista de strings simples
+                            sugestao = '\n'.join(f"• {s}" for s in sugestao_raw)
+                    elif isinstance(sugestao_raw, dict):
+                        # Formatar dict de forma mais legível
+                        sugestao_parts = []
+                        for key, value in sugestao_raw.items():
+                            if isinstance(value, list):
+                                sugestao_parts.append(f"**{key}:**")
+                                for item in value:
+                                    if isinstance(item, dict):
+                                        # Para objetos aninhados (ex: fontes)
+                                        item_str = ', '.join(f"{k}: {v}" for k, v in item.items())
+                                        sugestao_parts.append(f"  • {item_str}")
+                                    else:
+                                        sugestao_parts.append(f"  • {item}")
+                            else:
+                                sugestao_parts.append(f"**{key}:** {value}")
+                        sugestao = '\n'.join(sugestao_parts) if sugestao_parts else json.dumps(sugestao_raw, ensure_ascii=False, indent=2)
+                    else:
+                        sugestao = str(sugestao_raw) if sugestao_raw else ''
+                
+                # 3. ADICIONAR CAMPO AO BLOCO (sempre, mesmo sem dados N8N)
+                campo_data_dict = {
                     'nome': campo_nome,
-                    'label': field_labels.get(campo_nome, campo_nome.replace('_', ' ').title()),
+                    'label': campo_def['label'],
                     'status': status,
-                    'informado': informado,
-                    'avaliacao': campo_data.get('avaliacao', ''),
-                    'sugestao': sugestao
-                })
+                    'informado': informado or 'Não informado',
+                    'avaliacao': avaliacao,
+                    'sugestao': sugestao,
+                    'readonly': campo_def.get('readonly', False),  # Campos readonly não têm aceitar/rejeitar
+                    'no_suggestions': campo_def.get('no_suggestions', False),  # Campos sem botões de sugestão
+                    'type': campo_def.get('type', 'text')  # Tipo de campo (text, colors, etc)
+                }
+                
+                # Adicionar dados especiais para campos de cores
+                if colors_data is not None:
+                    campo_data_dict['colors'] = colors_data
+                
+                # Adicionar dados especiais para campos de fontes
+                if fonts_data is not None:
+                    campo_data_dict['fonts'] = fonts_data
+                
+                # Adicionar dados especiais para campos de logos
+                if logos_data is not None:
+                    campo_data_dict['logos'] = logos_data
+                
+                # Adicionar dados especiais para imagens de referência
+                if references_data is not None:
+                    campo_data_dict['references'] = references_data
+                
+                # Adicionar dados especiais para redes sociais
+                if 'social_networks_data' in locals() and social_networks_data:
+                    campo_data_dict['social_networks_data'] = social_networks_data
+                
+                # Adicionar dados especiais para concorrentes
+                if 'competitors_data' in locals() and competitors_data:
+                    campo_data_dict['competitors_data'] = competitors_data
+                
+                campos_bloco.append(campo_data_dict)
             
-            if campos_bloco:  # Só adicionar bloco se tiver campos
-                blocos_analise.append({
-                    'numero': bloco['numero'],
-                    'titulo': bloco['titulo'],
-                    'campos': campos_bloco
-                })
+            # Adicionar bloco (sempre, mesmo sem campos com sugestão)
+            blocos_analise.append({
+                'numero': bloco['numero'],
+                'titulo': bloco['titulo'],
+                'campos': campos_bloco
+            })
         
         print(f"🔍 [PERFIL_VIEW] Total de blocos processados: {len(blocos_analise)}", flush=True)
         print(f"🔍 [PERFIL_VIEW] Stats: {stats}", flush=True)

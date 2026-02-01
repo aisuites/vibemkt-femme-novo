@@ -1,0 +1,342 @@
+/**
+ * PERFIL-LOGOS.CSS - Estilos para grid de logotipos e imagens de referência no Perfil
+ * Seguindo referência: grid de thumbnails + botão adicionar
+ */
+
+/* ========================================
+   PERFIL LOGOS - Grid de Thumbnails
+   ======================================== */
+
+.perfil-logos-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.perfil-logos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  min-height: 120px;
+}
+
+.perfil-logo-item {
+  position: relative;
+  aspect-ratio: 1;
+  border: 1px solid rgba(122, 61, 138, 0.15);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+}
+
+.perfil-logo-item:hover {
+  border-color: rgba(122, 61, 138, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.perfil-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 12px;
+}
+
+.perfil-logo-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.15s ease;
+}
+
+.perfil-logo-item:hover .perfil-logo-remove {
+  opacity: 1;
+}
+
+.perfil-logo-remove:hover {
+  background: rgba(220, 38, 38, 1);
+  transform: scale(1.1);
+}
+
+.perfil-btn-add-logo {
+  align-self: flex-start;
+  padding: 10px 20px;
+  background: none;
+  border: 1.5px dashed rgba(122, 61, 138, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.perfil-btn-add-logo:hover {
+  background: rgba(122, 61, 138, 0.05);
+  border-color: var(--color-primary);
+  border-style: solid;
+}
+
+/* Modal de adicionar logo */
+.perfil-logo-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.perfil-logo-modal.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.perfil-logo-modal-content {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: scale(0.95);
+  transition: transform 0.2s ease;
+}
+
+.perfil-logo-modal.show .perfil-logo-modal-content {
+  transform: scale(1);
+}
+
+.perfil-logo-modal-header {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--color-text);
+}
+
+.perfil-logo-upload-area {
+  border: 2px dashed rgba(122, 61, 138, 0.3);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.perfil-logo-upload-area:hover {
+  border-color: var(--color-primary);
+  background: rgba(122, 61, 138, 0.02);
+}
+
+.perfil-logo-upload-area.dragging {
+  border-color: var(--color-primary);
+  background: rgba(122, 61, 138, 0.05);
+}
+
+.perfil-logo-upload-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.perfil-logo-upload-text {
+  font-size: 14px;
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+
+.perfil-logo-upload-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.perfil-logo-preview {
+  max-width: 100%;
+  max-height: 200px;
+  margin: 16px auto;
+  display: none;
+}
+
+.perfil-logo-preview.show {
+  display: block;
+}
+
+.perfil-logo-preview img {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+}
+
+.perfil-logo-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.perfil-logo-modal-actions button {
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.perfil-logo-modal-actions .btn-cancel {
+  background: none;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: var(--color-text-muted);
+}
+
+.perfil-logo-modal-actions .btn-cancel:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.perfil-logo-modal-actions .btn-confirm {
+  background: var(--color-primary);
+  border: none;
+  color: white;
+}
+
+.perfil-logo-modal-actions .btn-confirm:hover {
+  background: var(--color-primary-hover);
+}
+
+.perfil-logo-modal-actions .btn-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading state */
+.perfil-logo-uploading {
+  text-align: center;
+  padding: 16px;
+}
+
+.perfil-logo-uploading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(122, 61, 138, 0.2);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.perfil-logo-uploading-text {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+/* ========================================
+   PERFIL REFERENCES - Grid de Thumbnails
+   (Reutiliza estilos de logos)
+   ======================================== */
+
+.perfil-references-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.perfil-references-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  min-height: 120px;
+}
+
+.perfil-reference-item {
+  position: relative;
+  aspect-ratio: 1;
+  border: 1px solid rgba(122, 61, 138, 0.15);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+}
+
+.perfil-reference-item:hover {
+  border-color: rgba(122, 61, 138, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.perfil-reference-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  padding: 0;
+}
+
+.perfil-reference-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.15s ease;
+}
+
+.perfil-reference-item:hover .perfil-reference-remove {
+  opacity: 1;
+}
+
+.perfil-reference-remove:hover {
+  background: rgba(220, 38, 38, 1);
+  transform: scale(1.1);
+}
+
+.perfil-btn-add-reference {
+  align-self: flex-start;
+  padding: 10px 20px;
+  background: none;
+  border: 1.5px dashed rgba(122, 61, 138, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.perfil-btn-add-reference:hover {
+  background: rgba(122, 61, 138, 0.05);
+  border-color: var(--color-primary);
+  border-style: solid;
+}

@@ -8,6 +8,8 @@ from . import views_tags
 from . import views_upload
 from . import views_n8n
 from . import views_perfil
+from . import views_perfil_colors
+from . import views_perfil_fonts
 
 app_name = 'knowledge'
 
@@ -16,6 +18,10 @@ urlpatterns = [
     path('', views.knowledge_view, name='view'),
     path('perfil/', views.perfil_view, name='perfil_view'),
     path('perfil/apply-suggestions/', views_perfil.perfil_apply_suggestions, name='perfil_apply_suggestions'),
+    path('perfil/add-color/', views_perfil_colors.perfil_add_color, name='perfil_add_color'),
+    path('perfil/remove-color/', views_perfil_colors.perfil_remove_color, name='perfil_remove_color'),
+    path('perfil/add-font/', views_perfil_fonts.perfil_add_font, name='perfil_add_font'),
+    path('perfil/remove-font/', views_perfil_fonts.perfil_remove_font, name='perfil_remove_font'),
     
     # Salvamento
     path('save-block/<int:block_number>/', views.knowledge_save_block, name='save_block'),

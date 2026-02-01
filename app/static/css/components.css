@@ -1411,6 +1411,15 @@ label:has(+ select[required])::after {
   margin-bottom: var(--spacing-3);
 }
 
+.analysis-block-header{
+  background-color: #e5e5e5;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-4) var(--spacing-6) var(--spacing-4) var(--spacing-6);
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
 .btn-action {
   flex: 1;
   display: inline-flex;
@@ -1495,11 +1504,12 @@ label:has(+ select[required])::after {
 
 /* Resumo Geral */
 .analysis-summary {
-  background: var(--white-90);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-subtle);
-  padding: var(--spacing-6);
+  /*background: var(--white-90);*/
+  /*border-radius: var(--radius-lg);*/
+  /*box-shadow: var(--shadow-subtle);*/
+  /*padding: var(--spacing-6);*/
   margin-bottom: var(--spacing-6);
+  margin-top: var(--spacing-6);
 }
 
 .analysis-summary-title {

@@ -3,12 +3,16 @@
  * Gerencia aceitar/rejeitar sugestões e envio de dados
  */
 
+// Variáveis globais para integração com perfil-tags.js
+window.editedFields = {};
+window.updateCounter = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     // Estado das decisões do usuário
     const decisions = {};
     
     // Estado das edições nos campos INFORMADO
-    const editedFields = {};
+    const editedFields = window.editedFields; // Usar referência global
     
     // Inicializar todos os cards com "Rejeitar" selecionado por padrão
     const allCards = document.querySelectorAll('.analysis-card');
@@ -17,10 +21,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const rejectBtn = card.querySelector('.btn-action-reject');
         const feedbackRejected = card.querySelector('.analysis-feedback-rejected');
         
-        // Marcar como rejeitado por padrão
-        decisions[fieldName] = 'reject';
-        rejectBtn.classList.add('active');
-        feedbackRejected.classList.add('show');
+        // Só processar se o card tiver sugestão (botões existem)
+        if (rejectBtn && feedbackRejected) {
+            // Marcar como rejeitado por padrão
+            decisions[fieldName] = 'reject';
+            rejectBtn.classList.add('active');
+            feedbackRejected.classList.add('show');
+        }
     });
     
     // Rastrear edições nos campos INFORMADO (textarea)
@@ -79,6 +86,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const rejectBtn = card.querySelector('.btn-action-reject');
         const feedbackAccepted = card.querySelector('.analysis-feedback-accepted');
         const feedbackRejected = card.querySelector('.analysis-feedback-rejected');
+        
+        // Verificar se elementos existem
+        if (!acceptBtn || !rejectBtn || !feedbackAccepted || !feedbackRejected) {
+            console.warn(`Elementos de feedback não encontrados para campo: ${fieldName}`);
+            return;
+        }
         
         // Remover estados anteriores
         acceptBtn.classList.remove('active');
@@ -141,6 +154,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Expor updateCounter globalmente para perfil-tags.js
+    window.updateCounter = updateCounter;
+    
     /**
      * Enviar sugestões selecionadas
      */
@@ -157,11 +173,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const totalChanges = acceptedFields.length + editedCount;
             
             if (totalChanges === 0) {
-                alert('Nenhuma alteração foi feita.');
+                // Usar modal de confirmação ao invés de alert
+                if (window.confirmModal) {
+                    await window.confirmModal.show(
+                        'Você precisa aceitar pelo menos uma sugestão ou editar um campo antes de aplicar as alterações.',
+                        'Nenhuma alteração'
+                    );
+                }
                 return;
             }
             
-            // Confirmar ação
+            // Preparar mensagem de confirmação
             let message = '';
             if (editedCount > 0 && acceptedFields.length > 0) {
                 message = `Você editou ${editedCount} campo(s) e aceitou ${acceptedFields.length} sugestão(ões).\n\n`;
@@ -172,7 +194,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             message += 'Isso irá atualizar os campos da sua Base de Conhecimento.\n\nDeseja continuar?';
             
-            const confirmed = confirm(message);
+            // Usar modal de confirmação
+            if (!window.confirmModal) {
+                console.error('Modal de confirmação não encontrado');
+                return;
+            }
+            
+            const confirmed = await window.confirmModal.show(
+                message,
+                'Confirmar Alterações'
+            );
             
             if (!confirmed) return;
             
@@ -196,18 +227,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Redirecionar para estado de loading (compilação)
-                    window.location.href = '/knowledge/perfil/?status=compiling';
+                    console.log('✅ Resposta do servidor:', data);
+                    
+                    // Mostrar mensagem de sucesso
+                    if (window.toaster) {
+                        window.toaster.success(data.message || 'Alterações aplicadas com sucesso!');
+                    }
+                    
+                    // Redirecionar para Base de Conhecimento
+                    setTimeout(() => {
+                        window.location.href = '/knowledge/';
+                    }, 1500);
                 } else {
-                    alert('Erro ao processar sugestões: ' + (data.error || 'Erro desconhecido'));
+                    // Mostrar erro
+                    if (window.toaster) {
+                        window.toaster.error(data.error || 'Erro ao processar sugestões');
+                    }
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = 'Aplicar Sugestões Selecionadas <span class="counter">0</span>';
+                    updateCounter();
                 }
             } catch (error) {
                 console.error('Erro ao enviar sugestões:', error);
-                alert('Erro ao enviar sugestões. Tente novamente.');
+                
+                // Mostrar erro
+                if (window.toaster) {
+                    window.toaster.error('Erro ao enviar sugestões. Tente novamente.');
+                }
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Aplicar Sugestões Selecionadas <span class="counter">0</span>';
+                updateCounter();
             }
         });
     }

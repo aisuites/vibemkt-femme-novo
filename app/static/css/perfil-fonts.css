@@ -1,0 +1,235 @@
+/**
+ * PERFIL-FONTS.CSS - Estilos minimalistas para fontes no Perfil
+ * Layout pills: nome da fonte + uso + botão X
+ */
+
+/* ========================================
+   PERFIL FONTS - Layout Pills
+   ======================================== */
+
+.perfil-fonts-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.perfil-font-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.perfil-font-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(122, 61, 138, 0.15);
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+
+.perfil-font-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(122, 61, 138, 0.3);
+}
+
+.perfil-font-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.perfil-font-usage {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  padding: 2px 8px;
+  background: rgba(122, 61, 138, 0.1);
+  border-radius: 999px;
+}
+
+.perfil-font-remove {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+
+.perfil-font-remove:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.perfil-btn-add-font {
+  align-self: flex-start;
+  padding: 6px 16px;
+  background: none;
+  border: 1.5px dashed rgba(122, 61, 138, 0.3);
+  border-radius: 999px;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.perfil-btn-add-font:hover {
+  background: rgba(122, 61, 138, 0.05);
+  border-color: var(--color-primary);
+  border-style: solid;
+}
+
+/* Modal de adicionar fonte */
+.perfil-font-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.perfil-font-modal.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.perfil-font-modal-content {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: scale(0.95);
+  transition: transform 0.2s ease;
+}
+
+.perfil-font-modal.show .perfil-font-modal-content {
+  transform: scale(1);
+}
+
+.perfil-font-modal-header {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--color-text);
+}
+
+.perfil-font-source-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.perfil-font-source-option {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid rgba(122, 61, 138, 0.2);
+  border-radius: var(--radius-md);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.perfil-font-source-option:hover {
+  border-color: rgba(122, 61, 138, 0.4);
+}
+
+.perfil-font-source-option.active {
+  border-color: var(--color-primary);
+  background: rgba(122, 61, 138, 0.05);
+  color: var(--color-primary);
+}
+
+.perfil-font-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.perfil-font-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.perfil-font-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.perfil-font-field select,
+.perfil-font-field input {
+  padding: 10px 12px;
+  border: 1px solid rgba(122, 61, 138, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+
+.perfil-font-google-fields,
+.perfil-font-upload-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.perfil-font-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.perfil-font-modal-actions button {
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.perfil-font-modal-actions .btn-cancel {
+  background: none;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: var(--color-text-muted);
+}
+
+.perfil-font-modal-actions .btn-cancel:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.perfil-font-modal-actions .btn-confirm {
+  background: var(--color-primary);
+  border: none;
+  color: white;
+}
+
+.perfil-font-modal-actions .btn-confirm:hover {
+  background: var(--color-primary-hover);
+}

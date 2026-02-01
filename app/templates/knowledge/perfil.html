@@ -4,7 +4,11 @@
 {% block title %}Perfil da Empresa - IAMKT{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/perfil.css' %}?v=20260130-0242">
+<link rel="stylesheet" href="{% static 'css/perfil.css' %}?v=20260131-1301">
+<link rel="stylesheet" href="{% static 'css/perfil-colors.css' %}?v=20260131-1511">
+<link rel="stylesheet" href="{% static 'css/perfil-fonts.css' %}?v=20260131-1616">
+<link rel="stylesheet" href="{% static 'css/perfil-logos.css' %}?v=20260131-1629">
+<link rel="stylesheet" href="{% static 'css/knowledge.css' %}?v=20260131-1502">
 <link rel="stylesheet" href="{% static 'css/logo-upload-widget.css' %}?v=20260129-1703">
 <link rel="stylesheet" href="{% static 'css/confirm-modal.css' %}?v=20260129-1703">
 {% endblock %}
@@ -55,10 +59,28 @@
                     aceitar ou editar nenhum campo. Caso edite ou aceite alguma sugestão, 
                     enviaremos apenas o que mudou para o agente.
                 </p>
+                <div class="analysis-summary">
+                <h3 class="analysis-summary-title">📊 Resumo da Análise</h3>
+                <div class="analysis-summary-stats">
+                    <div class="stat-item stat-danger">
+                        <span class="stat-number">{{ stats.fraco }}</span>
+                        <span class="stat-label">campos fracos</span>
+                    </div>
+                    <div class="stat-item stat-warning">
+                        <span class="stat-number">{{ stats.medio }}</span>
+                        <span class="stat-label">campos médios</span>
+                    </div>
+                    <div class="stat-item stat-success">
+                        <span class="stat-number">{{ stats.bom }}</span>
+                        <span class="stat-label">campos bons</span>
+                    </div>
+                </div>
+        </div>
+    
             </div>
         </div>
         
-        <!-- Resumo Geral -->
+        <!-- Resumo Geral
         <div class="analysis-summary">
             <h3 class="analysis-summary-title">📊 Resumo da Análise</h3>
             <div class="analysis-summary-stats">
@@ -75,15 +97,14 @@
                     <span class="stat-label">campos bons</span>
                 </div>
             </div>
-        </div>
+        </div> -->
         
         <!-- Lista de Cards de Análise Agrupados por Bloco -->
         <div class="analysis-cards-list">
             {% for bloco in blocos_analise %}
             <!-- Cabeçalho do Bloco -->
             <div class="analysis-block-header">
-                <div class="form-block-kicker">Bloco {{ bloco.numero }}</div>
-                <div class="form-block-title">{{ bloco.titulo }}</div>
+                <div class="form-block-kicker">Bloco {{ bloco.numero }} - {{ bloco.titulo }}</div>
             </div>
             
             <!-- Campos do Bloco -->
@@ -106,10 +127,223 @@
                 <div class="analysis-card-body">
                     <div class="analysis-section">
                         <label class="analysis-label">INFORMADO</label>
+                        {% if campo.nome == 'recommended_words' or campo.nome == 'words_to_avoid' %}
+                        <!-- Layout de Tags para Palavras -->
+                        <div class="tags-input-wrapper" data-field="{{ campo.nome }}">
+                            <div class="tags-container" id="tags-{{ campo.nome }}" data-tags="{{ campo.informado|default:'[]' }}"></div>
+                            <input type="text" 
+                                   class="tag-input" 
+                                   data-target="tags-{{ campo.nome }}"
+                                   placeholder="Digite e pressione Enter para adicionar">
+                        </div>
+                        {% elif campo.type == 'colors' %}
+                        <!-- Layout de Cores - Estilo Minimalista -->
+                        <div class="perfil-colors-wrapper">
+                            <div id="perfil-color-list" class="perfil-color-list">
+                                {% for color in campo.colors %}
+                                <div class="perfil-color-item" data-color-id="{{ color.id }}">
+                                    <div class="perfil-color-preview" style="background-color: {{ color.hex_code }};"></div>
+                                    <span class="perfil-color-hex">{{ color.hex_code }}</span>
+                                    <button type="button" 
+                                            class="perfil-color-remove" 
+                                            onclick="removePerfilColor({{ color.id }})"
+                                            title="Remover cor">×</button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" 
+                                    class="perfil-btn-add-color" 
+                                    onclick="addPerfilColor()">+ cor</button>
+                        </div>
+                        {% elif campo.type == 'fonts' %}
+                        <!-- Layout de Fontes - Pills com Nome + Uso + X -->
+                        <div class="perfil-fonts-wrapper">
+                            <div id="perfil-font-list" class="perfil-font-list">
+                                {% for font in campo.fonts %}
+                                <div class="perfil-font-item" data-font-id="{{ font.id }}">
+                                    <span class="perfil-font-name">{{ font.font_name }}</span>
+                                    <span class="perfil-font-usage">{{ font.usage }}</span>
+                                    <button type="button" 
+                                            class="perfil-font-remove" 
+                                            onclick="removePerfilFont({{ font.id }})"
+                                            title="Remover fonte">×</button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" 
+                                    class="perfil-btn-add-font" 
+                                    onclick="addPerfilFont()">+ fonte</button>
+                        </div>
+                        {% elif campo.type == 'logos' %}
+                        <!-- Layout de Logotipos - Grid de Thumbnails -->
+                        <div class="perfil-logos-wrapper">
+                            <div id="perfil-logos-grid" class="perfil-logos-grid">
+                                {% for logo in campo.logos %}
+                                <div class="perfil-logo-item" data-logo-id="{{ logo.id }}" data-s3-key="{{ logo.s3_key }}">
+                                    <img src="#" alt="{{ logo.name }}" class="perfil-logo-img" data-lazy-load="{{ logo.s3_key }}">
+                                    <button type="button" 
+                                            class="perfil-logo-remove" 
+                                            onclick="removePerfilLogo({{ logo.id }})"
+                                            title="Remover logo">×</button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" 
+                                    class="perfil-btn-add-logo" 
+                                    onclick="addPerfilLogo()">Adicionar logo</button>
+                        </div>
+                        {% elif campo.type == 'references' %}
+                        <!-- Layout de Imagens de Referência - Grid de Thumbnails -->
+                        <div class="perfil-references-wrapper">
+                            <div id="perfil-references-grid" class="perfil-references-grid">
+                                {% for ref in campo.references %}
+                                <div class="perfil-reference-item" data-ref-id="{{ ref.id }}" data-s3-key="{{ ref.s3_key }}">
+                                    <img src="#" alt="{{ ref.title }}" class="perfil-reference-img" data-lazy-load="{{ ref.s3_key }}">
+                                    <button type="button" 
+                                            class="perfil-reference-remove" 
+                                            onclick="removePerfilReference({{ ref.id }})"
+                                            title="Remover imagem">×</button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" 
+                                    class="perfil-btn-add-reference" 
+                                    onclick="addPerfilReference()">Adicionar imagem</button>
+                        </div>
+                        {% elif campo.type == 'website' %}
+                        <!-- Layout de Site Institucional - Ícone + https:// fixo -->
+                        <div class="social-network-field">
+                            <div class="social-network-icon website">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                </svg>
+                            </div>
+                            <div class="website-field-wrapper">
+                                <span class="website-prefix">https://</span>
+                                <input type="text" 
+                                       class="editable-field" 
+                                       data-field="{{ campo.nome }}"
+                                       data-original="{% if campo.informado and campo.informado != 'Não informado' %}{{ campo.informado|slice:'8:' }}{% endif %}"
+                                       value="{% if campo.informado and campo.informado != 'Não informado' %}{{ campo.informado|slice:'8:' }}{% endif %}"
+                                       placeholder="femme.com.br">
+                            </div>
+                        </div>
+                        {% elif campo.type == 'competitors' %}
+                        <!-- Layout de Concorrentes - Linhas dinâmicas com nome + URL -->
+                        <div class="concorrentes-container">
+                            <!-- Campo hidden para armazenar JSON -->
+                            <input type="hidden" id="concorrentes_data_perfil" name="concorrentes" value="">
+                            
+                            <!-- Container para linhas de concorrentes -->
+                            <div id="concorrentes-inputs-container-perfil" class="concorrentes-inputs-container">
+                                <!-- Linhas serão adicionadas dinamicamente -->
+                            </div>
+                            
+                            <!-- Botão para adicionar nova linha -->
+                            <button type="button" class="btn-add-item" onclick="addConcorrenteLinePerfil()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Adicionar Concorrente
+                            </button>
+                            
+                            <!-- Script para inicializar concorrentes existentes -->
+                            <script>
+                            (function() {
+                                const competitorsData = {{ campo.competitors_data|safe|default:"[]" }};
+                                if (typeof initConcorrentesPerfil === 'function') {
+                                    initConcorrentesPerfil(competitorsData);
+                                } else {
+                                    // Se a função ainda não foi carregada, aguardar
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        if (typeof initConcorrentesPerfil === 'function') {
+                                            initConcorrentesPerfil(competitorsData);
+                                        }
+                                    });
+                                }
+                            })();
+                            </script>
+                        </div>
+                        {% elif campo.type == 'social_networks' %}
+                        <!-- Layout de Redes Sociais - Todas as redes com ícone + https:// fixo -->
+                        <div class="social-networks-manager">
+                            <!-- Instagram -->
+                            <div class="social-network-field">
+                                <div class="social-network-icon instagram">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                                    </svg>
+                                </div>
+                                <div class="website-field-wrapper">
+                                    <span class="website-prefix">https://</span>
+                                    <input type="text" 
+                                           name="social_instagram_domain"
+                                           data-original="{% if campo.social_networks_data.instagram %}{{ campo.social_networks_data.instagram|slice:'8:' }}{% endif %}"
+                                           value="{% if campo.social_networks_data.instagram %}{{ campo.social_networks_data.instagram|slice:'8:' }}{% endif %}"
+                                           placeholder="instagram.com/femme">
+                                </div>
+                            </div>
+                            
+                            <!-- Facebook -->
+                            <div class="social-network-field">
+                                <div class="social-network-icon facebook">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.853 0 2.136 1.445 2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                    </svg>
+                                </div>
+                                <div class="website-field-wrapper">
+                                    <span class="website-prefix">https://</span>
+                                    <input type="text" 
+                                           name="social_facebook_domain"
+                                           data-original="{% if campo.social_networks_data.facebook %}{{ campo.social_networks_data.facebook|slice:'8:' }}{% endif %}"
+                                           value="{% if campo.social_networks_data.facebook %}{{ campo.social_networks_data.facebook|slice:'8:' }}{% endif %}"
+                                           placeholder="facebook.com/femme">
+                                </div>
+                            </div>
+                            
+                            <!-- LinkedIn -->
+                            <div class="social-network-field">
+                                <div class="social-network-icon linkedin">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                    </svg>
+                                </div>
+                                <div class="website-field-wrapper">
+                                    <span class="website-prefix">https://</span>
+                                    <input type="text" 
+                                           name="social_linkedin_domain"
+                                           data-original="{% if campo.social_networks_data.linkedin %}{{ campo.social_networks_data.linkedin|slice:'8:' }}{% endif %}"
+                                           value="{% if campo.social_networks_data.linkedin %}{{ campo.social_networks_data.linkedin|slice:'8:' }}{% endif %}"
+                                           placeholder="linkedin.com/company/femme">
+                                </div>
+                            </div>
+                            
+                            <!-- YouTube -->
+                            <div class="social-network-field">
+                                <div class="social-network-icon youtube">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                    </svg>
+                                </div>
+                                <div class="website-field-wrapper">
+                                    <span class="website-prefix">https://</span>
+                                    <input type="text" 
+                                           name="social_youtube_domain"
+                                           data-original="{% if campo.social_networks_data.youtube %}{{ campo.social_networks_data.youtube|slice:'8:' }}{% endif %}"
+                                           value="{% if campo.social_networks_data.youtube %}{{ campo.social_networks_data.youtube|slice:'8:' }}{% endif %}"
+                                           placeholder="youtube.com/@femme">
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
                         <textarea class="analysis-value editable-field" 
                                   data-field="{{ campo.nome }}"
                                   data-original="{{ campo.informado|default:'' }}"
                                   rows="3">{{ campo.informado|default:"Não informado" }}</textarea>
+                        {% endif %}
                     </div>
                     
                     <div class="analysis-section">
@@ -121,6 +355,7 @@
                     <div class="analysis-section">
                         <label class="analysis-label">SUGESTÃO</label>
                         <div class="analysis-suggestion">{{ campo.sugestao }}</div>
+                        {% if not campo.readonly and not campo.no_suggestions %}
                         <div class="analysis-actions">
                             <button type="button" class="btn-action btn-action-accept" data-action="accept-suggestion" data-field="{{ campo.nome }}">
                                 ✓ Aceitar Sugestão
@@ -129,6 +364,14 @@
                                 × Rejeitar
                             </button>
                         </div>
+                        <!-- Feedback visual -->
+                        <div class="analysis-feedback analysis-feedback-accepted">
+                            ✓ Você marcou esta sugestão como ACEITA.
+                        </div>
+                        <div class="analysis-feedback analysis-feedback-rejected">
+                            × Você rejeitou esta sugestão.
+                        </div>
+                        {% endif %}
                     </div>
                     {% endif %}
                 </div>
@@ -196,13 +439,32 @@
 <script src="{% static 'js/image-preview-loader.js' %}?v=20260129-1627"></script>
 <script src="{% static 'js/uploads-simple.js' %}?v=20260129-1627"></script>
 <script src="{% static 'js/confirm-modal.js' %}?v=20260129-1627"></script>
-<script src="{% static 'js/perfil.js' %}?v=20260130-0242"></script>
+<script src="{% static 'js/perfil-tags.js' %}?v=20260131-1502"></script>
+<script src="{% static 'js/perfil-colors.js' %}?v=20260131-1518"></script>
+<script src="{% static 'js/perfil-fonts.js' %}?v=20260131-1616"></script>
+<script src="{% static 'js/perfil-logos.js' %}?v=20260131-1629"></script>
+<script src="{% static 'js/perfil-references.js' %}?v=20260131-1649"></script>
+<script src="{% static 'js/perfil-social.js' %}?v=20260131-1816"></script>
+<script src="{% static 'js/perfil-competitors.js' %}?v=20260131-1852"></script>
+<script src="{% static 'js/perfil.js' %}?v=20260131-1335"></script>
 <script>
 // Inicializar upload de logotipo no Perfil
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar image preview loader global
     if (!window.imagePreviewLoader) {
         window.imagePreviewLoader = new ImagePreviewLoader('/knowledge/preview-url/');
+    }
+    
+    // Observar imagens de logos no Perfil
+    const logoImages = document.querySelectorAll('#perfil-logos-grid img[data-lazy-load]');
+    if (logoImages.length > 0 && window.imagePreviewLoader) {
+        logoImages.forEach(img => window.imagePreviewLoader.observe(img));
+    }
+    
+    // Observar imagens de referência no Perfil
+    const referenceImages = document.querySelectorAll('#perfil-references-grid img[data-lazy-load]');
+    if (referenceImages.length > 0 && window.imagePreviewLoader) {
+        referenceImages.forEach(img => window.imagePreviewLoader.observe(img));
     }
     
     // Inicializar validadores

@@ -212,6 +212,10 @@ def create_logo(request):
         # Gerar URL pública
         s3_url = S3Service.get_public_url(s3_key)
         
+        # Se não há nenhum logo ainda, este será o principal automaticamente
+        if not is_primary and not knowledge_base.logos.exists():
+            is_primary = True
+        
         # Criar registro no banco
         logo = Logo.objects.create(
             knowledge_base=knowledge_base,
@@ -427,16 +431,17 @@ def create_reference_image(request):
         s3_url = S3Service.get_public_url(s3_key)
         
         # Criar registro no banco
+        # Usar valores padrão seguros para campos que serão calculados posteriormente
         reference = ReferenceImage.objects.create(
             knowledge_base=knowledge_base,
             title=name,  # ReferenceImage usa 'title' não 'name'
             description=description,
             s3_key=s3_key,
             s3_url=s3_url,
-            perceptual_hash='',  # TODO: Calcular hash perceptual
-            file_size=0,  # TODO: Obter do S3 ou enviar do frontend
-            width=0,  # TODO: Obter dimensões da imagem
-            height=0,  # TODO: Obter dimensões da imagem
+            perceptual_hash='pending',  # Placeholder - será calculado em background
+            file_size=1,  # Placeholder - será atualizado
+            width=1,  # Placeholder - será atualizado
+            height=1,  # Placeholder - será atualizado
             uploaded_by=request.user
         )
         
