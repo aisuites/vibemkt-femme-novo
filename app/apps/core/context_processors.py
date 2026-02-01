@@ -33,9 +33,15 @@ def tenant_context(request):
             org = getattr(request, 'organization', None)
             kb = KnowledgeBase.objects.filter(organization=org).first()
             context['kb_onboarding_completed'] = kb.onboarding_completed if kb else False
+            context['kb_suggestions_reviewed'] = kb.suggestions_reviewed if kb else False
+            context['kb_compilation_status'] = kb.compilation_status if kb else None
         except Exception:
             context['kb_onboarding_completed'] = False
+            context['kb_suggestions_reviewed'] = False
+            context['kb_compilation_status'] = None
     else:
         context['kb_onboarding_completed'] = False
+        context['kb_suggestions_reviewed'] = False
+        context['kb_compilation_status'] = None
     
     return context

@@ -23,7 +23,7 @@
     <div>
       <div class="sidebar-section-title">Análise</div>
       <nav class="sidebar-nav">
-        <a href="{% url 'knowledge:perfil_view' %}" class="sidebar-link {% if request.resolver_match.url_name == 'perfil_view' %}active{% endif %}">
+        <a href="{% if kb_compilation_status == 'completed' %}{% url 'knowledge:perfil_visualizacao_view' %}{% else %}{% url 'knowledge:perfil_view' %}{% endif %}" class="sidebar-link {% if request.resolver_match.url_name == 'perfil_view' or request.resolver_match.url_name == 'perfil_visualizacao_view' %}active{% endif %}">
           <span class="icon">🏢</span>
           <span>Perfil da Empresa</span>
         </a>
@@ -40,7 +40,7 @@
           <span class="icon">🏠</span>
           <span>Dashboard</span>
         </a>
-        <a href="{% url 'knowledge:perfil_view' %}" class="sidebar-link {% if request.resolver_match.url_name == 'perfil_view' %}active{% endif %}">
+        <a href="{% if kb_compilation_status == 'completed' %}{% url 'knowledge:perfil_visualizacao_view' %}{% else %}{% url 'knowledge:perfil_view' %}{% endif %}" class="sidebar-link {% if request.resolver_match.url_name == 'perfil_view' or request.resolver_match.url_name == 'perfil_visualizacao_view' %}active{% endif %}">
           <span class="icon">🏢</span>
           <span>Perfil da Empresa</span>
         </a>
