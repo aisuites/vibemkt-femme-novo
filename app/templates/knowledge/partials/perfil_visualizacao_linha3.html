@@ -78,33 +78,33 @@
             <div class="content-block">
                 <h2 class="block-title">💡 Melhorias Sugeridas</h2>
                 
-                {% if compilation_data._raw.improvements_summary %}
+                {% if compilation_data.melhorias_summary %}
                     <div class="block-content">
                         
                         {# Improvements Summary - mapear de improvements_summary #}
-                        {% if compilation_data._raw.improvements_summary.base %}
+                        {% if compilation_data.melhorias_summary.base %}
                         <div class="content-item">
                             <h3 class="item-title">Base de Conhecimento</h3>
                             <div class="item-content">
-                                <p>{{ compilation_data._raw.improvements_summary.base }}</p>
+                                <p>{{ compilation_data.melhorias_summary.base }}</p>
                             </div>
                         </div>
                         {% endif %}
                         
-                        {% if compilation_data._raw.improvements_summary.digital_presence %}
+                        {% if compilation_data.melhorias_summary.digital_presence %}
                         <div class="content-item">
                             <h3 class="item-title">Presença Digital</h3>
                             <div class="item-content">
-                                <p>{{ compilation_data._raw.improvements_summary.digital_presence }}</p>
+                                <p>{{ compilation_data.melhorias_summary.digital_presence }}</p>
                             </div>
                         </div>
                         {% endif %}
                         
-                        {% if compilation_data._raw.improvements_summary.visual_identity %}
+                        {% if compilation_data.melhorias_summary.visual_identity %}
                         <div class="content-item">
                             <h3 class="item-title">Identidade Visual</h3>
                             <div class="item-content">
-                                <p>{{ compilation_data._raw.improvements_summary.visual_identity }}</p>
+                                <p>{{ compilation_data.melhorias_summary.visual_identity }}</p>
                             </div>
                         </div>
                         {% endif %}

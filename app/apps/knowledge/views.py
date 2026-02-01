@@ -1178,8 +1178,8 @@ def perfil_visualizacao_view(request):
                 'summary': n8n_data.get('assessment_summary', {})
             },
             
-            # Melhorias - mapear de 'gaps'
-            'melhorias': n8n_data.get('gaps', []),
+            # Melhorias - mapear de 'improvements_summary'
+            'melhorias_summary': n8n_data.get('improvements_summary', {}),
             
             # Plano de marketing - mapear de 'marketing_plan_4w'
             'plano_marketing': n8n_data.get('marketing_plan_4w', []),
@@ -1189,9 +1189,6 @@ def perfil_visualizacao_view(request):
             
             # Links verificados - mapear de 'link_checks'
             'links_verificados': n8n_data.get('link_checks', []),
-            
-            # Dados brutos para debug
-            '_raw': n8n_data
         }
     
     # Preparar contexto
