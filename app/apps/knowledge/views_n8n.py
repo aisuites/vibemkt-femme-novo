@@ -330,9 +330,14 @@ def n8n_compilation_webhook(request):
     
     # CAMADA 5: Processar Compilação
     try:
+        # Log do payload recebido para debug
+        logger.info(f"🔍 [N8N_COMPILATION_WEBHOOK] Payload recebido - Keys: {list(data.keys())}")
+        
         # Extrair dados da compilação
         # N8N pode enviar com chave 'compilation' ou diretamente os dados
         compilation_data = data.get('compilation') or data
+        
+        logger.info(f"🔍 [N8N_COMPILATION_WEBHOOK] Compilation data keys: {list(compilation_data.keys())}")
         
         # Remover metadados do Django (kb_id, organization_id, revision_id, flow_type)
         # para manter apenas os dados compilados do N8N
@@ -343,6 +348,7 @@ def n8n_compilation_webhook(request):
             # Criar cópia sem metadados
             clean_data = {k: v for k, v in compilation_data.items() if k not in metadata_keys}
             compilation_data = clean_data
+            logger.info(f"🔍 [N8N_COMPILATION_WEBHOOK] Dados limpos - Keys: {list(compilation_data.keys())}")
         
         if not compilation_data or len(compilation_data) == 0:
             logger.warning(
