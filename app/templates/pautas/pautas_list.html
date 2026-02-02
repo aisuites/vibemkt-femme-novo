@@ -4,6 +4,7 @@
 {% block title %}Pautas{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/confirm-modal.css' %}?v=20260201-2227">
 <link rel="stylesheet" href="{% static 'css/toaster.css' %}?v=20260201-2227">
 {% endblock %}
 
@@ -340,6 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/confirm-modal.js' %}?v=20260201-2227"></script>
 <script src="{% static 'js/toaster.js' %}?v=20260201-2227"></script>
 <script src="{% static 'js/pautas.js' %}?v=20260201-2227"></script>
 {% endblock %}

@@ -99,39 +99,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Botões Excluir
-    let pautaParaExcluir = null;
-    
     document.querySelectorAll('.btn-delete').forEach(button => {
-        button.addEventListener('click', function() {
-            pautaParaExcluir = {
-                id: this.dataset.pautaId,
-                title: this.dataset.pautaTitle
-            };
+        button.addEventListener('click', async function() {
+            const pautaId = this.dataset.pautaId;
+            const pautaTitle = this.dataset.pautaTitle;
             
-            // Preencher modal de confirmação
-            document.getElementById('pauta-excluir-titulo').textContent = pautaParaExcluir.title;
+            // Usar modal de confirmação existente
+            const mensagem = `Tem certeza que deseja excluir a pauta "${pautaTitle}"?\n\nEsta ação não poderá ser desfeita.`;
             
-            // Abrir modal
-            const modal = new bootstrap.Modal(document.getElementById('modalExcluirPauta'));
-            modal.show();
-        });
-    });
-    
-    // Botão Confirmar Exclusão no Modal
-    const btnConfirmarExcluir = document.getElementById('btn-confirmar-excluir');
-    if (btnConfirmarExcluir) {
-        btnConfirmarExcluir.addEventListener('click', function() {
-            if (!pautaParaExcluir) return;
+            const confirmed = window.confirmModal 
+                ? await window.confirmModal.show(mensagem, 'Confirmar Exclusão')
+                : confirm(mensagem);
             
-            deletePauta(pautaParaExcluir.id, pautaParaExcluir.title);
-            
-            // Fechar modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('modalExcluirPauta'));
-            if (modal) {
-                modal.hide();
+            if (confirmed) {
+                deletePauta(pautaId, pautaTitle);
             }
         });
-    }
+    });
     
     // Função para alternar entre modo visualização e edição
     function toggleEditMode(pautaId, isEdit) {
