@@ -6,7 +6,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from .models import Organization, QuotaUsageDaily
 from .decorators import require_organization
-from apps.content.models import Post, TrendMonitor
+from apps.content.models import TrendMonitor
+from apps.posts.models import Post
 from apps.pautas.models import Pauta
 from apps.knowledge.models import KnowledgeBase
 from apps.campaigns.models import Project, Approval

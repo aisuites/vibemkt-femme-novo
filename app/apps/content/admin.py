@@ -1,8 +1,9 @@
 from django.contrib import admin
 from .models import (
-    Pauta, Post, Asset, TrendMonitor, 
+    Pauta, Asset, TrendMonitor, 
     WebInsight, IAModelUsage, ContentMetrics
 )
+# NOTA: Post foi movido para apps.posts.admin
 
 
 @admin.register(Pauta)
@@ -37,60 +38,6 @@ class PautaAdmin(admin.ModelAdmin):
             if not can_create:
                 from django.contrib import messages
                 messages.error(request, f'❌ Não foi possível criar a pauta: {message}')
-                # Impedir salvamento retornando sem chamar super()
-                return
-        
-        super().save_model(request, obj, form, change)
-    
-    def get_queryset(self, request):
-        """Filtrar por organization do usuário"""
-        qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        if hasattr(request, 'organization') and request.organization:
-            return qs.filter(organization=request.organization)
-        return qs.none()
-
-
-@admin.register(Post)
-class PostAdmin(admin.ModelAdmin):
-    list_display = ['id', 'content_type', 'social_network', 'user', 'area', 
-                   'ia_provider', 'status', 'created_at']
-    list_filter = ['content_type', 'social_network', 'ia_provider', 'status', 'area', 'created_at']
-    search_fields = ['caption', 'image_prompt']
-    readonly_fields = ['created_at', 'updated_at']
-    
-    fieldsets = (
-        ('Informações Básicas', {
-            'fields': ('user', 'area', 'pauta', 'content_type', 'social_network')
-        }),
-        ('IA Utilizada', {
-            'fields': ('ia_provider', 'ia_model_text', 'ia_model_image')
-        }),
-        ('Conteúdo', {
-            'fields': ('caption', 'hashtags')
-        }),
-        ('Imagem', {
-            'fields': ('has_image', 'image_s3_key', 'image_s3_url', 'image_prompt', 
-                      'image_width', 'image_height')
-        }),
-        ('Status', {
-            'fields': ('status', 'created_at', 'updated_at')
-        }),
-    )
-    
-    def save_model(self, request, obj, form, change):
-        """Auto-preencher organization e validar quota ao salvar"""
-        # Auto-preencher organization
-        if not obj.organization_id and hasattr(request, 'organization'):
-            obj.organization = request.organization
-        
-        # Validar quota apenas ao criar (não ao editar)
-        if not change and obj.organization:
-            can_create, error_code, message = obj.organization.can_create_post()
-            if not can_create:
-                from django.contrib import messages
-                messages.error(request, f'❌ Não foi possível criar o post: {message}')
                 # Impedir salvamento retornando sem chamar super()
                 return
         

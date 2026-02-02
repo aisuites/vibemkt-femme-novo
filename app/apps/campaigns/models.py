@@ -1,7 +1,7 @@
 from django.db import models
 from apps.core.models import User, Area
 from apps.core.managers import OrganizationScopedManager
-from apps.content.models import Post
+from apps.posts.models import Post
 
 
 class Project(models.Model):

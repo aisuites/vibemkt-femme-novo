@@ -6,7 +6,8 @@ Testes para garantir que o isolamento de tenants está funcionando corretamente.
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from apps.core.models import Organization, Area
-from apps.content.models import Pauta, Post, Asset
+from apps.content.models import Pauta, Asset
+from apps.posts.models import Post
 from apps.campaigns.models import Project
 from apps.knowledge.models import KnowledgeBase
 

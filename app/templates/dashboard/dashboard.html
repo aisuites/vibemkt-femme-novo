@@ -67,7 +67,7 @@
             {{ posts_draft }} rascunho{{ posts_draft|pluralize }}, {{ posts_aprovados }} aprovado{{ posts_aprovados|pluralize }}
           </div>
         </div>
-        <a href="{% url 'content:posts' %}" class="btn btn-primary btn-sm">
+        <a href="{% url 'posts:list' %}" class="btn btn-primary btn-sm">
           Novo Post
         </a>
       </div>
@@ -247,7 +247,7 @@
       <a href="{% url 'pautas:list' %}" class="btn btn-outline w-full">
         📝 Nova Pauta
       </a>
-      <a href="{% url 'content:posts' %}" class="btn btn-outline w-full">
+      <a href="{% url 'posts:list' %}" class="btn btn-outline w-full">
         🎨 Novo Post
       </a>
       <a href="{% url 'campaigns:projects' %}" class="btn btn-outline w-full">

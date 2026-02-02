@@ -9,7 +9,8 @@ Valida que:
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from apps.core.models import Organization, Area
-from apps.content.models import Pauta, Post
+from apps.content.models import Pauta
+from apps.posts.models import Post
 from apps.core.middleware import TenantMiddleware
 
 User = get_user_model()

@@ -1,0 +1,3565 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+<!-- Cache buster: 2025-11-13T20:02:00Z - renderVideoPagination ao trocar página -->
+<!-- Dados de bloqueio do dashboard (se houver) -->
+{% if show_blocked_modal %}
+<script id="dashboardBlockedData" type="application/json">{{ blocked_data|safe }}</script>
+{% endif %}
+<link id="gfStaticSamples" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800&family=DM+Sans:wght@400;700;800&family=Roboto+Mono:wght@400&display=swap">
+<style>
+  /* v2025.01.20.02.29 - Lógica condicional banner texto */
+  :root{
+    --bg:#0f0f12;
+    --card:#16171b;
+    --muted:#a9b0be;
+    --text:#eef2f7;
+    --accent:#7c4dff;
+    --accent-2:#00d2a8;
+    --border:#24262c;
+    --success:#21c37a;
+    --warning:#ffb020;
+    --danger:#ff5d5d;
+  }
+  *{box-sizing:border-box}
+  body{ margin:0; background: radial-gradient(1200px 600px at 80% -10%, #1a1c22 0%, var(--bg) 60%), var(--bg); color:var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial; line-height:1.5; }
+  a{color:var(--accent-2); text-decoration:none}
+  .container{ width:min(1200px,92vw); margin:0 auto }
+  .section{ padding: clamp(32px, 6vw, 72px) 0 }
+  #pautas_posts{ padding-top: 0 }
+  .title-xl{ font-size:clamp(1.9rem,5.6vw,3.2rem); line-height:1.05; margin:.2rem 0 .35rem; font-weight:900 }
+  .subtitle{ font-size:clamp(1rem,2.2vw,1.15rem); color:var(--muted) }
+  .card{ background:linear-gradient(180deg,#17181d 0%, #121318 100%); border:1px solid var(--border); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35) }
+  .card.pad{ padding:18px }
+  .kicker{ color:var(--accent-2); font-weight:700; letter-spacing:.08em; text-transform:uppercase; font-size:.85rem }
+  .btn{ --bgc:var(--accent); display:inline-flex; align-items:center; gap:.6rem; background:linear-gradient(135deg, var(--bgc) 0%, #5c35ff 50%, #3f2bd6 100%);
+        color:#fff; padding:.9rem 1.1rem; border-radius:12px; border:0; font-weight:700; letter-spacing:.2px; cursor:pointer;
+        box-shadow:0 6px 16px rgba(92,53,255,.35); transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease; text-decoration:none; }
+  .btn:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(92,53,255,.45) }
+  .btn.ghost{ background:transparent; border:1px solid var(--border); color:var(--text); box-shadow:none }
+  .btn[disabled]{ opacity:.6; cursor:not-allowed }
+  .user-meta{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end }
+  .logout-form{ margin:0 }
+  .grid-2{ display:grid; grid-template-columns:1.2fr .8fr; gap:28px }
+  .grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px }
+  .full{ grid-column:1/-1 }
+  @media (max-width:1000px){ .grid-2{ grid-template-columns:1fr } .grid-4{ grid-template-columns:repeat(2,1fr) } }
+  @media (max-width:640px){ .grid-4{ grid-template-columns:1fr } }
+  .pill{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:999px; border:1px solid var(--border); color:var(--muted); font-weight:600; font-size:.85rem }
+  .timeline{ display:grid; gap:10px }
+  .tl-item{ display:grid; grid-template-columns:120px 1fr; gap:12px; align-items:start; border:1px dashed #2a2d36; padding:12px; border-radius:12px; background:#0f1218 }
+  .tl-time{ color:#cfe9f5; font-weight:800 }
+  @media (max-width:560px){ .tl-item{ grid-template-columns:1fr } .tl-time{ order:2 } }
+  .post-card{ background:#0f131a; border:1px solid var(--border); border-radius:14px; overflow:hidden; display:flex; flex-direction:column }
+  .post-card img{ width:100%; height:220px; object-fit:cover; display:block; background:#000 }
+  .post-card .body{ padding:12px }
+  /* Visual identity helpers */
+  .swatches{ display:flex; flex-wrap:wrap; gap:8px }
+  .swatch{ display:inline-flex; align-items:center; gap:8px; padding:.4rem .55rem; border:1px solid var(--border); border-radius:999px; background:#101218 }
+  .swatch .dot{ width:16px; height:16px; border-radius:50%; border:1px solid rgba(255,255,255,.2) }
+  .swatch .hex{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.85rem; color:var(--muted) }
+  .thumbs{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px }
+  .thumb{ width:88px; height:88px; border-radius:8px; overflow:hidden; border:1px solid var(--border); background:#0b0e14; display:flex; align-items:center; justify-content:center }
+  .thumb img{ width:100%; height:100%; object-fit:cover; display:block }
+  .empty{ border:1px dashed #303342; border-radius:14px; padding:18px; color:var(--muted); display:flex; align-items:center; justify-content:center; min-height:120px }
+  .header{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px }
+  .actions{ display:flex; gap:10px; flex-wrap:wrap }
+  .modal{ position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.55); z-index:1000; padding:12px }
+  .modal.open{ display:grid }
+  .modal .panel{ width:min(720px, 92vw); max-height:calc(100vh - 24px); overflow-y:auto; background:linear-gradient(180deg,#17181d 0%, #121318 100%); border:1px solid var(--border); border-radius:16px; padding:16px }
+  .modal .head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px }
+  .modal .head h3{ margin:0 }
+  .modal .close{ background:transparent; border:1px solid var(--border); color:var(--text); border-radius:10px; padding:.5rem .7rem; cursor:pointer }
+  .form{ display:grid; gap:12px }
+  .row{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+  @media (max-width:680px){ .row{ grid-template-columns:1fr } }
+  label{ font-size:.9rem; color:#cfd6e6; font-weight:600 }
+  input[type="text"], select, textarea{ width:100%; background:#0f131a; border:1px solid var(--border); border-radius:10px; color:var(--text); padding:.7rem .8rem; font:inherit; }
+  textarea{ min-height:110px; resize:vertical }
+  input[type="file"]{ color:#cfd6e6 }
+  .chat{ display:grid; grid-template-rows:auto 1fr auto; height:520px; background:#0f131a; border:1px solid var(--border); border-radius:16px; overflow:hidden }
+  .chat-head{ padding:12px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between }
+  .chat-body{ padding:12px; overflow:auto; display:grid; gap:10px }
+  .msg{ max-width:76%; padding:.7rem .9rem; border-radius:14px; }
+  .msg.ai{ background:#151a22; border:1px solid #283041 }
+  .msg.me{ background:#2a1f4c; border:1px solid #3a2f6e; margin-left:auto }
+  .chat-input{ padding:12px; border-top:1px solid var(--border); display:flex; gap:10px }
+  .chat-input input{ flex:1; background:#0f131a; border:1px solid var(--border); color:var(--text); border-radius:10px; padding:.7rem .8rem }
+  .tabs{ display:flex; gap:8px; border-bottom:1px solid var(--border); margin-bottom:12px }
+  .tab{ padding:.55rem .8rem; border-radius:10px 10px 0 0; border:1px solid var(--border); border-bottom:0; cursor:pointer; color:var(--muted) }
+  .tab.active{ background:#15161c; color:var(--text) }
+  .back-link{ position:fixed; top:22px; left:22px; z-index:1000; border-radius:999px; padding:.85rem 1.1rem; display:inline-flex; align-items:center; gap:.55rem; }
+  .back-link .icon{ width:18px; height:18px }
+
+  /* Typography samples */
+  .type-samples{ display:grid; gap:12px }
+  .type-row{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; border:1px dashed #2a2d36; padding:12px; border-radius:12px; background:#0f1218 }
+  .type-label{ color:#cfd6e6; font-weight:700 }
+  .type-meta{ color:#a9b0be; font-size:.85rem }
+  .type-controls{ display:grid; gap:10px; margin-top:10px }
+  .type-controls .row{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+  @media (max-width:680px){ .type-controls .row{ grid-template-columns:1fr } }
+        
+  /* Gallery for reference images */
+  .gallery{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
+  @media (max-width:720px){ .gallery{ grid-template-columns:repeat(2,1fr) } }
+  .gitem{ position:relative; width:100%; aspect-ratio:1/1; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:#0b0e14; display:flex; align-items:center; justify-content:center; color:var(--muted) }
+  .gitem img{ width:100%; height:100%; object-fit:cover; display:block }
+  .gitem .cap{ position:absolute; bottom:6px; left:6px; right:6px; font-size:.75rem; color:#cfd6e6; opacity:.85 }
+  /* Font name label under sample */
+  .type-fontname{ margin-top:6px; font-size:.85rem; color:#a9b0be }
+
+.chip-group{display:flex;gap:10px;flex-wrap:wrap}
+.chip{padding:.45rem 1rem;border-radius:999px;border:1px solid var(--border);background:#13161e;color:var(--muted);font-weight:600;font-size:.9rem;cursor:pointer;transition:all .2s ease}
+.chip.active{background:linear-gradient(135deg,var(--accent) 0%,#5c35ff 50%,#3f2bd6 100%);color:#fff;border-color:rgba(124,77,255,.65);box-shadow:0 8px 18px rgba(92,53,255,.3)}
+.chip[disabled]{opacity:.5;cursor:not-allowed}
+.field-label{display:flex;align-items:center;justify-content:space-between;font-size:.85rem;color:var(--muted);gap:12px}
+.qty-control{display:flex;align-items:center;gap:8px;background:#0f131a;border:1px solid var(--border);border-radius:10px;padding:6px 10px;max-width:160px}
+.qty-control button{background:transparent;border:1px solid var(--border);color:var(--text);width:30px;height:30px;border-radius:8px;font-size:1.1rem;line-height:1;cursor:pointer;transition:all .2s ease}
+.qty-control button:hover{border-color:var(--accent);color:var(--accent)}
+.qty-control input{width:48px;text-align:center;background:transparent;border:0;color:var(--text);font-weight:700;font-size:1rem}
+.form-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
+.row.align-end{align-items:end}
+.posts-pane{display:flex;flex-direction:column;gap:16px}
+.posts-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;background:#10121a;border:1px solid var(--border);border-radius:14px;padding:14px}
+.posts-toolbar .field{display:flex;flex-direction:column;gap:6px;min-width:160px}
+.posts-toolbar label{font-size:.8rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.posts-toolbar input,
+.posts-toolbar select{height:42px;border-radius:10px;background:#0e1017;border:1px solid var(--border);color:var(--text);padding:0 12px;font:inherit}
+.posts-toolbar .field-search{flex:1 1 220px}
+.search-box{display:flex;align-items:center;gap:8px;background:#0e1017;border:1px solid var(--border);border-radius:10px;padding:0 10px}
+.search-box input{flex:1;border:0;background:transparent;color:var(--text);height:40px;padding:0}
+.search-box button{background:linear-gradient(135deg,var(--accent) 0%,#5c35ff 50%,#3f2bd6 100%);border:0;width:38px;height:38px;border-radius:9px;display:grid;place-items:center;color:#fff;cursor:pointer}
+.posts-empty{border:1px dashed #303342;text-align:center;font-size:1rem;padding:32px;color:var(--muted)}
+.posts-main{display:flex;flex-direction:column;gap:18px}
+.posts-columns{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}
+@media (max-width:900px){.posts-columns{grid-template-columns:1fr}}
+.post-details,.post-visual{display:flex;flex-direction:column;gap:14px}
+.status-pill{display:inline-flex;align-items:center;padding:.35rem .9rem;border-radius:999px;font-weight:700;font-size:.85rem;letter-spacing:.03em}
+.status-pill.is-pending{background:rgba(255,176,32,.15);color:#ffb020}
+.status-pill.is-in_progress{background:rgba(124,77,255,.15);color:var(--accent)}
+.status-pill.is-delivered{background:rgba(33,195,122,.15);color:#21c37a}
+.status-pill.is-approved{background:rgba(33,195,122,.15);color:#21c37a}
+.status-pill.is-rejected{background:rgba(255,93,93,.15);color:#ff5d5d}
+.status-pill.is-agent{background:rgba(124,77,255,.15);color:var(--accent)}
+.post-tags{display:flex;flex-wrap:wrap;gap:8px}
+.post-tag{padding:.28rem .7rem;border-radius:999px;border:1px solid var(--border);font-size:.78rem;font-weight:600;letter-spacing:.04em;color:var(--muted)}
+.post-section h4{margin:0 0 6px;font-size:.9rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.post-section p{margin:0;white-space:pre-line}
+.post-request{border:1px dashed #303342;border-radius:12px;padding:12px;background:#10131a;display:flex;flex-direction:column;gap:10px}
+.post-request textarea{min-height:110px;background:#0d1017;border:1px solid var(--border);border-radius:10px;color:var(--text);padding:.7rem}
+.post-request textarea.invalid{border-color:var(--danger);box-shadow:0 0 0 1px rgba(255,93,93,.4)}
+.post-request[hidden]{display:none!important}
+.request-actions{display:flex;justify-content:flex-end;gap:10px}
+.post-footer{display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--muted)}
+.post-image-frame{position:relative;display:flex;align-items:center;justify-content:center;min-height:320px;max-height:450px!important;border:1px dashed #2f3241;border-radius:14px;background:#0b0f16;overflow:hidden}
+.post-image-frame img{width:auto;height:100%;max-width:100%;max-height:100%;display:block;object-fit:contain}
+.post-image-frame video{width:100%;height:100%;max-height:450px;display:block;object-fit:contain;background:#000}
+.post-image-frame .badge{position:absolute;top:12px;right:12px;padding:.35rem .75rem;border-radius:999px;background:rgba(255,93,93,.2);color:#ff5d5d;font-size:.78rem;font-weight:700;letter-spacing:.05em}
+.post-image-frame .placeholder{color:var(--muted);font-weight:600;letter-spacing:.05em;text-align:center}
+.video-play-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);z-index:2}
+.btn-play-video{display:flex;flex-direction:column;align-items:center;gap:8px;background:rgba(124,77,255,.9);color:#fff;border:none;padding:20px 32px;border-radius:16px;cursor:pointer;transition:all .3s ease;font-size:14px;font-weight:700;letter-spacing:.5px}
+.btn-play-video:hover{background:rgba(124,77,255,1);transform:scale(1.05);box-shadow:0 8px 24px rgba(124,77,255,.5)}
+.btn-play-video svg{filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+.post-gallery{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.post-gallery button{border:1px solid var(--border);background:#0b0f16;border-radius:10px;padding:0;width:72px;height:72px;overflow:hidden;cursor:pointer;opacity:.7;transition:all .2s ease}
+.post-gallery button.active{opacity:1;border-color:var(--accent)}
+.post-gallery img{width:100%;height:100%;object-fit:cover;display:block}
+.post-visual-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
+.post-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.post-pagination{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:12px;background:#10121a}
+.post-pagination span{font-size:.85rem;color:var(--muted)}
+.pager-buttons{display:flex;gap:6px}
+.pager-buttons button{min-width:36px;height:34px;border-radius:8px;border:1px solid var(--border);background:#0e1017;color:var(--text);font-weight:600;cursor:pointer;transition:all .2s ease}
+.pager-buttons button.active{border-color:var(--accent)!important;color:#fff!important;background:linear-gradient(135deg,var(--accent) 0%,#5c35ff 60%,#3f2bd6 100%)!important}
+.pager-buttons button:disabled{opacity:.4;cursor:not-allowed}
+.badge-muted{display:inline-flex;align-items:center;padding:.3rem .65rem;border-radius:999px;background:#1a1d28;color:var(--muted);font-size:.75rem;letter-spacing:.05em}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.btn.ghost.danger{border-color:rgba(255,93,93,.35);color:#ff7979}
+.btn.small{padding:.6rem .85rem;border-radius:10px}
+
+/* Pautas - Layout de duas colunas */
+.pauta-container{display:flex;gap:20px;align-items:flex-start}
+.pauta-body{flex:0 0 65%;display:flex;flex-direction:column;gap:8px;min-width:0}
+.pauta-title{font-size:1.05rem;line-height:1.3;color:var(--text);display:block}
+.pauta-text{margin:0;color:var(--muted);font-size:.95rem;line-height:1.55}
+.pauta-actions{flex:0 0 35%;display:flex;flex-direction:row;flex-wrap:wrap;gap:6px;align-items:flex-start;justify-content:flex-end;padding-right:3%}
+.pauta-actions .btn{font-size:.75rem;padding:.45rem .6rem;border-radius:8px;white-space:nowrap;flex:0 1 auto}
+/* .pauta-actions .btn:last-child{flex:1 1 100%} */
+@media (max-width:768px){
+  .pauta-container{flex-direction:column}
+  .pauta-body,.pauta-actions{flex:0 0 100%}
+  .pauta-actions{justify-content:flex-start}
+}
+
+/* Pautas - Paginação */
+.pauta-pagination{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:12px;background:#10121a}
+.pauta-pagination span{font-size:.85rem;color:var(--muted)}
+
+/* Pautas - Banner de Status */
+.pauta-status-banner{display:flex;align-items:center;gap:12px;padding:14px 18px;border:1px solid rgba(33,195,122,.3);border-radius:12px;background:rgba(33,195,122,.08);margin-bottom:16px}
+.pauta-status-banner .status-icon{font-size:1.3rem;animation:spin 2s linear infinite}
+.pauta-status-banner .status-text{flex:1;color:var(--success);font-weight:600;font-size:.95rem}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* Posts - Banner de Status de Imagem (por post) */
+.post-image-status-banner{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid rgba(33,195,122,.3);border-radius:10px;background:rgba(33,195,122,.08);margin-bottom:12px;font-size:.9rem}
+.post-image-status-banner .status-icon{font-size:1.1rem;animation:spin 2s linear infinite}
+.post-image-status-banner .status-text{flex:1;color:var(--success);font-weight:600}
+.post-image-status-banner .btn{font-size:.8rem;padding:.4rem .8rem}
+
+/* Posts - Banner de Status de Texto (lado esquerdo) */
+.post-text-status-banner{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid rgba(33,195,122,.3);border-radius:10px;background:rgba(33,195,122,.08);margin-bottom:12px;font-size:.9rem}
+.post-text-status-banner .status-icon{font-size:1.1rem;animation:spin 2s linear infinite}
+.post-text-status-banner .status-text{flex:1;color:var(--success);font-weight:600}
+.post-text-status-banner .btn{font-size:.8rem;padding:.4rem .8rem}
+
+/* Carrossel - Campo de Image Prompt com scroll */
+.post-section .post-image-prompt,
+p.post-image-prompt,
+#postDescricaoImagem.post-image-prompt{max-height:350px!important;overflow-y:auto!important;background:#0f131a;border:1px solid var(--border);border-radius:10px;padding:14px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-size:.8rem;line-height:1.7;color:#cfd6e6;white-space:pre-wrap!important;word-wrap:break-word}
+.post-image-prompt::-webkit-scrollbar{width:8px}
+.post-image-prompt::-webkit-scrollbar-track{background:#10121a;border-radius:4px}
+.post-image-prompt::-webkit-scrollbar-thumb{background:#2a2d36;border-radius:4px;border:1px solid #1a1d28}
+.post-image-prompt::-webkit-scrollbar-thumb:hover{background:#343842}
+
+/* Indicador visual de carrossel no header do post */
+.post-type-indicator{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted);font-weight:600;letter-spacing:.04em}
+.post-type-indicator.is-carousel{color:#a78bfa}
+.post-type-indicator.is-carousel::before{content:"📸";margin-right:2px}
+
+</style>
+<style id="thumbOverride">
+/* Smaller thumbs for Identidade Visual gallery */
+#kb-refs{
+  --tile: clamp(92px, 14vw, 132px);
+  display: grid;
+  grid-template-columns: repeat(3, var(--tile));
+  gap: 12px;
+  justify-content: flex-start;
+  max-width: calc(3 * var(--tile) + 2 * 12px);
+}
+#kb-refs .gitem{
+  width: var(--tile);
+  height: var(--tile);
+  aspect-ratio: auto;
+}
+@media (max-width: 720px){
+  #kb-refs{
+    --tile: clamp(84px, 24vw, 120px);
+    grid-template-columns: repeat(2, var(--tile));
+    max-width: calc(2 * var(--tile) + 1 * 12px);
+  }
+}
+</style>
+<style>
+  /* Modal básico (mesmo visual dos seus cards) */
+  .modal{ position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.55); z-index:1000; padding:12px }
+  .modal.open{ display:grid }
+  .modal .panel{ width:min(720px, 92vw); max-height:calc(100vh - 24px); overflow-y:auto; background:linear-gradient(180deg,#17181d 0%, #121318 100%); border:1px solid var(--border); border-radius:16px; padding:20px }
+  .modal .head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px }
+  .modal .head h3{ margin:0 }
+  .modal .close{ background:transparent; border:1px solid var(--border); color:var(--text); border-radius:10px; padding:.5rem .7rem; cursor:pointer }
+
+  .form{ display:grid; gap:12px }
+  label{ font-size:.9rem; color:#cfd6e6; font-weight:600 }
+  input[type="text"], select, textarea{
+    width:100%; background:#0f131a; border:1px solid var(--border); border-radius:10px; color:var(--text); padding:.7rem .8rem; font:inherit;
+  }
+  textarea{ min-height:110px; resize:vertical }
+
+  .btn{ --bgc:#7c4dff; display:inline-flex; align-items:center; gap:.6rem;
+        background:linear-gradient(135deg, var(--bgc) 0%, #5c35ff 50%, #3f2bd6 100%);
+        color:#fff; padding:.9rem 1.1rem; border-radius:12px; border:0; font-weight:700; letter-spacing:.2px; cursor:pointer; }
+  .btn.ghost{ background:transparent; border:1px solid var(--border); color:var(--text) }
+
+  /* CTA Toggle Style (igual ao questionário Diagnóstico Básico) */
+  .cta-toggle-group{ display:flex; gap:10px; margin-top:8px; }
+  .cta-toggle-option{ 
+    display:inline-flex; align-items:center; gap:8px; 
+    background:transparent; border:1px solid var(--border); border-radius:999px; 
+    padding:.45rem 1rem; cursor:pointer; transition:all 0.2s ease;
+  }
+  .cta-toggle-option:hover{
+    border-color:#00d2a8; background:rgba(0,210,168,.05);
+  }
+  .cta-toggle-option input[type="radio"]{ 
+    appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    width:18px; height:18px; min-width:18px; min-height:18px;
+    border:2px solid #3b3f4a; border-radius:50%; 
+    background:transparent; cursor:pointer; 
+    transition:all 0.2s ease; flex-shrink:0;
+    margin:0; display:inline-block;
+  }
+  .cta-toggle-option input[type="radio"]:checked{ 
+    background:#00d2a8; border-color:#00d2a8;
+    box-shadow:0 0 0 3px rgba(0,210,168,.2) inset;
+  }
+  .cta-toggle-option span{ color:var(--text); font-weight:600; font-size:.9rem; }
+  
+  /* Carrossel controls - Grid 2 colunas */
+  .carrossel-controls{ display:grid; grid-template-columns:auto auto; gap:12px; align-items:start; }
+  .carrossel-item{ display:flex; flex-direction:column; gap:8px; }
+  .carrossel-item label{ margin:0; font-size:.9rem; color:#cfd6e6; font-weight:600; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include "components/staff_warning_banner.html" %}
+<section class="section">
+  <div class="container">
+    <div style="display:grid; grid-template-columns:1fr 380px; gap:40px; align-items:center;">
+      <div>
+        <div class="kicker" style="margin-bottom:12px">MÉTODO™</div>
+        <h2 style="margin:0 0 16px; font-size:3.5rem; font-weight:900; line-height:1.1">
+          Central de Criação Inteligente
+        </h2>
+        <p style="margin:0 0 24px; font-size:1.15rem; line-height:1.6; color:var(--muted)">
+          Não é slogan — é a única estratégia possível. Aqui você gerencia a base estratégica da sua marca e aciona as ferramentas de IA para 
+          <strong style="color:var(--text)">gerar pautas</strong>, 
+          <strong style="color:var(--text)">criar posts</strong> 
+          e evoluir continuamente em um cenário de turbulência permanente.
+        </p>
+        <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+          <button class="btn" data-open="modalGerarPauta" >
+            GERAR PAUTAS
+          </button>
+          <button class="btn" data-open="modalGerarPost" style="--bgc:var(--accent-2)">
+            GERAR POSTS
+          </button>
+          {% if videos_avatar_enabled %}
+          <button class="btn" data-open="modalGerarVideo" style="--bgc:#9333ea">
+            🎬 VÍDEOS AVATAR
+          </button>
+          {% endif %}
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:16px; align-items:center;">
+        <div style="display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.03); border-radius:16px; border:1px solid var(--border); padding:30px; width:350px; height:350px;">
+          {% if knowledge_base and knowledge_base.logo_files and knowledge_base.logo_files|length > 0 %}
+            <img src="{{ knowledge_base.logo_files.0 }}" alt="Logotipo {{ organization.name }}" 
+                 style="max-width:100%; max-height:300px; object-fit:contain;">
+          {% else %}
+            <div style="font-size:2rem; font-weight:900; color:var(--muted); text-align:center;">
+              {{ organization.name }}
+            </div>
+          {% endif %}
+        </div>
+        {% if knowledge_base %}
+        <a href="{% url 'core:kb_company_profile' knowledge_base.id %}" 
+           style="color:var(--accent-2); font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+          Ver meu perfil
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 17L17 7M17 7H7M17 7V17"/>
+          </svg>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="pautas_posts">
+  <div class="container">
+    <div class="tabs">
+      <div class="tab active" data-tab="pautas">Pautas</div>
+      <div class="tab" data-tab="posts">Posts</div>
+      {% if videos_avatar_enabled %}
+      <div class="tab" data-tab="videos">Vídeos Avatar</div>
+      {% endif %}
+    </div>
+
+    <div id="tab-pautas">
+      <div class="pauta-status-banner" id="pautaStatusBanner" hidden>
+        <span class="status-icon">🔄</span>
+        <span class="status-text">Pautas sendo geradas pelo agente. Aguarde...</span>
+        <button type="button" class="btn btn-sm" id="btnVerificarStatus">Verificar Status</button>
+      </div>
+      
+      <div class="pauta-pagination" id="pautaPagination" style="margin-bottom:16px" hidden>
+        <span id="pautaPagerInfo">0 pautas</span>
+        <div class="pager-buttons" id="pautaPagerButtons"></div>
+      </div>
+      
+      <div class="card pad">
+        <div id="pautasList" class="empty">Nenhuma pauta ainda. Gere pautas ou converta suas ideias em pauta final.</div>
+      </div>
+    </div>
+
+
+    <div id="tab-posts" class="posts-pane" style="display:none">
+      <div class="posts-toolbar" id="postsToolbar">
+        <div class="field">
+          <label for="filtroData">Data</label>
+          <input type="date" id="filtroData" placeholder="dd/mm/aaaa">
+        </div>
+        <div class="field">
+          <label for="filtroStatus">Status</label>
+          <select id="filtroStatus"></select>
+        </div>
+        <div class="field field-search">
+          <label for="filtroBusca">Buscar por título</label>
+          <div class="search-box">
+            <input type="search" id="filtroBusca" placeholder="Buscar por título...">
+            <button type="button" id="btnBuscarTitulo" aria-label="Buscar título">
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="currentColor" d="M10.5 3a7.5 7.5 0 015.949 12.196l4.177 4.178a1 1 0 11-1.414 1.414l-4.178-4.177A7.5 7.5 0 1110.5 3zm0 2a5.5 5.5 0 100 11 5.5 5.5 0 000-11z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button type="button" class="btn ghost" id="btnLimparFiltros">Limpar Filtros</button>
+      </div>
+
+      <div class="post-pagination">
+        <span id="postPagerInfo">0 posts</span>
+        <div class="pager-buttons" id="pagerButtons"></div>
+      </div>
+
+      <div class="posts-empty card pad" id="postsEmpty">
+        Nenhum post ainda. Gere posts com título, imagem e legenda.
+      </div>
+
+      <div class="posts-main" id="postsMain" hidden>
+        <div class="posts-columns">
+          <article class="post-details card pad" id="postDetails">
+            <div>
+              <span class="status-pill is-pending" id="postStatus">Pendente de Aprovação</span>
+            </div>
+            <div class="post-tags" id="postTags"></div>
+            <div class="post-section">
+              <h4>Título</h4>
+              <p id="postTitulo">—</p>
+            </div>
+            <div class="post-section">
+              <h4>Subtítulo</h4>
+              <p id="postSubtitulo">—</p>
+            </div>
+            <div class="post-section">
+              <h4>Legenda</h4>
+              <p id="postLegenda">—</p>
+            </div>
+            <div class="post-section">
+              <h4>Hashes</h4>
+              <p id="postHashtags">—</p>
+            </div>
+            <div class="post-section">
+              <h4>CTA</h4>
+              <p id="postCTA">—</p>
+            </div>
+            <div class="post-section">
+              <h4>Descrição da imagem a ser gerada</h4>
+              <p id="postDescricaoImagem">—</p>
+            </div>
+            <div class="post-request" id="textRequestBox" hidden>
+              <label class="sr-only" for="textRequestInput">Solicitação de alteração</label>
+              <textarea id="textRequestInput" maxlength="400" placeholder="Digite aqui o que gostaria de alterar..."></textarea>
+              <div class="request-actions">
+                <button type="button" class="btn ghost" data-action="cancel-text-request">Cancelar</button>
+                <button type="button" class="btn" data-action="submit-text-request">Enviar</button>
+              </div>
+            </div>
+            <div class="post-footer">
+              <div id="postRevisoes">Revisões restantes: —</div>
+              <div id="postDataCriacao">Data da criação: —</div>
+            </div>
+            <div class="post-actions" id="postActions"></div>
+          </article>
+
+          <aside class="post-visual card pad" id="postVisual">
+            <div class="post-image-frame" id="postImageFrame">
+              <span class="placeholder">SEM IMAGEM GERADA</span>
+            </div>
+            <div class="post-gallery" id="postGallery" hidden></div>
+            <div class="post-visual-actions" id="postImageActions"></div>
+            <div class="post-request" id="imageRequestBox" hidden>
+              <label class="sr-only" for="imageRequestInput">Solicitação de alteração da imagem</label>
+              <textarea id="imageRequestInput" maxlength="400" placeholder="Digite aqui o que gostaria de alterar na imagem..."></textarea>
+              <div class="request-actions">
+                <button type="button" class="btn ghost" data-action="cancel-image-request">Cancelar</button>
+                <button type="button" class="btn" data-action="submit-image-request">Enviar</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+
+    {% if videos_avatar_enabled %}
+    <!-- ABA: VÍDEOS AVATAR -->
+    <div id="tab-videos" class="videos-pane" style="display:none">
+      
+      <!-- Toolbar de Filtros -->
+      <div class="posts-toolbar" id="videosToolbar">
+        <div class="field">
+          <label for="filtroVideoData">Data</label>
+          <input type="date" id="filtroVideoData" placeholder="dd/mm/aaaa">
+        </div>
+        <div class="field">
+          <label for="filtroVideoStatus">Status</label>
+          <select id="filtroVideoStatus">
+            <option value="">Todos</option>
+            <option value="pending">Aguardando Produção</option>
+            <option value="in_progress">Em Produção</option>
+            <option value="delivered">Entregue</option>
+            <option value="revision_requested">Revisão Solicitada</option>
+          </select>
+        </div>
+        <div class="field field-search">
+          <label for="filtroBuscaVideo">Buscar</label>
+          <div class="search-box">
+            <input type="search" id="filtroBuscaVideo" placeholder="Buscar por script ou ID...">
+            <button type="button" id="btnBuscarVideo" aria-label="Buscar vídeo">
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="currentColor" d="M10.5 3a7.5 7.5 0 015.949 12.196l4.177 4.178a1 1 0 11-1.414 1.414l-4.178-4.177A7.5 7.5 0 1110.5 3zm0 2a5.5 5.5 0 100 11 5.5 5.5 0 000-11z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button type="button" class="btn ghost" id="btnLimparFiltrosVideo">Limpar Filtros</button>
+      </div>
+
+      <!-- Paginação -->
+      <div class="post-pagination" id="videoPagination">
+        <span id="videoPagerInfo">0 vídeos</span>
+        <div class="pager-buttons" id="videoPagerButtons"></div>
+      </div>
+
+      <!-- Estado Vazio -->
+      <div class="posts-empty card pad" id="videosEmpty">
+        Nenhum vídeo ainda. Clique em "VÍDEOS AVATAR" para criar seu primeiro vídeo.
+      </div>
+
+      <!-- Conteúdo Principal -->
+      <div class="posts-main" id="videosMain" hidden>
+        <div class="posts-columns">
+          
+          <!-- Coluna Esquerda: Detalhes -->
+          <article class="post-details card pad" id="videoDetails">
+            
+            <!-- Status Badge -->
+            <div>
+              <span class="status-pill is-pending" id="videoStatusPill">Aguardando Produção</span>
+            </div>
+
+            <!-- Script -->
+            <div class="post-section">
+              <h4>📝 Script</h4>
+              <p id="videoScriptText">—</p>
+            </div>
+
+            <!-- Ação do Avatar (opcional) -->
+            <div class="post-section" id="videoActionSection" hidden>
+              <h4>🎭 Ação do Avatar</h4>
+              <p id="videoActionText">—</p>
+            </div>
+
+            <!-- Rodapé -->
+            <div class="post-footer">
+              <div id="videoRevisoes">Revisões restantes: —</div>
+              <div id="videoDataCriacao">Data da solicitação: —</div>
+            </div>
+
+            <!-- Solicitação de Alteração -->
+            <div class="post-request" id="videoChangeRequestBox" hidden>
+              <textarea 
+                id="videoChangeText" 
+                placeholder="Descreva as alterações que você gostaria no vídeo..." 
+                maxlength="500"
+              ></textarea>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span id="videoChangeCharCount" style="font-size:.8rem;color:var(--muted)">0/500</span>
+                <div style="display:flex;gap:8px">
+                  <button type="button" class="btn ghost" id="btnCancelVideoChange">Cancelar</button>
+                  <button type="button" class="btn" id="btnSendVideoChange">Enviar Alteração</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ações -->
+            <div class="post-actions" id="videoActions"></div>
+
+          </article>
+
+          <!-- Coluna Direita: Vídeo -->
+          <aside class="post-visual card pad" id="videoVisual">
+            
+            <!-- Banner de Prazo -->
+            <div id="videoPrazoContainer"></div>
+            
+            <!-- Container Unificado: Thumbnail/Placeholder e Player -->
+            <div class="post-image-frame" id="videoFrame">
+              <!-- Placeholder -->
+              <span class="placeholder" id="videoPlaceholder">VÍDEO EM PRODUÇÃO</span>
+              
+              <!-- Thumbnail -->
+              <img id="videoThumbnail" alt="Thumbnail do vídeo" style="display:none;">
+              
+              <!-- Play Button Overlay -->
+              <div class="video-play-overlay" id="videoPlayOverlay" style="display:none">
+                <button class="btn-play-video" id="btnPlayVideo" type="button">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <span>Assistir Vídeo</span>
+                </button>
+              </div>
+              
+              <!-- Player de Vídeo -->
+              <video id="videoPlayer" controls style="display:none;"></video>
+            </div>
+
+            <!-- Botão de Download (fora do frame) -->
+            <div id="videoDownloadContainer" style="margin-top:12px; text-align:center; display:none;">
+              <a id="videoDownloadLink" class="btn btn-sm" download>
+                📥 Baixar Vídeo
+              </a>
+            </div>
+
+          </aside>
+
+        </div>
+      </div>
+
+    </div>
+    {% endif %}
+
+    </div>
+  </div>
+</section>
+
+
+
+<!-- Modal: Gerador de Pautas -->
+<!-- Modal: Gerador de Pautas -->
+<div class="modal" id="modalGerarPauta" aria-hidden="true" role="dialog" aria-label="Gerador de Pautas">
+  <div class="panel">
+    <div class="head">
+      <h3>Gerador de Pautas</h3>
+      <button class="close" data-close>Fechar</button>
+    </div>
+
+    <div class="subtitle" style="margin-bottom:40px;color:#00d2a8;font-size: 16px;">
+      Digite no campo abaixo sobre o que você quer postar em suas Redes Sociais.
+      Se quiser colocar apenas palavras-chave, separe elas por “;”.<br><br>
+      Se não tiver nada em mente, deixe em branco que traremos sugestões
+      baseadas na atualidade que estão relacionadas com seu perfil.
+    </div>
+
+    <form class="form" id="formGerarPauta">
+      <div>
+        <label for="redeSocial">Escolha a rede social *</label>
+        <select id="redeSocial" required>
+          <option>Facebook</option>
+          <option>Instagram</option>
+          <option>LinkedIn</option>
+          <option>WhatsApp</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="temaPauta">Digite o tema</label>
+        <textarea id="temaPauta" placeholder="Ex.: ‘Novidades do mês’; ‘Bastidores’; ‘Case X’; ..."></textarea>
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px">
+        <button type="button" class="btn ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn">Gerar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Editar Post -->
+<div class="modal" id="modalEditarPost" aria-hidden="true" role="dialog" aria-label="Editar Post">
+  <div class="panel">
+    <div class="head">
+      <h3>Editar Post</h3>
+      <button class="close" data-close>Fechar</button>
+    </div>
+    <form class="form" id="formEditarPost">
+      <div class="form-grid" style="display:grid; gap:1rem;">
+        <label>
+          <span>Título</span>
+          <input type="text" id="editTitulo" maxlength="220" required>
+        </label>
+        <label>
+          <span>Subtítulo</span>
+          <input type="text" id="editSubtitulo" maxlength="220">
+        </label>
+        <label>
+          <span>Legenda</span>
+          <textarea id="editLegenda" rows="4"></textarea>
+        </label>
+        <label>
+          <span>Hashtags</span>
+          <input type="text" id="editHashtags" placeholder="#tag1 #tag2">
+        </label>
+        <label>
+          <span>CTA</span>
+          <input type="text" id="editCTA" maxlength="160">
+        </label>
+        <label>
+          <span>Descrição da imagem</span>
+          <textarea id="editDescricaoImagem" rows="3"></textarea>
+        </label>
+      </div>
+      <div class="form-footer">
+        <button type="button" class="btn ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn">Salvar alterações</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Gerar Posts -->
+<div class="modal" id="modalGerarPost" aria-hidden="true" role="dialog" aria-label="Gerar Posts">
+  <div class="panel">
+    <div class="head" style="margin-bottom:4px">
+      <h3>Gerar Posts</h3>
+      <button class="close" data-close>Fechar</button>
+    </div>
+
+    <form class="form" id="formGerarPost">
+      <!-- LINHA 1: Rede Social | Formato (NÃO ALTERADA) -->
+      <div class="row format-row">
+        <div>
+          <label for="redePost">Rede social</label>
+          <select id="redePost" required>
+            <option>Instagram</option>
+            <option>Facebook</option>
+            <option>LinkedIn</option>
+            <option>WhatsApp</option>
+          </select>
+        </div>
+        <div class="format-col">
+          <label>Formato</label>
+          <div class="format-controls">
+            <div class="format-options" id="formatOptions" role="radiogroup" aria-label="Formato do post">
+              <label class="chip-choice active">
+                <input type="radio" name="formatOption" value="feed" checked>
+                <span>Feed</span>
+              </label>
+              <label class="chip-choice">
+                <input type="radio" name="formatOption" value="stories">
+                <span>Stories</span>
+              </label>
+              <label class="chip-choice">
+                <input type="radio" name="formatOption" value="both">
+                <span style="white-space: nowrap;">Feed + Stories</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LINHA 2: CTA | Carrossel (NOVA ESTRUTURA) -->
+      <div class="row format-row">
+        <div>
+          <label>Call to Action (CTA)</label>
+          <div class="cta-toggle-group">
+            <label class="cta-toggle-option active">
+              <input type="radio" name="ctaOption" value="sim" checked>
+              <span>Sim</span>
+            </label>
+            <label class="cta-toggle-option">
+              <input type="radio" name="ctaOption" value="nao">
+              <span>Não</span>
+            </label>
+          </div>
+        </div>
+        <div class="carrossel-col">
+          <div class="carrossel-controls">
+            <!-- Coluna 1: Carrossel -->
+            <div class="carrossel-item">
+              <label for="carrosselToggle">Carrossel</label>
+              <div class="chip-group">
+                <button type="button" class="chip" id="carrosselToggle" aria-pressed="false">Ativar</button>
+              </div>
+            </div>
+            
+            <!-- Coluna 2: Qtd Imagens -->
+            <div class="carrossel-item" id="carrosselQtyField" hidden>
+              <label for="qtdImagens">Qtd Imagens</label>
+              <div class="qty-control">
+                <button type="button" data-step="-1" aria-label="Diminuir quantidade">−</button>
+                <input type="number" id="qtdImagens" min="2" max="5" value="3" readonly>
+                <button type="button" data-step="1" aria-label="Aumentar quantidade">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LINHA 3: Tema -->
+      <div>
+        <div class="field-label">
+          <label for="temaPost">Tema</label>
+          <span id="temaContador">0/3000</span>
+        </div>
+        <textarea id="temaPost" maxlength="3000" placeholder="Restrições, exemplos, referências..." required></textarea>
+      </div>
+
+      <div>
+        <label for="refImgs">Imagens de Referência</label>
+        <div class="input-file card pad" style="padding:.7rem">
+          <input id="refImgs" type="file" accept=".jpg,.jpeg,.png" multiple>
+          <div class="subtitle" id="refImgsInfo" style="opacity:.8; margin-top:.35rem">
+            Nenhum arquivo selecionado — Máx. 5 imagens (.JPG ou .PNG)
+          </div>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <button type="button" class="btn ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn">Enviar ao agente</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if videos_avatar_enabled %}
+<!-- Modal: Gerar Vídeo Avatar -->
+<div class="modal" id="modalGerarVideo" aria-hidden="true" role="dialog" aria-label="Gerar Vídeo Avatar">
+  <div class="panel">
+    <div class="head" style="margin-bottom:4px">
+      <h3>🎬 Gerar Vídeo Avatar</h3>
+      <button type="button" class="btn-close" data-close aria-label="Fechar">&times;</button>
+    </div>
+    <p style="color:var(--muted); font-size:14px; margin-bottom:24px">
+      Envie uma imagem e um script para gerar um vídeo avatar personalizado
+    </p>
+
+    <form id="formGerarVideo" enctype="multipart/form-data">
+      <div>
+        <label for="avatarImage">Imagem do Avatar *</label>
+        <div class="input-file card pad" style="padding:.7rem">
+          <input id="avatarImage" type="file" accept=".jpg,.jpeg,.png" required>
+          <div class="subtitle" id="avatarImageInfo" style="opacity:.8; margin-top:.35rem">
+            Nenhum arquivo selecionado — Foto ou ilustração (.JPG ou .PNG)
+          </div>
+        </div>
+        <p style="font-size:13px; color:var(--muted); margin-top:8px">
+          💡 Dica: Use fotos com boa resolução e enquadramento frontal
+        </p>
+      </div>
+
+      <div>
+        <div class="field-label">
+          <label for="scriptVideo">Script do Vídeo *</label>
+          <span id="scriptContador">0/500</span>
+        </div>
+        <textarea 
+          id="scriptVideo" 
+          maxlength="500" 
+          placeholder="Digite o texto que o avatar vai falar (locução)..." 
+          required
+          style="min-height:120px"
+        ></textarea>
+        <p style="font-size:13px; color:var(--muted); margin-top:8px">
+          Máximo de 500 caracteres. Seja claro e objetivo.
+        </p>
+      </div>
+
+      <div>
+        <label for="avatarAction">Ação do Avatar (opcional)</label>
+        <input 
+          id="avatarAction" 
+          type="text" 
+          placeholder="Ex: acenar, sorrir, apontar para a câmera..."
+          maxlength="200"
+        >
+        <p style="font-size:13px; color:var(--muted); margin-top:8px">
+          Descreva a ação que o avatar deve fazer durante o vídeo
+        </p>
+      </div>
+
+      <div class="form-footer">
+        <button type="button" class="btn ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn">Solicitar Vídeo</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const el = (id)=>document.getElementById(id);
+  const sample = {
+    h1: el('sampleH1'),
+    h2: el('sampleH2'),
+    body: el('sampleBody'),
+    cap: el('sampleCaption'),
+    m1: el('metaH1'),
+    m2: el('metaH2'),
+    mb: el('metaBody'),
+    mc: el('metaCaption')
+  };
+  let currentFamily = 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
+
+  function updateScale(){
+    const base = Math.max(12, Math.min(22, parseInt(el('baseSize').value || '16', 10)));
+    const r = parseFloat(el('ratio').value || '1.25');
+    // Sizes: body=base; h2=base*r^1.5 (approx  r*r ), h1=base*r^2; caption=base/r
+    const h1 = Math.round(base * Math.pow(r, 2));
+    const h2 = Math.round(base * Math.pow(r, 1.5));
+    const body = base;
+    const cap = Math.round(base / r);
+    sample.h1.style.fontSize = h1 + 'px';
+    sample.h2.style.fontSize = h2 + 'px';
+    sample.body.style.fontSize = body + 'px';
+    sample.cap.style.fontSize = cap + 'px';
+    sample.m1.textContent = `H1 — ${h1}px — weight 800`;
+    sample.m2.textContent = `H2 — ${h2}px — weight 700`;
+    sample.mb.textContent = `Body — ${body}px — weight 400`;
+    sample.mc.textContent = `Caption — ${cap}px — weight 400`;
+  }
+
+  function applyFamily(familyStack){
+    [sample.h1, sample.h2, sample.body, sample.cap].forEach(s => s.style.fontFamily = familyStack);
+  }
+
+  function toGFontQuery(name){
+    // e.g., "DM Sans" -> DM+Sans:wght@400;700;800
+    const fam = encodeURIComponent(name.trim().replace(/\s+/g,'+'));
+    return `https://fonts.googleapis.com/css2?family=${fam}:wght@400;700;800&display=swap`;
+  }
+
+  function loadGoogleFont(name){
+    if(!name) return;
+    const id = 'gfLinkBrand';
+    let link = document.getElementById(id);
+    if(!link){
+      link = document.createElement('link');
+      link.id = id;
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+    }
+    link.href = toGFontQuery(name);
+    currentFamily = `'${name}', ${currentFamily}`;
+    applyFamily(currentFamily);
+  }
+
+  function loadLocalFont(file){
+    const id = 'uploadedFontStyle';
+    const url = URL.createObjectURL(file);
+    const family = 'UploadedBrandFont';
+    let styleEl = document.getElementById(id);
+    if(!styleEl){
+      styleEl = document.createElement('style'); styleEl.id = id; document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = `@font-face{ font-family:'${family}'; src:url('${url}') format('${file.name.split('.').pop().toLowerCase()}'); font-weight:400 800; font-style:normal; font-display:swap }`;
+    currentFamily = `'${family}', ${currentFamily}`;
+    applyFamily(currentFamily);
+  }
+
+  // Events
+  const baseSize = el('baseSize'), ratio = el('ratio');
+  if(baseSize && ratio){
+    baseSize.addEventListener('input', updateScale);
+    ratio.addEventListener('change', updateScale);
+    updateScale();
+  }
+  const btnApply = el('applyGFont');
+  if(btnApply){
+    btnApply.addEventListener('click', ()=>{ const n = el('gfName').value.trim(); if(n){ loadGoogleFont(n); }});
+  }
+  const file = el('fileFont');
+  if(file){
+    file.addEventListener('change', ()=>{ const f = file.files && file.files[0]; if(f){ loadLocalFont(f); }});
+  }
+  const btnReset = el('resetFont');
+  if(btnReset){
+    btnReset.addEventListener('click', ()=>{
+      currentFamily = 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
+      applyFamily(currentFamily);
+      el('gfName').value=''; if(file) file.value='';
+      updateScale();
+    });
+  }
+})();
+</script>
+<script>
+(function () {
+  const PAUTAS_WEBHOOK_URL = "{{ pautas_webhook_url|escapejs }}";
+  const POSTS_WEBHOOK_URL  = "{{ posts_webhook_url|escapejs }}";
+  const CSRF_TOKEN = '{{ csrf_token|escapejs }}';
+  
+  console.log('🔍 [DASHBOARD] PAUTAS_WEBHOOK_URL:', PAUTAS_WEBHOOK_URL);
+  console.log('🔍 [DASHBOARD] CSRF_TOKEN:', CSRF_TOKEN ? 'Presente' : 'Ausente');
+
+  const $ = (selector, scope = document) => scope.querySelector(selector);
+  const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  async function postJSON(url, data) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': CSRF_TOKEN,
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMsg = errorData.error || 'HTTP ' + response.status;
+      throw new Error(errorMsg);
+    }
+    return response.json();
+  }
+  function uid() {
+    return 'p_' + Math.random().toString(36).slice(2, 10);
+  }
+  function escapeHtml(str) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return (str || '').replace(/[&<>"']/g, ch => map[ch]);
+  }
+  function normalizeHashtags(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(Boolean);
+    return String(value)
+      .split(/[,#\s]+/)
+      .map(v => v.trim())
+      .filter(Boolean)
+      .map(v => (v.startsWith('#') ? v : '#' + v));
+  }
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const INITIAL_PAUTAS = {{ pautas_json|safe }};
+  const INITIAL_POSTS = {{ posts_json|safe }};
+
+  const CURRENT_USER = "{{ current_user_display|default:''|escapejs }}";
+  const ORGANIZATION_ID = {{ organization_id|default:0 }};
+
+  const statusInfo = {
+    pending: { label: 'Pendente de Aprovação', className: 'is-pending' },
+    approved: { label: 'Aprovado', className: 'is-approved' },
+    rejected: { label: 'Rejeitado', className: 'is-rejected' },
+    agent: { label: 'Agente Alterando — Aguarde', className: 'is-agent' },
+    generating: { label: 'Agente Gerando Conteúdo', className: 'is-agent' },
+    image_generating: { label: 'Agente Gerando Imagem', className: 'is-agent' },
+    image_ready: { label: 'Imagem Disponível', className: 'is-approved' }
+  };
+
+  const postsState = {
+    items: INITIAL_POSTS.slice(),
+    filtered: [],
+    page: 1,
+    perPage: 1,
+    filters: { date: '', status: 'all', search: '' },
+    selectedId: null,
+    restoredFromStorage: false
+  };
+
+  let editingPostRef = null;
+
+  postsState.items.forEach(item => {
+    if (!item) return;
+    if (item.serverId === undefined || item.serverId === null) {
+      if (typeof item.id === 'number' && Number.isFinite(item.id)) {
+        item.serverId = item.id;
+      } else if (typeof item.id === 'string' && /^\d+$/.test(item.id)) {
+        item.serverId = Number(item.id);
+      }
+    }
+    if (typeof item.imageChanges !== 'number') item.imageChanges = 0;
+    if (!item.statusLabel && item.status) {
+      item.statusLabel = (statusInfo[item.status]?.label) || '';
+    }
+  });
+
+  const dom = {
+    modals: $$('.modal'),
+    section: document.getElementById('pautas_posts'),
+    pautasList: document.getElementById('pautasList'),
+    pautaStatusBanner: document.getElementById('pautaStatusBanner'),
+    btnVerificarStatus: document.getElementById('btnVerificarStatus'),
+    pautaPagination: document.getElementById('pautaPagination'),
+    pautaPagerInfo: document.getElementById('pautaPagerInfo'),
+    pautaPagerButtons: document.getElementById('pautaPagerButtons'),
+    postsPane: document.getElementById('tab-posts'),
+    postsEmpty: document.getElementById('postsEmpty'),
+    postsMain: document.getElementById('postsMain'),
+    postStatus: document.getElementById('postStatus'),
+    postTags: document.getElementById('postTags'),
+    postTitulo: document.getElementById('postTitulo'),
+    postSubtitulo: document.getElementById('postSubtitulo'),
+    postLegenda: document.getElementById('postLegenda'),
+    postHashtags: document.getElementById('postHashtags'),
+    postCTA: document.getElementById('postCTA'),
+    postDescricaoImagem: document.getElementById('postDescricaoImagem'),
+    postRevisoes: document.getElementById('postRevisoes'),
+    postDataCriacao: document.getElementById('postDataCriacao'),
+    textRequestBox: document.getElementById('textRequestBox'),
+    textRequestInput: document.getElementById('textRequestInput'),
+    imageRequestBox: document.getElementById('imageRequestBox'),
+    imageRequestInput: document.getElementById('imageRequestInput'),
+    postActions: document.getElementById('postActions'),
+    postImageActions: document.getElementById('postImageActions'),
+    postImageFrame: document.getElementById('postImageFrame'),
+    postGallery: document.getElementById('postGallery'),
+    postPagerInfo: document.getElementById('postPagerInfo'),
+    pagerButtons: document.getElementById('pagerButtons'),
+    filtroStatus: document.getElementById('filtroStatus'),
+    filtroData: document.getElementById('filtroData'),
+    filtroBusca: document.getElementById('filtroBusca'),
+    btnBuscar: document.getElementById('btnBuscarTitulo'),
+    btnLimparFiltros: document.getElementById('btnLimparFiltros'),
+    formGerarPauta: document.getElementById('formGerarPauta'),
+    formGerarPost: document.getElementById('formGerarPost'),
+    redePost: document.getElementById('redePost'),
+    temaPost: document.getElementById('temaPost'),
+    temaContador: document.getElementById('temaContador'),
+    formatOptions: document.getElementById('formatOptions'),
+    carrosselToggle: document.getElementById('carrosselToggle'),
+    carrosselQtyField: document.getElementById('carrosselQtyField'),
+    carrosselQtyInput: document.getElementById('qtdImagens'),
+    refImgs: document.getElementById('refImgs'),
+    refImgsInfo: document.getElementById('refImgsInfo'),
+    editModal: document.getElementById('modalEditarPost'),
+    editForm: document.getElementById('formEditarPost'),
+    editTitulo: document.getElementById('editTitulo'),
+    editSubtitulo: document.getElementById('editSubtitulo'),
+    editLegenda: document.getElementById('editLegenda'),
+    editHashtags: document.getElementById('editHashtags'),
+    editCTA: document.getElementById('editCTA'),
+    editDescricaoImagem: document.getElementById('editDescricaoImagem'),
+    // Vídeos Avatar
+    videosPane: document.getElementById('tab-videos'),
+    videosToolbar: document.getElementById('videosToolbar'),
+    filtroVideoData: document.getElementById('filtroVideoData'),
+    filtroVideoStatus: document.getElementById('filtroVideoStatus'),
+    filtroBuscaVideo: document.getElementById('filtroBuscaVideo'),
+    btnBuscarVideo: document.getElementById('btnBuscarVideo'),
+    btnLimparFiltrosVideo: document.getElementById('btnLimparFiltrosVideo'),
+    videoPagination: document.getElementById('videoPagination'),
+    videoPagerInfo: document.getElementById('videoPagerInfo'),
+    videoPagerButtons: document.getElementById('videoPagerButtons'),
+    videosEmpty: document.getElementById('videosEmpty'),
+    videosMain: document.getElementById('videosMain'),
+    videoDetails: document.getElementById('videoDetails'),
+    videoStatusPill: document.getElementById('videoStatusPill'),
+    videoPrazoContainer: document.getElementById('videoPrazoContainer'),
+    videoScriptText: document.getElementById('videoScriptText'),
+    videoActionSection: document.getElementById('videoActionSection'),
+    videoActionText: document.getElementById('videoActionText'),
+    videoRevisoes: document.getElementById('videoRevisoes'),
+    videoDataCriacao: document.getElementById('videoDataCriacao'),
+    videoActions: document.getElementById('videoActions'),
+    videoChangeRequestBox: document.getElementById('videoChangeRequestBox'),
+    videoChangeText: document.getElementById('videoChangeText'),
+    videoChangeCharCount: document.getElementById('videoChangeCharCount'),
+    btnCancelVideoChange: document.getElementById('btnCancelVideoChange'),
+    btnSendVideoChange: document.getElementById('btnSendVideoChange'),
+    videoVisual: document.getElementById('videoVisual'),
+    videoFrame: document.getElementById('videoFrame'),
+    videoThumbnail: document.getElementById('videoThumbnail'),
+    videoPlayOverlay: document.getElementById('videoPlayOverlay'),
+    videoPlaceholder: document.getElementById('videoPlaceholder'),
+    btnPlayVideo: document.getElementById('btnPlayVideo'),
+    videoPlayer: document.getElementById('videoPlayer'),
+    videoDownloadContainer: document.getElementById('videoDownloadContainer'),
+    videoDownloadLink: document.getElementById('videoDownloadLink'),
+    modalGerarVideo: document.getElementById('modalGerarVideo'),
+    formGerarVideo: document.getElementById('formGerarVideo'),
+    avatarImage: document.getElementById('avatarImage'),
+    avatarImageInfo: document.getElementById('avatarImageInfo'),
+    scriptVideo: document.getElementById('scriptVideo'),
+    scriptContador: document.getElementById('scriptContador'),
+    avatarAction: document.getElementById('avatarAction')
+  };
+
+
+if (dom.filtroStatus) {
+  const statusOrder = ['pending', 'generating', 'image_generating', 'image_ready', 'approved', 'agent', 'rejected'];
+  const options = ['<option value="all">Status</option>'];
+  statusOrder.forEach(code => {
+    const info = statusInfo[code];
+    if (info) {
+      options.push(`<option value="${code}">${info.label}</option>`);
+    }
+  });
+  dom.filtroStatus.innerHTML = options.join('');
+}
+
+
+  function openModal(id) {
+    const modal = typeof id === 'string' ? document.getElementById(id) : id;
+    if (modal) {
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+  }
+  function closeModal(target) {
+    const modal = typeof target === 'string' ? document.getElementById(target) : target;
+    if (modal) {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+  $$('[data-open]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-open');
+      if (id === 'modalGerarPost') {
+        resetGerarPostForm();
+        updateTemaCounter();
+      }
+      openModal(id);
+    });
+  });
+  $$('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.closest('.modal')));
+  });
+  dom.modals.forEach(modal => {
+    modal.addEventListener('click', event => {
+      if (event.target === modal) closeModal(modal);
+    });
+  });
+
+  if (dom.editModal) {
+    $$('[data-close]', dom.editModal).forEach(btn => {
+      btn.addEventListener('click', () => closeEditPostModal());
+    });
+    dom.editModal.addEventListener('click', event => {
+      if (event.target === dom.editModal) {
+        closeEditPostModal();
+      }
+    });
+  }
+
+
+  function setActiveTab(name) {
+    if (!dom.section) return;
+    const tabs = $$('.tabs .tab', dom.section);
+    tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.tab === name));
+    const pautasPane = $('#tab-pautas', dom.section);
+    if (pautasPane) pautasPane.style.display = name === 'pautas' ? '' : 'none';
+    if (dom.postsPane) dom.postsPane.style.display = name === 'posts' ? '' : 'none';
+    if (dom.videosPane) dom.videosPane.style.display = name === 'videos' ? '' : 'none';
+    
+    // Carregar vídeos quando aba é ativada
+    if (name === 'videos' && videosState.list.length === 0) {
+      loadVideos();
+    }
+    
+    // Salvar aba ativa no localStorage para persistir após reload
+    try {
+      localStorage.setItem('activeTab', name);
+    } catch (e) {
+      // Ignorar erro silenciosamente se localStorage não estiver disponível
+    }
+  }
+  if (dom.section) {
+    $$('.tabs .tab', dom.section).forEach(tab => {
+      tab.addEventListener('click', () => setActiveTab(tab.dataset.tab));
+    });
+    
+    // Restaurar aba ativa após reload (NUNCA restaurar 'videos' automaticamente)
+    try {
+      const savedTab = localStorage.getItem('activeTab');
+      // Só restaurar pautas ou posts, nunca videos
+      if (savedTab && (savedTab === 'pautas' || savedTab === 'posts')) {
+        setActiveTab(savedTab);
+      } else {
+        // Padrão: sempre abrir na aba Pautas
+        setActiveTab('pautas');
+      }
+    } catch (e) {
+      // Padrão: sempre abrir na aba Pautas
+      setActiveTab('pautas');
+    }
+  }
+
+  // ============================================================================
+  // FUNÇÕES DE VÍDEOS AVATAR
+  // ============================================================================
+
+  async function loadVideos() {
+    if (videosState.loading) return;
+    videosState.loading = true;
+    
+    try {
+      const response = await fetch('/api/videos/list/', {
+        headers: { 'X-CSRFToken': CSRF_TOKEN }
+      });
+      
+      if (!response.ok) throw new Error('Erro ao carregar vídeos');
+      
+      const data = await response.json();
+      videosState.list = data.videos || [];
+      videosState.filtered = videosState.list;
+      videosState.currentPage = 1;
+      
+      applyVideoFilters();
+    } catch (error) {
+      console.error('Erro ao carregar vídeos:', error);
+      alert('Não foi possível carregar os vídeos. Tente novamente.');
+    } finally {
+      videosState.loading = false;
+    }
+  }
+
+  function applyVideoFilters() {
+    let filtered = [...videosState.list];
+    
+    // Filtro por data
+    if (dom.filtroVideoData && dom.filtroVideoData.value) {
+      const selectedDate = dom.filtroVideoData.value;
+      filtered = filtered.filter(v => {
+        const videoDate = new Date(v.created_at).toISOString().split('T')[0];
+        return videoDate === selectedDate;
+      });
+    }
+    
+    // Filtro por status
+    if (dom.filtroVideoStatus && dom.filtroVideoStatus.value) {
+      filtered = filtered.filter(v => v.status === dom.filtroVideoStatus.value);
+    }
+    
+    // Busca por script ou ID
+    if (dom.filtroBuscaVideo && dom.filtroBuscaVideo.value.trim()) {
+      const query = dom.filtroBuscaVideo.value.toLowerCase();
+      filtered = filtered.filter(v => 
+        v.script_text.toLowerCase().includes(query) || 
+        String(v.id).includes(query)
+      );
+    }
+    
+    videosState.filtered = filtered;
+    videosState.currentPage = 1;
+    renderVideoPagination();
+    renderCurrentVideo();
+  }
+
+  function renderVideoPagination() {
+    const total = videosState.filtered.length;
+    const totalPages = Math.ceil(total / videosState.pageSize);
+    
+    if (!dom.videoPagerButtons || !dom.videoPagerInfo) return;
+    
+    dom.videoPagerInfo.textContent = `${videosState.currentPage} de ${total} ${total === 1 ? 'vídeo' : 'vídeos'}`;
+    dom.videoPagerButtons.innerHTML = '';
+    
+    if (totalPages <= 1) return;
+    
+    const currentPage = videosState.currentPage;
+    const windowSize = 10;
+    const maxStart = Math.max(1, totalPages - windowSize + 1);
+    let startPage = Math.min(Math.max(1, currentPage), maxStart);
+    let endPage = Math.min(totalPages, startPage + windowSize - 1);
+    
+    // Helper function para adicionar botões (igual aos posts)
+    const addButton = (label, page, disabled = false, extraClass = '') => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = label;
+      if (extraClass) {
+        btn.classList.add(extraClass);
+        console.log(`[PAGINAÇÃO] Botão ${label} com classe '${extraClass}'`);
+      }
+      btn.disabled = disabled;
+      if (!disabled) {
+        btn.addEventListener('click', () => {
+          if (videosState.currentPage === page) return;
+          goToVideoPage(page);
+        });
+      }
+      dom.videoPagerButtons.appendChild(btn);
+    };
+    
+    addButton('«', 1, currentPage === 1, 'nav-first');
+    addButton('‹', Math.max(1, currentPage - 1), currentPage === 1, 'nav-prev');
+    
+    for (let page = startPage; page <= endPage; page += 1) {
+      addButton(page, page, false, page === currentPage ? 'active' : '');
+    }
+    
+    addButton('›', Math.min(totalPages, currentPage + 1), currentPage >= totalPages, 'nav-next');
+    addButton('»', totalPages, currentPage >= totalPages, 'nav-last');
+  }
+
+  function goToVideoPage(page) {
+    videosState.currentPage = page;
+    renderVideoPagination();  // Recriar botões com novo estado
+    renderCurrentVideo();     // Atualizar vídeo exibido
+  }
+
+  function renderCurrentVideo() {
+    const total = videosState.filtered.length;
+    
+    // Mostrar/ocultar estados
+    if (total === 0) {
+      if (dom.videosEmpty) dom.videosEmpty.style.display = 'block';
+      if (dom.videosMain) dom.videosMain.hidden = true;
+      return;
+    }
+    
+    if (dom.videosEmpty) dom.videosEmpty.style.display = 'none';
+    if (dom.videosMain) dom.videosMain.hidden = false;
+    
+    const index = (videosState.currentPage - 1) * videosState.pageSize;
+    const video = videosState.filtered[index];
+    if (!video) return;
+    
+    // Status Badge
+    if (dom.videoStatusPill) {
+      dom.videoStatusPill.textContent = video.statusLabel || video.status;
+      dom.videoStatusPill.className = 'status-pill is-' + video.status;
+    }
+    
+    // Banner de Prazo (estilo pauta/post) - só mostrar se NÃO tiver vídeo pronto
+    if (dom.videoPrazoContainer) {
+      dom.videoPrazoContainer.innerHTML = '';
+      
+      // Só mostrar banner se não tiver vídeo E status for pending/in_progress
+      if (!video.has_video && (video.status === 'pending' || video.status === 'in_progress')) {
+        const banner = document.createElement('div');
+        banner.className = 'post-image-status-banner';
+        const prazoTexto = video.expected_delivery_display || formatVideoDeadline(video.expected_delivery_at);
+        banner.innerHTML = `
+          <span class="status-icon">🔄</span>
+          <span class="status-text">Seu vídeo será entregue até ${prazoTexto}</span>
+        `;
+        dom.videoPrazoContainer.appendChild(banner);
+      }
+    }
+    
+    // Script
+    if (dom.videoScriptText) {
+      dom.videoScriptText.textContent = video.script_text || '—';
+    }
+    
+    // Ação do Avatar
+    if (video.avatar_action) {
+      if (dom.videoActionSection) dom.videoActionSection.hidden = false;
+      if (dom.videoActionText) dom.videoActionText.textContent = video.avatar_action;
+    } else {
+      if (dom.videoActionSection) dom.videoActionSection.hidden = true;
+    }
+    
+    // Rodapé
+    if (dom.videoRevisoes) {
+      dom.videoRevisoes.textContent = `Revisões restantes: ${video.revisions_remaining || 0}`;
+    }
+    if (dom.videoDataCriacao) {
+      dom.videoDataCriacao.textContent = `Data da solicitação: ${formatVideoDate(video.created_at)}`;
+    }
+    
+    // Botão "Solicitar Alteração" (só aparece se vídeo entregue + tem revisões)
+    if (dom.videoActions) {
+      dom.videoActions.innerHTML = '';
+      
+      if (video.has_video && video.status === 'delivered' && video.revisions_remaining > 0) {
+        const btnChange = document.createElement('button');
+        btnChange.type = 'button';
+        btnChange.className = 'btn';
+        btnChange.textContent = '✏️ Solicitar Alteração';
+        btnChange.addEventListener('click', () => {
+          if (dom.videoChangeRequestBox) dom.videoChangeRequestBox.hidden = false;
+          if (dom.videoChangeText) dom.videoChangeText.focus();
+        });
+        dom.videoActions.appendChild(btnChange);
+      }
+    }
+    
+    // Resetar estados do player
+    if (dom.videoPlayer) {
+      dom.videoPlayer.src = '';
+      dom.videoPlayer.style.display = 'none';
+    }
+    if (dom.videoDownloadContainer) dom.videoDownloadContainer.style.display = 'none';
+    
+    // Thumbnail e Player
+    if (video.has_video || video.status === 'delivered') {
+      // Tem vídeo: mostrar thumbnail (ou placeholder se não tiver) com play button
+      if (video.thumbnail) {
+        // Tem thumbnail: mostrar thumbnail
+        if (dom.videoPlaceholder) dom.videoPlaceholder.style.display = 'none';
+        if (dom.videoThumbnail) {
+          dom.videoThumbnail.src = video.thumbnail;
+          dom.videoThumbnail.style.display = 'block';
+        }
+      } else {
+        // Sem thumbnail: mostrar placeholder com texto "Clique para assistir"
+        if (dom.videoThumbnail) dom.videoThumbnail.style.display = 'none';
+        if (dom.videoPlaceholder) {
+          dom.videoPlaceholder.textContent = 'VÍDEO PRONTO';
+          dom.videoPlaceholder.style.display = 'flex';
+        }
+      }
+      // SEMPRE mostrar play button se tiver vídeo
+      if (dom.videoPlayOverlay) dom.videoPlayOverlay.style.display = 'flex';
+    } else {
+      // Sem vídeo: mostrar placeholder "em produção"
+      if (dom.videoPlaceholder) {
+        dom.videoPlaceholder.textContent = 'VÍDEO EM PRODUÇÃO';
+        dom.videoPlaceholder.style.display = 'flex';
+      }
+      if (dom.videoThumbnail) dom.videoThumbnail.style.display = 'none';
+      if (dom.videoPlayOverlay) dom.videoPlayOverlay.style.display = 'none';
+    }
+  }
+
+  function formatVideoDate(dateString) {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  function formatVideoDeadline(dateString) {
+    if (!dateString) return '48h úteis';
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${day}/${month} às ${hours}:${minutes}`;
+  }
+
+  async function loadVideoPlayer() {
+    const index = (videosState.currentPage - 1) * videosState.pageSize;
+    const video = videosState.filtered[index];
+    if (!video || !video.has_video) return;
+    
+    try {
+      const response = await fetch(`/api/videos/${video.id}/get-url/`, {
+        headers: { 'X-CSRFToken': CSRF_TOKEN }
+      });
+      
+      if (!response.ok) throw new Error('Erro ao carregar vídeo');
+      
+      const data = await response.json();
+      
+      // Esconder thumbnail e overlay, mostrar player
+      if (dom.videoThumbnail) dom.videoThumbnail.style.display = 'none';
+      if (dom.videoPlayOverlay) dom.videoPlayOverlay.style.display = 'none';
+      if (dom.videoPlaceholder) dom.videoPlaceholder.style.display = 'none';
+      
+      // Carregar e exibir player
+      if (dom.videoPlayer) {
+        dom.videoPlayer.src = data.video_url;
+        dom.videoPlayer.style.display = 'block';
+        dom.videoPlayer.play();
+      }
+      
+      // Mostrar botão de download (URL SEGURA via proxy Django)
+      if (dom.videoDownloadContainer) dom.videoDownloadContainer.style.display = 'block';
+      if (dom.videoDownloadLink) {
+        // Usar rota de download segura (não expõe credenciais S3)
+        dom.videoDownloadLink.href = `/api/videos/${video.id}/download/`;
+        dom.videoDownloadLink.download = `video_${video.id}.mp4`;
+      }
+    } catch (error) {
+      console.error('Erro ao carregar player:', error);
+      alert('Não foi possível carregar o vídeo. Tente novamente.');
+    }
+  }
+
+  // Event Listeners - Filtros de Vídeos
+  if (dom.filtroVideoData) {
+    dom.filtroVideoData.addEventListener('change', applyVideoFilters);
+  }
+  if (dom.filtroVideoStatus) {
+    dom.filtroVideoStatus.addEventListener('change', applyVideoFilters);
+  }
+  if (dom.filtroBuscaVideo) {
+    dom.filtroBuscaVideo.addEventListener('input', applyVideoFilters);
+  }
+  if (dom.btnBuscarVideo) {
+    dom.btnBuscarVideo.addEventListener('click', applyVideoFilters);
+  }
+  if (dom.btnLimparFiltrosVideo) {
+    dom.btnLimparFiltrosVideo.addEventListener('click', () => {
+      if (dom.filtroVideoData) dom.filtroVideoData.value = '';
+      if (dom.filtroVideoStatus) dom.filtroVideoStatus.value = '';
+      if (dom.filtroBuscaVideo) dom.filtroBuscaVideo.value = '';
+      applyVideoFilters();
+    });
+  }
+
+  // Event Listener - Play Video
+  if (dom.btnPlayVideo) {
+    dom.btnPlayVideo.addEventListener('click', (e) => {
+      console.log('Play button clicked');
+      e.preventDefault();
+      e.stopPropagation();
+      loadVideoPlayer();
+    });
+    console.log('Play button event listener added');
+  } else {
+    console.log('Play button NOT found in DOM');
+  }
+
+  // Form de criar vídeo
+  if (dom.formGerarVideo) {
+    // Contador de caracteres
+    if (dom.scriptVideo && dom.scriptContador) {
+      dom.scriptVideo.addEventListener('input', () => {
+        dom.scriptContador.textContent = `${dom.scriptVideo.value.length}/500`;
+      });
+    }
+    
+    // Info do arquivo
+    if (dom.avatarImage && dom.avatarImageInfo) {
+      dom.avatarImage.addEventListener('change', () => {
+        const files = dom.avatarImage.files;
+        if (files.length > 0) {
+          dom.avatarImageInfo.textContent = `${files[0].name} (${(files[0].size / 1024).toFixed(0)}KB)`;
+        } else {
+          dom.avatarImageInfo.textContent = 'Nenhum arquivo selecionado — Foto ou ilustração (.JPG ou .PNG)';
+        }
+      });
+    }
+    
+    // Submit
+    dom.formGerarVideo.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData();
+      formData.append('avatar_image', dom.avatarImage.files[0]);
+      formData.append('script_text', dom.scriptVideo.value);
+      formData.append('avatar_action', dom.avatarAction.value);
+      
+      try {
+        const response = await fetch('/api/videos/generate/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': CSRF_TOKEN },
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao solicitar vídeo');
+        }
+        
+        alert('✅ Vídeo solicitado com sucesso!\n\n' + 
+              `Prazo de entrega: ${data.expected_delivery_display || '48h úteis'}\n\n` +
+              'Você receberá um email quando o vídeo estiver pronto.');
+        
+        closeModal('modalGerarVideo');
+        dom.formGerarVideo.reset();
+        
+        // Recarregar lista
+        await loadVideos();
+        setActiveTab('videos');
+      } catch (error) {
+        console.error('Erro:', error);
+        alert(error.message || 'Não foi possível solicitar o vídeo. Tente novamente.');
+      }
+    });
+  }
+
+  // Event Listeners - Solicitação de Alteração de Vídeo
+  if (dom.videoChangeText && dom.videoChangeCharCount) {
+    dom.videoChangeText.addEventListener('input', () => {
+      dom.videoChangeCharCount.textContent = `${dom.videoChangeText.value.length}/500`;
+    });
+  }
+
+  if (dom.btnCancelVideoChange) {
+    dom.btnCancelVideoChange.addEventListener('click', () => {
+      if (dom.videoChangeRequestBox) dom.videoChangeRequestBox.hidden = true;
+      if (dom.videoChangeText) dom.videoChangeText.value = '';
+      if (dom.videoChangeCharCount) dom.videoChangeCharCount.textContent = '0/500';
+    });
+  }
+
+  if (dom.btnSendVideoChange) {
+    dom.btnSendVideoChange.addEventListener('click', async () => {
+      const changeText = dom.videoChangeText?.value.trim();
+      const index = (videosState.currentPage - 1) * videosState.pageSize;
+      const video = videosState.filtered[index];
+      
+      if (!changeText || changeText.length < 10) {
+        alert('Por favor, descreva as alterações desejadas (mínimo 10 caracteres).');
+        return;
+      }
+      
+      if (!video || !video.id) {
+        alert('Erro: Vídeo não encontrado.');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/videos/${video.id}/request-change/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+          },
+          body: JSON.stringify({ change_description: changeText })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao solicitar alteração');
+        }
+        
+        // Ocultar formulário
+        if (dom.videoChangeRequestBox) dom.videoChangeRequestBox.hidden = true;
+        if (dom.videoChangeText) dom.videoChangeText.value = '';
+        if (dom.videoChangeCharCount) dom.videoChangeCharCount.textContent = '0/500';
+        
+        // Alert de sucesso
+        alert('✅ Solicitação de alteração enviada com sucesso!\n\n' + 
+              `Novo prazo de entrega: ${data.expected_delivery_display || '48h úteis'}\n\n` +
+              'Você receberá um email quando o vídeo revisado estiver pronto.');
+        
+        // Recarregar lista
+        await loadVideos();
+      } catch (error) {
+        console.error('Erro:', error);
+        alert(error.message || 'Não foi possível solicitar alteração. Tente novamente.');
+      }
+    });
+  }
+
+  const chatBody = document.getElementById('chatBody');
+  const chatInput = document.getElementById('chatInput');
+  if (chatBody && chatInput) {
+    const sendBtn = document.getElementById('sendMsg');
+    const clearBtn = document.getElementById('clearChat');
+    const addMsg = (who, text) => {
+      const div = document.createElement('div');
+      div.className = `msg ${who}`;
+      div.textContent = text;
+      chatBody.appendChild(div);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    };
+    const sendMessage = () => {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      addMsg('me', text);
+      chatInput.value = '';
+      setTimeout(() => {
+        addMsg('ai', 'Entendi. Vou ajustar o cronograma e sugerir 3 pautas alinhadas.');
+      }, 500);
+    };
+    sendBtn?.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+      }
+    });
+    clearBtn?.addEventListener('click', () => {
+      chatBody.innerHTML = '<div class="msg ai">Como posso ajudar?</div>';
+    });
+  }
+
+  function formatDateKey(dateLike) {
+    const date = (dateLike instanceof Date) ? dateLike : new Date(dateLike);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toISOString().slice(0, 10);
+  }
+  function formatDateDisplay(dateLike) {
+    const date = (dateLike instanceof Date) ? dateLike : new Date(dateLike);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString('pt-BR');
+  }
+
+  function applyFilters() {
+    const { date, status, search } = postsState.filters;
+    let items = postsState.items.slice();
+    if (date) {
+      items = items.filter(post => formatDateKey(post.createdAt) === date);
+    }
+    if (status && status !== 'all') {
+      items = items.filter(post => post.status === status);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      items = items.filter(post => (post.titulo || '').toLowerCase().includes(q));
+    }
+    postsState.filtered = items;
+    return items;
+  }
+
+  function getCurrentPost() {
+    if (!postsState.filtered.length) return null;
+    const index = Math.min(postsState.filtered.length - 1, Math.max(0, postsState.page - 1));
+    return postsState.filtered[index];
+  }
+
+  function renderPosts(scrollIntoView = false) {
+    const filtered = applyFilters();
+    const total = filtered.length;
+
+    if (!dom.postsPane) return;
+
+    if (total === 0) {
+      if (dom.postsEmpty) dom.postsEmpty.style.display = '';
+      if (dom.postsMain) dom.postsMain.hidden = true;
+      if (dom.postPagerInfo) {
+        const msg = postsState.items.length && (postsState.filters.date || postsState.filters.search || postsState.filters.status !== 'all')
+          ? 'Nenhum post corresponde aos filtros aplicados'
+          : '0 posts';
+        dom.postPagerInfo.textContent = msg;
+      }
+      if (dom.pagerButtons) dom.pagerButtons.innerHTML = '';
+      return;
+    }
+
+    if (dom.postsEmpty) dom.postsEmpty.style.display = 'none';
+    if (dom.postsMain) dom.postsMain.hidden = false;
+
+    const totalPages = Math.max(1, Math.ceil(total / postsState.perPage));
+
+    // Restaurar post selecionado após reload (apenas na primeira renderização)
+    if (!postsState.restoredFromStorage) {
+      postsState.restoredFromStorage = true;
+      try {
+        const savedPostId = localStorage.getItem('selectedPostId');
+        if (savedPostId) {
+          const postId = parseInt(savedPostId, 10);
+          if (!isNaN(postId) && filtered.some(p => p.id === postId)) {
+            postsState.selectedId = postId;
+          }
+        }
+      } catch (e) {
+        // Ignorar erro
+      }
+    }
+
+    if (postsState.selectedId) {
+      const selectedIndex = filtered.findIndex(item => item.id === postsState.selectedId);
+      if (selectedIndex !== -1) {
+        postsState.page = Math.floor(selectedIndex / postsState.perPage) + 1;
+      } else {
+        postsState.selectedId = null;
+      }
+    }
+
+    postsState.page = Math.min(totalPages, Math.max(1, postsState.page));
+    const startIndex = (postsState.page - 1) * postsState.perPage;
+    let current = filtered[startIndex] || null;
+    if (!current && filtered.length) {
+      current = filtered[0];
+      postsState.page = 1;
+    }
+    postsState.selectedId = current?.id || postsState.selectedId || null;
+    
+    // Salvar post selecionado no localStorage
+    if (postsState.selectedId) {
+      try {
+        localStorage.setItem('selectedPostId', postsState.selectedId.toString());
+      } catch (e) {
+        // Ignorar erro
+      }
+    }
+
+    updatePostDetails(current);
+    updatePostVisual(current);
+    buildPostActions(current);
+    buildPagination(total, totalPages);
+
+    if (scrollIntoView) {
+      const offset = (window.app && window.app.stickyOffset) ? window.app.stickyOffset : 80;
+      requestAnimationFrame(() => {
+        const top = dom.postsPane.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top, behavior: 'smooth' });
+      });
+    }
+  }
+
+  function buildPagination(totalItems, totalPages) {
+    if (!dom.pagerButtons || !dom.postPagerInfo) return;
+    dom.postPagerInfo.textContent = `${postsState.page} de ${totalItems} ${totalItems === 1 ? 'post' : 'posts'}`;
+    dom.pagerButtons.innerHTML = '';
+
+    const windowSize = 10;
+    const currentPage = postsState.page;
+    const maxStart = Math.max(1, totalPages - windowSize + 1);
+    let startPage = Math.min(Math.max(1, currentPage), maxStart);
+    let endPage = Math.min(totalPages, startPage + windowSize - 1);
+
+    const addButton = (label, page, disabled = false, extraClass = '') => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = label;
+      if (extraClass) btn.classList.add(extraClass);
+      btn.disabled = disabled;
+      if (!disabled) {
+        btn.addEventListener('click', () => {
+          if (postsState.page === page) return;
+          postsState.page = page;
+          postsState.selectedId = null;
+          renderPosts();
+        });
+      }
+      dom.pagerButtons.appendChild(btn);
+    };
+
+    addButton('«', 1, currentPage === 1, 'nav-first');
+    addButton('‹', Math.max(1, currentPage - 1), currentPage === 1, 'nav-prev');
+
+    for (let page = startPage; page <= endPage; page += 1) {
+      addButton(page, page, false, page === currentPage ? 'active' : '');
+    }
+
+    addButton('›', Math.min(totalPages, currentPage + 1), currentPage >= totalPages, 'nav-next');
+    addButton('»', totalPages, currentPage >= totalPages, 'nav-last');
+  }
+
+  function updatePostDetails(post) {
+    if (!post) return;
+
+    dom.textRequestBox.hidden = !post.textRequestOpen;
+    dom.imageRequestBox.hidden = !post.imageRequestOpen;
+    
+    // Banner de status de geração de texto (coluna esquerda)
+    // Buscar banner no local correto (onde ele é inserido)
+    const bannerContainer = dom.postStatus?.parentElement?.parentElement;
+    const existingTextBanner = bannerContainer?.querySelector('.post-text-status-banner');
+    if (existingTextBanner) {
+      existingTextBanner.remove();
+    }
+    
+    // Mostrar banner apenas se processing_status === 'generating'
+    if (dom.postStatus && post.status === 'generating' && bannerContainer) {
+      const textBanner = document.createElement('div');
+      textBanner.className = 'post-text-status-banner';
+      textBanner.innerHTML = `
+        <span class="status-icon">🔄</span>
+        <span class="status-text">Seu conteúdo será gerado em até 3 minutos.</span>
+        <button type="button" class="btn btn-sm" onclick="window.location.reload()">Atualizar Status</button>
+      `;
+      bannerContainer.insertBefore(textBanner, dom.postStatus.parentElement);
+    }
+    
+    if (dom.postStatus) {
+      const info = statusInfo[post.status] || statusInfo.pending;
+      const label = post.statusLabel || info.label;
+      dom.postStatus.textContent = label;
+      dom.postStatus.className = `status-pill ${info.className}`;
+    }
+    if (dom.postTags) {
+      dom.postTags.innerHTML = '';
+      
+      const tags = [];
+      if (post.formats && post.formats.length) {
+        post.formats.forEach(format => {
+          tags.push(`${post.rede || 'Canal'} - ${format.toUpperCase()}`);
+        });
+      } else if (post.rede) {
+        tags.push(post.rede);
+      }
+      if (post.carrossel) {
+        const amount = Math.min(5, Math.max(2, Number(post.qtdImagens) || 2));
+        tags.push(`CARROSSEL - ${amount} IMAGENS`);
+      }
+      tags.forEach(text => {
+        const span = document.createElement('span');
+        span.className = 'post-tag';
+        span.textContent = text;
+        dom.postTags.appendChild(span);
+      });
+    }
+    
+    // ============================================================
+    // 🚫 TEMPORARIAMENTE DESABILITADO - TESTE
+    // ============================================================
+    // Verificar se deve mostrar banner de status de geração de texto (lado esquerdo)
+    // if (dom.postDetails && shouldShowTextGenerationBanner(post)) {
+    //   // Remover banner existente
+    //   const existingTextBanner = dom.postDetails.querySelector('.post-text-status-banner');
+    //   if (existingTextBanner) {
+    //     existingTextBanner.remove();
+    //   }
+    //   
+    //   // Criar banner
+    //   const banner = document.createElement('div');
+    //   banner.className = 'post-text-status-banner';
+    //   banner.innerHTML = `
+    //     <span class="status-icon">🔄</span>
+    //     <span class="status-text">Conteúdo sendo gerado. Aguarde...</span>
+    //     <button type="button" class="btn btn-sm" onclick="window.location.reload()">Atualizar Status</button>
+    //   `;
+    //   
+    //   // Inserir banner - método simples e seguro
+    //   try {
+    //     // Tentar inserir como segundo elemento (após status pill)
+    //     const secondChild = dom.postDetails.children[1];
+    //     if (secondChild) {
+    //       dom.postDetails.insertBefore(banner, secondChild);
+    //     } else {
+    //       // Se não houver segundo elemento, adicionar no final
+    //       dom.postDetails.appendChild(banner);
+    //     }
+    //   } catch (e) {
+    //     console.error('Erro ao inserir banner:', e);
+    //   }
+    // }
+    // ============================================================
+    
+    if (dom.postTitulo) dom.postTitulo.textContent = post.titulo || '—';
+    if (dom.postSubtitulo) dom.postSubtitulo.textContent = post.subtitulo || '—';
+    if (dom.postLegenda) dom.postLegenda.textContent = post.legenda || '—';
+    if (dom.postHashtags) dom.postHashtags.textContent = (post.hashtags && post.hashtags.length) ? post.hashtags.join(' ') : '—';
+    if (dom.postCTA) dom.postCTA.textContent = post.cta || '—';
+    
+    // Aplicar classe com scroll para descrição da imagem
+    if (dom.postDescricaoImagem) {
+      dom.postDescricaoImagem.textContent = post.descricaoImagem || post.descricao || '—';
+      
+      // Adicionar classe de scroll se for carrossel
+      if (post.carrossel && post.qtdImagens > 1) {
+        if (!dom.postDescricaoImagem.classList.contains('post-image-prompt')) {
+          dom.postDescricaoImagem.classList.add('post-image-prompt');
+        }
+      } else {
+        dom.postDescricaoImagem.classList.remove('post-image-prompt');
+      }
+    }
+    
+    if (dom.postRevisoes) dom.postRevisoes.textContent = `Revisões restantes: ${Math.max(0, post.revisoesRestantes ?? 0)}`;
+    if (dom.postDataCriacao) dom.postDataCriacao.textContent = `Data da criação: ${formatDateDisplay(post.createdAt)}`;
+
+    if (dom.textRequestBox) dom.textRequestBox.hidden = !post.textRequestOpen;
+    if (dom.textRequestInput) {
+      dom.textRequestInput.classList.remove('invalid');
+      dom.textRequestInput.value = post.textRequestOpen ? (post.pendingTextRequest || '') : '';
+    }
+  }
+
+  function calculateImageDeadline(createdAtStr) {
+    const created = new Date(createdAtStr);
+    
+    // Função auxiliar: adicionar dias úteis (pula fim de semana)
+    function addBusinessDays(date, days) {
+      const result = new Date(date);
+      let added = 0;
+      while (added < days) {
+        result.setDate(result.getDate() + 1);
+        const dayOfWeek = result.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Não é sábado ou domingo
+          added++;
+        }
+      }
+      return result;
+    }
+    
+    // Função auxiliar: ir para próximo dia útil às 09:00
+    function nextBusinessDay09(date) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + 1);
+      result.setHours(9, 0, 0, 0);
+      
+      // Se cair em fim de semana, ir para segunda
+      while (result.getDay() === 0 || result.getDay() === 6) {
+        result.setDate(result.getDate() + 1);
+      }
+      return result;
+    }
+    
+    // PASSO 1: Normalizar horário de início
+    let startTime = new Date(created);
+    const dayOfWeek = startTime.getDay();
+    const hour = startTime.getHours();
+    
+    // Se é fim de semana (sábado=6, domingo=0) → próxima segunda às 09:00
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      startTime = new Date(created);
+      // Ir para segunda-feira
+      const daysToAdd = dayOfWeek === 0 ? 1 : 2; // domingo=1, sábado=2
+      startTime.setDate(startTime.getDate() + daysToAdd);
+      startTime.setHours(9, 0, 0, 0);
+    }
+    // Se antes das 09:00 → contar como 09:00 do mesmo dia
+    else if (hour < 9) {
+      startTime.setHours(9, 0, 0, 0);
+    }
+    // Se depois das 17:00 → próximo dia útil às 09:00
+    else if (hour >= 17) {
+      startTime = nextBusinessDay09(startTime);
+    }
+    
+    // PASSO 2: Adicionar 6 horas ao horário normalizado
+    const deadline = new Date(startTime);
+    deadline.setHours(deadline.getHours() + 6);
+    
+    // PASSO 3: Aplicar regras de resultado
+    const deadlineHour = deadline.getHours();
+    
+    // Se horário normalizado >= 16:00 → próximo dia 15:00
+    if (startTime.getHours() >= 16) {
+      const nextDay = addBusinessDays(startTime, 1);
+      nextDay.setHours(15, 0, 0, 0);
+      return nextDay;
+    }
+    
+    // Se resultado > 17:00 → próximo dia 09:00
+    if (deadlineHour > 17) {
+      return nextBusinessDay09(startTime);
+    }
+    
+    return deadline;
+  }
+  
+  function formatDeadline(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} às ${hour}:${minute}`;
+  }
+
+  function updatePostVisual(post) {
+    if (!post || !dom.postImageFrame || !dom.postGallery) {
+      return;
+    }
+    if (dom.postImageFrame) dom.postImageFrame.innerHTML = '';
+    if (dom.postGallery) {
+      dom.postGallery.innerHTML = '';
+      dom.postGallery.hidden = true;
+    }
+    if (dom.postImageActions) dom.postImageActions.innerHTML = '';
+    
+    // Verificar se deve mostrar banner (usa status do banco - simples e confiável!)
+    const existingBanner = dom.postImageFrame.parentElement?.querySelector('.post-image-status-banner');
+    if (existingBanner) {
+      existingBanner.remove();
+    }
+    
+    if (shouldShowImageGenerationBanner(post)) {
+      const banner = document.createElement('div');
+      banner.className = 'post-image-status-banner';
+      
+      // Calcular prazo de entrega
+      const deadline = calculateImageDeadline(post.createdAt);
+      const deadlineText = formatDeadline(deadline);
+      
+      banner.innerHTML = `
+        <span class="status-icon">🔄</span>
+        <span class="status-text">Sua imagem será gerada até ${deadlineText}</span>
+        <button type="button" class="btn btn-sm" onclick="window.location.reload()">Atualizar Status</button>
+      `;
+      dom.postImageFrame.parentElement.insertBefore(banner, dom.postImageFrame);
+    }
+
+    if (dom.imageRequestBox) dom.imageRequestBox.hidden = !post.imageRequestOpen;
+    if (dom.imageRequestInput) {
+      dom.imageRequestInput.classList.remove('invalid');
+      dom.imageRequestInput.value = post.imageRequestOpen ? (post.pendingImageRequest || '') : '';
+    }
+
+    if (post.status === 'agent') {
+      const span = document.createElement('span');
+      span.className = 'placeholder';
+      span.textContent = 'Agente alterando — aguarde';
+      dom.postImageFrame.appendChild(span);
+      return;
+    }
+
+    if (post.imageStatus === 'ready' && post.imagens && post.imagens.length) {
+      const index = Math.max(0, Math.min(post.imagens.length - 1, post.activeImageIndex || 0));
+      post.activeImageIndex = index;
+      const img = document.createElement('img');
+      img.src = post.imagens[index];
+      img.alt = `Pré-visualização da imagem ${index + 1}`;
+      dom.postImageFrame.appendChild(img);
+
+      if (post.imagens.length > 1 && dom.postGallery) {
+        dom.postGallery.hidden = false;
+        post.imagens.forEach((url, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          if (idx === index) btn.classList.add('active');
+          const thumb = document.createElement('img');
+          thumb.src = url;
+          thumb.alt = `Miniatura ${idx + 1}`;
+          btn.appendChild(thumb);
+          btn.addEventListener('click', () => {
+            post.activeImageIndex = idx;
+            updatePostVisual(post);
+          });
+          dom.postGallery.appendChild(btn);
+        });
+      }
+
+      if (dom.postImageActions) {
+        if (post.imageRequestOpen) return;
+        if (post.imageChanges >= 1) {
+          const badge = document.createElement('span');
+          badge.className = 'badge-muted';
+          badge.textContent = 'Limite de alterações de imagem atingido';
+          dom.postImageActions.appendChild(badge);
+        } else {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn';
+          btn.textContent = 'Solicitar Alteração de imagem';
+          btn.addEventListener('click', () => {
+            post.imageRequestOpen = true;
+            post.pendingImageRequest = '';
+            updatePostVisual(post);
+            requestAnimationFrame(() => dom.imageRequestInput?.focus());
+          });
+          dom.postImageActions.appendChild(btn);
+        }
+      }
+      return;
+    }
+
+    if (post.imageStatus === 'generating') {
+      const span = document.createElement('span');
+      span.className = 'placeholder';
+      span.textContent = 'Gerando imagem...';
+      dom.postImageFrame.appendChild(span);
+      return;
+    }
+
+    const placeholder = document.createElement('span');
+    placeholder.className = 'placeholder';
+    placeholder.textContent = 'SEM IMAGEM GERADA';
+    dom.postImageFrame.appendChild(placeholder);
+  }
+
+  function createActionButton(label, className, handler) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = className;
+    btn.textContent = label;
+    btn.addEventListener('click', handler);
+    return btn;
+  }
+
+  function buildPostActions(post) {
+    if (!dom.postActions) return;
+    dom.postActions.innerHTML = '';
+    if (!post) return;
+
+    if (post.status === 'agent') {
+      const badge = document.createElement('span');
+      badge.className = 'badge-muted';
+      badge.textContent = 'Agente alterando — aguarde';
+      dom.postActions.appendChild(badge);
+      return;
+    }
+
+    if (post.status === 'image_generating') {
+      const badge = document.createElement('span');
+      badge.className = 'badge-muted';
+      badge.textContent = 'Gerando imagem — aguarde';
+      dom.postActions.appendChild(badge);
+      return;
+    }
+
+    if (post.status === 'rejected') {
+      const badge = document.createElement('span');
+      badge.className = 'badge-muted';
+      badge.textContent = 'Post rejeitado';
+      dom.postActions.appendChild(badge);
+      return;
+    }
+
+    if (post.status === 'pending') {
+      if (!post.textRequestOpen) {
+        const btnReject = createActionButton('Rejeitar', 'btn ghost danger', () => {
+          rejectPost(post);
+        });
+
+        const btnRequest = createActionButton('Solicitar Alteração', 'btn ghost', () => {
+          if ((post.revisoesRestantes ?? 1) <= 0) return;
+          post.textRequestOpen = true;
+          post.pendingTextRequest = '';
+          renderPosts();
+          requestAnimationFrame(() => dom.textRequestInput?.focus());
+        });
+        if ((post.revisoesRestantes ?? 0) <= 0) {
+          btnRequest.disabled = true;
+          btnRequest.title = 'Limite de revisões atingido';
+        }
+
+        const btnEdit = createActionButton('Editar', 'btn ghost', () => {
+          openEditPostModal(post);
+        });
+
+        const btnApprove = createActionButton('Gerar Imagem', 'btn', () => {
+          startImageGeneration(post);
+        });
+
+        dom.postActions.append(btnReject, btnRequest, btnEdit, btnApprove);
+        dom.textRequestBox.hidden = true;
+        dom.imageRequestBox.hidden = true;
+      }
+      return;
+    }
+
+    if (post.status === 'approved' && post.imageStatus === 'none') {
+      const btnGenerate = createActionButton('Gerar Imagem', 'btn', () => startImageGeneration(post));
+      dom.postActions.appendChild(btnGenerate);
+    }
+  }
+
+  function resetEditPostForm() {
+    if (dom.editForm) dom.editForm.reset();
+  }
+
+  function closeEditPostModal() {
+    resetEditPostForm();
+    editingPostRef = null;
+    closeModal('modalEditarPost');
+  }
+
+  function openEditPostModal(post) {
+    if (!post || !dom.editModal) return;
+    editingPostRef = post;
+    if (dom.editTitulo) dom.editTitulo.value = post.titulo || '';
+    if (dom.editSubtitulo) dom.editSubtitulo.value = post.subtitulo || '';
+    if (dom.editLegenda) dom.editLegenda.value = post.legenda || '';
+    if (dom.editHashtags) {
+      const tags = Array.isArray(post.hashtags) ? post.hashtags.join(' ') : (post.hashtags || '');
+      dom.editHashtags.value = tags.trim();
+    }
+    if (dom.editCTA) dom.editCTA.value = post.cta || '';
+    if (dom.editDescricaoImagem) dom.editDescricaoImagem.value = post.descricaoImagem || post.descricao || '';
+    openModal('modalEditarPost');
+    requestAnimationFrame(() => dom.editTitulo?.focus());
+  }
+
+  async function rejectPost(post) {
+    const serverId = getServerId(post);
+    if (!serverId) {
+      alert('Não foi possível identificar o post selecionado.');
+      return;
+    }
+    const previousStatus = post.status;
+    post.status = 'rejected';
+    renderPosts();
+    try {
+      const response = await fetch(`/api/posts/${serverId}/reject/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+      const data = await response.json();
+      post.status = data.status || 'rejected';
+      post.statusLabel = data.statusLabel || 'Rejeitado';
+      post.revisoesRestantes = data.revisoesRestantes ?? post.revisoesRestantes;
+      renderPosts();
+    } catch (error) {
+      console.error(error);
+      post.status = previousStatus;
+      renderPosts();
+      alert('Não foi possível rejeitar o post. Tente novamente.');
+    }
+  }
+
+  function createImagePlaceholder(post, index) {
+    const base = (post.titulo || 'Post gerado').replace(/\s+/g, ' ').trim() || 'Post gerado';
+    const text = encodeURIComponent(`${base} ${index + 1}`);
+    return `https://placehold.co/720x900/1e202b/FFFFFF.png?text=${text}`;
+  }
+
+  async function startImageGeneration(post) {
+    const serverId = getServerId(post);
+    if (!serverId) {
+      alert('Não foi possível identificar o post selecionado.');
+      return;
+    }
+    const previousStatus = post.status;
+    const previousStatusLabel = post.statusLabel;
+    const previousImageStatus = post.imageStatus;
+    const previousImages = Array.isArray(post.imagens) ? post.imagens.slice() : null;
+    const previousImageChanges = post.imageChanges || 0;
+    post.imageStatus = 'generating';
+    post.status = 'image_generating';
+    post.statusLabel = statusInfo.image_generating?.label || 'Agente Gerando Imagem';
+    renderPosts();
+    try {
+      const response = await fetch(`/api/posts/${serverId}/generate-image/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': CSRF_TOKEN,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mensagem: '' }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || ('HTTP ' + response.status));
+      }
+      post.status = data?.status || 'image_generating';
+      post.statusLabel = data?.statusLabel || statusInfo[post.status]?.label || statusInfo.image_generating?.label || 'Agente Gerando Imagem';
+      post.imageStatus = data?.imageStatus || 'generating';
+      if (typeof data?.imageChanges === 'number') post.imageChanges = data.imageChanges;
+      renderPosts();
+    } catch (error) {
+      console.error(error);
+      post.status = previousStatus;
+      post.statusLabel = previousStatusLabel;
+      post.imageStatus = previousImageStatus || 'none';
+      if (previousImages) post.imagens = previousImages;
+      post.imageChanges = previousImageChanges;
+      renderPosts();
+      alert(error.message || 'Não foi possível acionar a geração de imagem. Tente novamente.');
+    }
+  }
+
+  async function submitTextRequest(post, text) {
+    const serverId = getServerId(post);
+    if (!serverId) {
+      alert('Não foi possível identificar o post selecionado.');
+      return;
+    }
+
+    const previousStatus = post.status;
+    const previousStatusLabel = post.statusLabel;
+    const previousRevisions = post.revisoesRestantes;
+
+    post.textRequestOpen = false;
+    post.pendingTextRequest = text;
+    post.status = 'generating';
+    post.statusLabel = statusInfo.generating?.label || 'Agente Gerando Conteúdo';
+    renderPosts();
+
+    try {
+      const response = await fetch(`/api/posts/${serverId}/request-change/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ mensagem: text }),
+      });
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+      const data = await response.json();
+      post.status = data.status || 'agent';
+      post.statusLabel = data.statusLabel || (statusInfo[post.status]?.label ?? 'Agente Alterando');
+      if (typeof data.revisoesRestantes === 'number') {
+        post.revisoesRestantes = data.revisoesRestantes;
+      }
+      if (typeof data.imageChanges === 'number') {
+        post.imageChanges = data.imageChanges;
+      }
+      post.pendingTextRequest = '';
+      if (dom.textRequestInput) dom.textRequestInput.value = '';
+      renderPosts();
+      alert('Solicitação enviada ao agente.');
+    } catch (error) {
+      console.error(error);
+      post.textRequestOpen = true;
+      post.pendingTextRequest = text;
+      post.status = previousStatus;
+      post.statusLabel = previousStatusLabel;
+      post.revisoesRestantes = previousRevisions;
+      renderPosts();
+      alert('Não foi possível enviar a solicitação. Tente novamente.');
+    }
+  }
+
+  async function submitImageRequest(post, text) {
+    if (post.imageChanges >= 1) return;
+    const serverId = getServerId(post);
+    if (!serverId) {
+      alert('Não foi possível identificar o post selecionado.');
+      return;
+    }
+    post.imageRequestOpen = false;
+    post.pendingImageRequest = text;
+    const previousStatus = post.status;
+    const previousStatusLabel = post.statusLabel;
+    const previousImageStatus = post.imageStatus;
+    const previousImages = Array.isArray(post.imagens) ? post.imagens.slice() : null;
+    const previousImageChanges = post.imageChanges || 0;
+    post.status = 'image_generating';
+    post.statusLabel = statusInfo.image_generating?.label || 'Agente Gerando Imagem';
+    post.imageStatus = 'generating';
+    post.imageChanges = previousImageChanges + 1;
+    renderPosts();
+    try {
+      const response = await fetch(`/api/posts/${serverId}/generate-image/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': CSRF_TOKEN,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mensagem: text }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || ('HTTP ' + response.status));
+      }
+      post.status = data?.status || 'image_generating';
+      post.statusLabel = data?.statusLabel || statusInfo[post.status]?.label || statusInfo.image_generating?.label || 'Agente Gerando Imagem';
+      post.imageStatus = data?.imageStatus || 'generating';
+      if (typeof data?.imageChanges === 'number') post.imageChanges = data.imageChanges;
+      post.pendingImageRequest = '';
+      if (dom.imageRequestInput) dom.imageRequestInput.value = '';
+      renderPosts();
+      
+      // Mostrar mensagem de sucesso com prazo
+      setTimeout(() => {
+        const bannerContainer = dom.postImageFrame?.parentElement;
+        if (!bannerContainer) return;
+        
+        // Remover banner anterior se existir
+        const existingBanner = bannerContainer.querySelector('.post-image-status-banner');
+        if (existingBanner) existingBanner.remove();
+        
+        // Calcular prazo de entrega usando data da solicitação (não data de criação)
+        const requestedAt = data?.imageRequestedAt || new Date().toISOString();
+        const deadline = calculateImageDeadline(requestedAt);
+        const deadlineText = formatDeadline(deadline);
+        
+        // Criar novo banner
+        const imageBanner = document.createElement('div');
+        imageBanner.className = 'post-image-status-banner';
+        imageBanner.innerHTML = `
+          <span class="status-icon">🔄</span>
+          <span class="status-text">Sua imagem será gerada até ${deadlineText}</span>
+          <button type="button" class="btn btn-sm" onclick="window.location.reload()">Atualizar Status</button>
+        `;
+        bannerContainer.insertBefore(imageBanner, dom.postImageFrame);
+      }, 100);
+    } catch (error) {
+      console.error(error);
+      post.status = previousStatus;
+      post.statusLabel = previousStatusLabel;
+      post.imageStatus = previousImageStatus || 'none';
+      if (previousImages) post.imagens = previousImages;
+      post.imageChanges = previousImageChanges;
+      post.pendingImageRequest = text;
+      renderPosts();
+      alert(error.message || 'Não foi possível acionar a geração de imagem. Tente novamente.');
+    }
+  }
+
+dom.textRequestBox?.addEventListener('click', event => {
+    const btn = event.target.closest('button[data-action]');
+    if (!btn) return;
+    const post = getCurrentPost();
+    if (!post) return;
+    if (btn.dataset.action === 'cancel-text-request') {
+      post.textRequestOpen = false;
+      post.pendingTextRequest = '';
+      if (dom.textRequestInput) dom.textRequestInput.value = '';
+      renderPosts();
+      return;
+    }
+    if (btn.dataset.action === 'submit-text-request') {
+      const value = dom.textRequestInput?.value.trim() || '';
+      if (!value) {
+        if (dom.textRequestInput) {
+          dom.textRequestInput.classList.add('invalid');
+          dom.textRequestInput.focus();
+        }
+        return;
+      }
+      dom.textRequestInput.classList.remove('invalid');
+      submitTextRequest(post, value);
+    }
+  });
+
+  dom.editForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const post = editingPostRef;
+    if (!post) {
+      closeEditPostModal();
+      return;
+    }
+    const serverId = getServerId(post);
+    if (!serverId) {
+      alert('Não foi possível identificar o post selecionado.');
+      return;
+    }
+    const payload = {
+      titulo: dom.editTitulo?.value.trim() || '',
+      subtitulo: dom.editSubtitulo?.value.trim() || '',
+      legenda: dom.editLegenda?.value.trim() || '',
+      hashtags: dom.editHashtags?.value.trim() || '',
+      cta: dom.editCTA?.value.trim() || '',
+      descricaoImagem: dom.editDescricaoImagem?.value.trim() || ''
+    };
+    const submitBtn = dom.editForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    try {
+      const response = await fetch(`/api/posts/${serverId}/update/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+      const data = await response.json();
+      post.titulo = data.titulo || '';
+      post.subtitulo = data.subtitulo || '';
+      post.legenda = data.legenda || '';
+      post.cta = data.cta || '';
+      post.descricaoImagem = data.descricaoImagem || post.descricaoImagem || '';
+      post.hashtags = Array.isArray(data.hashtags) ? data.hashtags : normalizeHashtags(data.hashtags);
+      if (data.status) post.status = data.status;
+      if (data.statusLabel) post.statusLabel = data.statusLabel;
+      closeEditPostModal();
+      renderPosts();
+    } catch (error) {
+      console.error(error);
+      alert('Não foi possível salvar as alterações. Tente novamente.');
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  });
+
+  dom.imageRequestBox?.addEventListener('click', event => {
+    const btn = event.target.closest('button[data-action]');
+    if (!btn) return;
+    const post = getCurrentPost();
+    if (!post) return;
+    if (btn.dataset.action === 'cancel-image-request') {
+      post.imageRequestOpen = false;
+      post.pendingImageRequest = '';
+      if (dom.imageRequestInput) dom.imageRequestInput.value = '';
+      renderPosts();
+      return;
+    }
+    if (btn.dataset.action === 'submit-image-request') {
+      const value = dom.imageRequestInput?.value.trim() || '';
+      if (!value) {
+        if (dom.imageRequestInput) {
+          dom.imageRequestInput.classList.add('invalid');
+          dom.imageRequestInput.focus();
+        }
+        return;
+      }
+      dom.imageRequestInput.classList.remove('invalid');
+      submitImageRequest(post, value);
+    }
+  });
+
+  dom.filtroStatus?.addEventListener('change', () => {
+    postsState.filters.status = dom.filtroStatus.value;
+    postsState.page = 1;
+    renderPosts();
+  });
+  dom.filtroData?.addEventListener('change', () => {
+    postsState.filters.date = dom.filtroData.value;
+    postsState.page = 1;
+    renderPosts();
+  });
+  dom.filtroBusca?.addEventListener('input', () => {
+    postsState.filters.search = dom.filtroBusca.value.trim();
+  });
+  dom.btnBuscar?.addEventListener('click', () => {
+    postsState.filters.search = dom.filtroBusca?.value.trim() || '';
+    postsState.page = 1;
+    renderPosts();
+  });
+  dom.filtroBusca?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      postsState.filters.search = dom.filtroBusca.value.trim();
+      postsState.page = 1;
+      renderPosts();
+    }
+  });
+  
+  // Limpar todos os filtros
+  dom.btnLimparFiltros?.addEventListener('click', () => {
+    // Limpar campos de filtro
+    if (dom.filtroStatus) dom.filtroStatus.value = '';
+    if (dom.filtroData) dom.filtroData.value = '';
+    if (dom.filtroBusca) dom.filtroBusca.value = '';
+    
+    // Limpar filtros do estado
+    postsState.filters.status = '';
+    postsState.filters.date = '';
+    postsState.filters.search = '';
+    postsState.page = 1;
+    
+    // Re-renderizar posts
+    renderPosts();
+  });
+
+  function updateTemaCounter() {
+    if (!dom.temaPost || !dom.temaContador) return;
+    const max = dom.temaPost.maxLength || 3000;
+    dom.temaContador.textContent = `${dom.temaPost.value.length}/${max}`;
+  }
+
+  function updateRefsInfo() {
+    if (!dom.refImgs || !dom.refImgsInfo) return;
+    const files = dom.refImgs.files ? Array.from(dom.refImgs.files) : [];
+    const label = files.length
+      ? `${files.length} ${files.length === 1 ? 'arquivo selecionado' : 'arquivos selecionados'}`
+      : 'Nenhum arquivo selecionado';
+    dom.refImgsInfo.textContent = `${label} — Máx. 5 imagens (.JPG ou .PNG)`;
+  }
+
+  function setCarrossel(enabled) {
+    if (!dom.carrosselToggle || !dom.carrosselQtyField) return;
+    dom.carrosselToggle.classList.toggle('active', enabled);
+    dom.carrosselToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    dom.carrosselQtyField.hidden = !enabled;
+  }
+
+  function resetGerarPostForm() {
+    if (!dom.formGerarPost) return;
+    dom.formGerarPost.reset();
+    if (dom.refImgs) dom.refImgs.value = '';
+    const feedRadio = dom.formatOptions?.querySelector('input[value="feed"]');
+    if (feedRadio) feedRadio.checked = true;
+    syncFormatUI();
+    setCarrossel(false);
+    if (dom.carrosselQtyInput) dom.carrosselQtyInput.value = '3';
+    updateTemaCounter();
+    updateRefsInfo();
+  }
+
+  function prefillPostModal(data) {
+    resetGerarPostForm();
+    if (data?.rede && dom.redePost) dom.redePost.value = data.rede;
+    if (data?.tema && dom.temaPost) {
+      const max = dom.temaPost.maxLength || data.tema.length;
+      dom.temaPost.value = data.tema.slice(0, max);
+    }
+    updateTemaCounter();
+
+    const formatsPref = Array.isArray(data?.formatos) ? data.formatos.map(f => String(f).toLowerCase()) : [];
+    const feedRadio = dom.formatOptions?.querySelector('input[value="feed"]');
+    const storiesRadio = dom.formatOptions?.querySelector('input[value="stories"]');
+    const bothRadio = dom.formatOptions?.querySelector('input[value="both"]');
+    
+    if (feedRadio && storiesRadio && bothRadio) {
+      if (formatsPref.includes('feed') && formatsPref.includes('stories')) {
+        bothRadio.checked = true;
+      } else if (formatsPref.includes('stories')) {
+        storiesRadio.checked = true;
+      } else {
+        feedRadio.checked = true;
+      }
+    }
+    syncFormatUI();
+  }
+
+  dom.temaPost?.addEventListener('input', () => {
+    const max = dom.temaPost.maxLength || 3000;
+    if (dom.temaPost.value.length > max) {
+      dom.temaPost.value = dom.temaPost.value.slice(0, max);
+    }
+    updateTemaCounter();
+  });
+
+  const formatRadios = dom.formatOptions ? Array.from(dom.formatOptions.querySelectorAll('input[type="radio"]')) : [];
+  function syncFormatUI() {
+    const checked = dom.formatOptions?.querySelector('input[type="radio"]:checked');
+    const bothSelected = checked?.value === 'both';
+    
+    if (dom.formatOptions) {
+      dom.formatOptions.querySelectorAll('.chip-choice').forEach(label => {
+        const input = label.querySelector('input[type="radio"]');
+        const isActive = !!(input && input.checked);
+        label.classList.toggle('active', isActive);
+      });
+    }
+    
+    if (dom.carrosselToggle) {
+      if (bothSelected) {
+        dom.carrosselToggle.classList.add('chip-disabled');
+        dom.carrosselToggle.setAttribute('aria-disabled', 'true');
+        dom.carrosselToggle.disabled = true;
+        setCarrossel(false);
+      } else {
+        dom.carrosselToggle.classList.remove('chip-disabled');
+        dom.carrosselToggle.removeAttribute('aria-disabled');
+        dom.carrosselToggle.disabled = false;
+      }
+    }
+  }
+  formatRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      syncFormatUI();
+    });
+  });
+  syncFormatUI();
+
+  // CTA Toggle behavior
+  const ctaOptions = document.querySelectorAll('.cta-toggle-option');
+  ctaOptions.forEach(option => {
+    option.addEventListener('click', () => {
+      ctaOptions.forEach(opt => opt.classList.remove('active'));
+      option.classList.add('active');
+      const radio = option.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+    });
+  });
+
+  dom.carrosselToggle?.addEventListener('click', () => {
+    if (dom.carrosselToggle.disabled) return;
+    const enabled = !dom.carrosselToggle.classList.contains('active');
+    setCarrossel(enabled);
+  });
+
+  $$('#carrosselQtyField button[data-step]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!dom.carrosselQtyInput) return;
+      const min = Number(dom.carrosselQtyInput.min) || 2;
+      const max = Number(dom.carrosselQtyInput.max) || 5;
+      const step = Number(btn.dataset.step) || 0;
+      let value = Number(dom.carrosselQtyInput.value) || min;
+      value = Math.max(min, Math.min(max, value + step));
+      dom.carrosselQtyInput.value = String(value);
+    });
+  });
+
+  dom.refImgs?.addEventListener('change', () => {
+    if (!dom.refImgs) return;
+    const files = Array.from(dom.refImgs.files || []);
+    if (files.length > 5) {
+      const dt = new DataTransfer();
+      files.slice(0, 5).forEach(file => dt.items.add(file));
+      dom.refImgs.files = dt.files;
+    }
+    updateRefsInfo();
+  });
+
+  function selectedFormats() {
+    if (!dom.formatOptions) return ['feed'];
+    const checked = dom.formatOptions.querySelector('input[type=\'radio\']:checked');
+    const value = checked?.value || 'feed';
+    if (value === 'both') {
+      return ['feed', 'stories'];
+    }
+    return [value];
+  }
+
+  async function requestPostFromAgent(payload) {
+    let response;
+    if (POSTS_WEBHOOK_URL) {
+      const formData = new FormData();
+      formData.append('rede', payload.rede || 'Instagram');
+      formData.append('tema', payload.tema || '');
+      formData.append('usuario', payload.usuario || '');
+      formData.append('formatos', JSON.stringify(payload.formatos || []));
+      formData.append('carrossel', payload.carrossel ? '1' : '0');
+      formData.append('qtdImagens', String(payload.qtdImagens || 1));
+      formData.append('ctaRequested', payload.ctaRequested ? '1' : '0');
+      if (Array.isArray(payload.files)) {
+        payload.files.forEach(file => {
+          if (file) formData.append('referencias', file);
+        });
+      }
+      console.log('📤 [DEBUG] Enviando post para:', POSTS_WEBHOOK_URL);
+      const responseRaw = await fetch(POSTS_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        body: formData,
+      });
+      console.log('📥 [DEBUG] Response status:', responseRaw.status, responseRaw.ok);
+      if (!responseRaw.ok) {
+        const errorText = await responseRaw.text();
+        console.error('❌ [DEBUG] Response error:', errorText);
+        
+        // Tentar extrair mensagem específica do JSON
+        let errorMessage = 'Não foi possível gerar o post agora. Tente novamente.';
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (parseError) {
+          // Se não for JSON válido, usa mensagem genérica
+          console.warn('⚠️ [DEBUG] Não foi possível parsear JSON de erro');
+        }
+        
+        throw new Error(errorMessage);
+      }
+      response = await responseRaw.json();
+      console.log('✅ [DEBUG] Response JSON:', response);
+      if (response && response.error) {
+        console.error('❌ [DEBUG] Response tem error:', response.error);
+        throw new Error(response.error);
+      }
+    } else {
+      await sleep(650);
+      response = mockPostResponse(payload);
+    }
+    console.log('🔄 [DEBUG] Normalizando response...');
+    const normalized = normalizePostResponse(response, payload);
+    console.log('✅ [DEBUG] Post normalizado:', normalized);
+    return normalized;
+  }
+
+  function mockPostResponse(payload) {
+    const tema = payload.tema || 'Conteúdo gerado pelo agente';
+    return {
+      titulo: `${tema.slice(0, 42)} - rev. 1`,
+      subtitulo: 'Sucessos com tecnologias avançadas',
+      legenda: `Legenda gerada automaticamente para "${tema}".`,
+      hashtags: ['#marketing', '#conteudo', '#ai'],
+      cta: 'ausente',
+      descricaoImagem: `Criar imagem para: ${tema}`,
+      revisoesRestantes: 2,
+      formatos: payload.formatos || ['feed'],
+      carrossel: !!payload.carrossel,
+      qtdImagens: payload.qtdImagens || 1,
+      referencias: Array.isArray(payload.files) ? payload.files.map(file => ({ name: file.name, size: file.size || 0, url: '' })) : [],
+    };
+  }
+
+  function normalizePostResponse(data, payload) {
+    const now = new Date();
+    let serverFormats = Array.isArray(data?.formatos) ? data.formatos.slice() : [];
+    if (!serverFormats.length && data?.format) {
+      serverFormats = [data.format];
+    }
+    const payloadFormats = Array.isArray(payload.formatos) ? payload.formatos.slice() : [];
+    let formatsList = serverFormats.length ? serverFormats : payloadFormats;
+    formatsList = formatsList.map(f => String(f).toLowerCase()).filter(Boolean);
+    if (!formatsList.length) formatsList = ['feed'];
+    const multiFormats = formatsList.length > 1;
+
+    const serverCarousel = typeof data?.carrossel === 'boolean' ? data.carrossel : null;
+    const carrosselAtivo = serverCarousel !== null ? serverCarousel : (!multiFormats && !!payload.carrossel);
+    const serverQtd = Number(data?.qtdImagens || 0);
+    const qtdImagens = carrosselAtivo ? (serverQtd || Math.min(5, Math.max(2, Number(payload.qtdImagens) || 2))) : 1;
+
+    const pickOr = (value, fallback) => (value === undefined || value === null ? fallback : value);
+    const hashtagsServer = Array.isArray(data?.hashtags) ? data.hashtags : normalizeHashtags(data?.hashtags);
+
+    const post = {
+      id: data?.id ? `db_${data.id}` : uid(),
+      serverId: (data?.serverId ?? data?.id ?? null),
+      rede: pickOr(data?.rede, payload.rede || 'Instagram'),
+      formats: formatsList.slice(),
+      carrossel: carrosselAtivo,
+      qtdImagens,
+      tema: pickOr(payload.tema, pickOr(data?.tema, '')),
+      titulo: pickOr(data?.titulo, `Post gerado - ${payload.rede || 'Instagram'}`),
+      subtitulo: pickOr(data?.subtitulo, 'Subtítulo sugerido pelo agente'),
+      legenda: pickOr(data?.legenda, 'Legenda sugerida pelo agente.'),
+      hashtags: hashtagsServer && hashtagsServer.length ? hashtagsServer : normalizeHashtags(payload?.hashtags),
+      cta: pickOr(data?.cta, 'ausente'),
+      descricaoImagem: pickOr(data?.descricaoImagem, pickOr(data?.descricao, `Gerar imagem com base em ${payload.tema || 'conteúdo'}`)),
+      revisoesRestantes: typeof data?.revisoesRestantes === 'number' ? data.revisoesRestantes : 2,
+      createdAt: now.toISOString(),
+      status: data?.status || 'generating',
+      statusLabel: data?.statusLabel || (statusInfo[data?.status]?.label) || '',
+      imageStatus: data?.imageStatus || (data?.status === 'image_generating' ? 'generating' : data?.status === 'image_ready' ? 'ready' : 'none'),
+      imagens: Array.isArray(data?.imagens) ? data.imagens : [],
+      referencias: Array.isArray(data?.referencias) ? data.referencias : (Array.isArray(payload.files) ? payload.files.map(file => ({ name: file.name, size: file.size || 0, url: '' })) : []),
+      imageChanges: typeof data?.imageChanges === 'number' ? data.imageChanges : 0,
+      rev: Number((data?.titulo || '').match(/rev\.\s*(\d+)/i)?.[1]) || 1,
+      baseTitulo: (data?.titulo || '').replace(/\s*-+\s*rev\..*$/i, '').trim() || (data?.titulo || payload.tema || '').trim() || 'Post gerado',
+      textRequestOpen: false,
+      imageRequestOpen: false,
+      pendingTextRequest: '',
+      pendingImageRequest: ''
+    };
+    if (!post.formats || !post.formats.length) {
+      post.formats = ['feed'];
+    }
+    post.formatos = post.formats.slice();
+    post.format = post.formats[0];
+    post.referencias = Array.isArray(post.referencias) ? post.referencias : [];
+    return post;
+  }
+
+  function getServerId(post) {
+    if (!post) return null;
+    if (typeof post.serverId === 'number' && Number.isFinite(post.serverId)) {
+      return post.serverId;
+    }
+    if (typeof post.serverId === 'string' && /^\d+$/.test(post.serverId)) {
+      return Number(post.serverId);
+    }
+    if (typeof post.id === 'number' && Number.isFinite(post.id)) {
+      return post.id;
+    }
+    if (typeof post.id === 'string') {
+      const dbMatch = post.id.match(/db_(\d+)/);
+      if (dbMatch) {
+        return Number(dbMatch[1]);
+      }
+      if (/^\d+$/.test(post.id)) {
+        return Number(post.id);
+      }
+    }
+    return null;
+  }
+
+  dom.formGerarPost?.addEventListener('submit', async event => {
+    event.preventDefault();
+
+    const formatos = selectedFormats();
+    if (!formatos.length) formatos.push('feed');
+
+    const files = dom.refImgs ? Array.from(dom.refImgs.files || []) : [];
+    const carrosselDisponivel = !dom.carrosselToggle?.disabled;
+    const carrosselAtivo = carrosselDisponivel && dom.carrosselToggle?.classList.contains('active');
+    const qtdImagens = carrosselAtivo ? Number(dom.carrosselQtyInput?.value || 3) : 1;
+    const ctaOption = document.querySelector('input[name="ctaOption"]:checked')?.value || 'sim';
+    const payload = {
+      rede: dom.redePost?.value || 'Instagram',
+      formatos,
+      carrossel: carrosselAtivo,
+      qtdImagens,
+      tema: dom.temaPost?.value.trim() || '',
+      usuario: CURRENT_USER,
+      ctaRequested: ctaOption === 'sim',
+      files
+    };
+
+    const submitBtn = dom.formGerarPost.querySelector("button[type='submit']");
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Enviando...';
+    }
+
+    try {
+      const post = await requestPostFromAgent(payload);
+      postsState.items.unshift(post);
+      postsState.page = 1;
+      postsState.selectedId = post.id;
+      closeModal('modalGerarPost');
+      setActiveTab('posts');
+      renderPosts(true);
+    } catch (error) {
+      console.error(error);
+      alert('Não foi possível gerar o post agora. Tente novamente.');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Enviar ao agente';
+      }
+      dom.formGerarPost.reset();
+      resetGerarPostForm();
+    }
+  });
+
+  // Estado de paginação das pautas
+  const pautasState = {
+    items: [],
+    page: 1,
+    perPage: 5
+  };
+
+  // Estado de vídeos avatar (similar ao postsState)
+  const videosState = {
+    list: [],
+    filtered: [],
+    currentIndex: 0,
+    currentPage: 1,
+    pageSize: 1,
+    loading: false
+  };
+
+  // Gerenciar banner de status de geração de pautas (específico por organização)
+  function getStorageKey() {
+    return `pauta_gen_${ORGANIZATION_ID}`;
+  }
+
+  function checkPautaGenerationStatus() {
+    const storageKey = getStorageKey();
+    const storedData = localStorage.getItem(storageKey);
+    
+    if (!storedData) {
+      // Não há geração pendente para esta organização
+      if (dom.pautaStatusBanner) dom.pautaStatusBanner.hidden = true;
+      return;
+    }
+    
+    try {
+      const { timestamp, countBefore } = JSON.parse(storedData);
+      const timeSinceGen = Date.now() - timestamp;
+      const twoMinutes = 2 * 60 * 1000;
+      
+      // Verificar se novas pautas foram adicionadas (comparar quantidade)
+      const currentCount = pautasState.items.length;
+      const hasNewPautas = currentCount > countBefore;
+      
+      // Se passou mais de 2 minutos OU chegaram novas pautas, limpar status
+      if (timeSinceGen > twoMinutes || hasNewPautas) {
+        localStorage.removeItem(storageKey);
+        if (dom.pautaStatusBanner) dom.pautaStatusBanner.hidden = true;
+      } else {
+        // Mostrar banner (ainda aguardando)
+        if (dom.pautaStatusBanner) dom.pautaStatusBanner.hidden = false;
+      }
+    } catch (e) {
+      // Dados corrompidos, limpar
+      localStorage.removeItem(storageKey);
+      if (dom.pautaStatusBanner) dom.pautaStatusBanner.hidden = true;
+    }
+  }
+
+  function showPautaGenerationBanner() {
+    const storageKey = getStorageKey();
+    
+    // Salvar timestamp E quantidade atual de pautas (específico da organização)
+    const data = {
+      timestamp: Date.now(),
+      countBefore: pautasState.items.length,
+      orgId: ORGANIZATION_ID
+    };
+    
+    localStorage.setItem(storageKey, JSON.stringify(data));
+    
+    // Mostrar banner
+    if (dom.pautaStatusBanner) dom.pautaStatusBanner.hidden = false;
+  }
+
+  // Verificar se deve mostrar banner de status de geração de imagem
+  // Usa APENAS o status do banco (mais simples e confiável)
+  function shouldShowImageGenerationBanner(post) {
+    // Mostra banner se:
+    // 1. Status é 'image_generating' E
+    // 2. Ainda não tem imagens
+    return (post.status === 'image_generating' || post.imageStatus === 'generating') 
+           && (!post.imagens || post.imagens.length === 0);
+  }
+
+  // Verificar se deve mostrar banner de status de geração de texto
+  // Usa APENAS o status do banco (mais simples e confiável)
+  function shouldShowTextGenerationBanner(post) {
+    // Mostra banner se:
+    // Status é 'generating' (Agente Gerando Conteúdo)
+    return post.status === 'generating';
+  }
+
+  function renderPautas(scrollIntoView = false) {
+    if (!dom.pautasList) return;
+    
+    const total = pautasState.items.length;
+    
+    // Se vazio, mostrar mensagem
+    if (total === 0) {
+      dom.pautasList.className = 'empty';
+      dom.pautasList.textContent = 'Nenhuma pauta ainda. Gere pautas ou converta suas ideias em pauta final.';
+      if (dom.pautaPagination) dom.pautaPagination.hidden = true;
+      return;
+    }
+    
+    // Remover classe empty
+    if (dom.pautasList.classList.contains('empty')) {
+      dom.pautasList.classList.remove('empty');
+    }
+    
+    // Calcular páginas
+    const totalPages = Math.max(1, Math.ceil(total / pautasState.perPage));
+    pautasState.page = Math.min(totalPages, Math.max(1, pautasState.page));
+    
+    // Calcular índices
+    const startIndex = (pautasState.page - 1) * pautasState.perPage;
+    const endIndex = Math.min(startIndex + pautasState.perPage, total);
+    const pautasToShow = pautasState.items.slice(startIndex, endIndex);
+    
+    // Limpar lista
+    dom.pautasList.textContent = '';
+    
+    // Renderizar pautas da página atual
+    pautasToShow.forEach(pauta => {
+      const card = document.createElement('div');
+      card.className = 'card pad pauta';
+      card.dataset.id = pauta.id || uid();
+      if (pauta.rede) card.dataset.rede = pauta.rede;
+      card.innerHTML = `
+        <div class="pauta-container">
+          <div class="pauta-body">
+            <strong class="pauta-title">${escapeHtml(pauta.titulo || 'Pauta sem título')}</strong>
+            <p class="pauta-text">${escapeHtml(pauta.texto || 'Descrição da pauta gerada pelo agente.')}</p>
+          </div>
+          <div class="pauta-actions">
+            <button class="btn ghost btn-sm" data-action="edit">Editar</button>
+            <button class="btn ghost btn-sm danger" data-action="delete">Excluir</button>
+            <button class="btn btn-sm" data-action="generate-post">Gerar Post</button>
+          </div>
+        </div>`;
+      dom.pautasList.appendChild(card);
+    });
+    
+    // Atualizar paginação
+    buildPautaPagination(total, totalPages);
+    
+    // Scroll suave se solicitado
+    if (scrollIntoView && dom.section) {
+      const offset = (window.app && window.app.stickyOffset) ? window.app.stickyOffset : 80;
+      requestAnimationFrame(() => {
+        const top = dom.section.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top, behavior: 'smooth' });
+      });
+    }
+  }
+
+  function buildPautaPagination(total, totalPages) {
+    if (!dom.pautaPagerButtons || !dom.pautaPagerInfo || !dom.pautaPagination) return;
+    
+    // Mostrar/ocultar paginação
+    if (total <= pautasState.perPage) {
+      dom.pautaPagination.hidden = true;
+      return;
+    }
+    
+    dom.pautaPagination.hidden = false;
+    dom.pautaPagerInfo.textContent = `Página ${pautasState.page} de ${totalPages} (${total} ${total === 1 ? 'pauta' : 'pautas'})`;
+    dom.pautaPagerButtons.innerHTML = '';
+    
+    const windowSize = 10;
+    const currentPage = pautasState.page;
+    const maxStart = Math.max(1, totalPages - windowSize + 1);
+    let startPage = Math.min(Math.max(1, currentPage), maxStart);
+    let endPage = Math.min(totalPages, startPage + windowSize - 1);
+    
+    const addButton = (label, page, disabled = false, extraClass = '') => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = label;
+      btn.className = extraClass;
+      btn.disabled = disabled;
+      if (!disabled) {
+        btn.addEventListener('click', () => {
+          if (pautasState.page === page) return;
+          pautasState.page = page;
+          renderPautas(true);
+        });
+      }
+      dom.pautaPagerButtons.appendChild(btn);
+    };
+    
+    addButton('«', 1, currentPage === 1, 'nav-first');
+    addButton('‹', Math.max(1, currentPage - 1), currentPage === 1, 'nav-prev');
+    
+    for (let page = startPage; page <= endPage; page += 1) {
+      addButton(page, page, false, page === currentPage ? 'active' : '');
+    }
+    
+    addButton('›', Math.min(totalPages, currentPage + 1), currentPage >= totalPages, 'nav-next');
+    addButton('»', totalPages, currentPage >= totalPages, 'nav-last');
+  }
+
+  function addPautaCard({ id, titulo, texto, rede }) {
+    // Adicionar ao estado ao invés de DOM direto
+    pautasState.items.unshift({
+      id: id || uid(),
+      titulo: titulo || '',
+      texto: texto || '',
+      rede: rede || ''
+    });
+    
+    // Ir para página 1 e renderizar
+    pautasState.page = 1;
+    renderPautas(false);
+  }
+
+  function enterEditMode(card) {
+    const titleEl = $('.pauta-title', card);
+    const textEl = $('.pauta-text', card);
+    if (!titleEl || !textEl) return;
+    card._old = { title: titleEl.textContent, text: textEl.textContent };
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = card._old.title;
+    input.className = 'pauta-edit-title';
+    input.style.cssText = 'width:100%; background:#0f131a; border:1px solid var(--border); border-radius:8px; color:var(--text); padding:.6rem .7rem; margin:.4rem 0';
+
+    const textarea = document.createElement('textarea');
+    textarea.value = card._old.text;
+    textarea.className = 'pauta-edit-text';
+    textarea.style.cssText = 'width:100%; min-height:120px; background:#0f131a; border:1px solid var(--border); border-radius:8px; color:var(--text); padding:.6rem .7rem; margin:.4rem 0';
+
+    titleEl.replaceWith(input);
+    textEl.replaceWith(textarea);
+
+    const actions = $('.pauta-actions', card);
+    if (actions) {
+      actions.innerHTML = `
+        <button class="btn btn-sm" data-action="save-edit">Salvar</button>
+        <button class="btn ghost btn-sm" data-action="cancel-edit">Cancelar</button>
+      `;
+    }
+  }
+
+  async function saveEditMode(card) {
+    const input = $('.pauta-edit-title', card);
+    const textarea = $('.pauta-edit-text', card);
+    const titleNew = (input?.value || '').trim();
+    const textNew = (textarea?.value || '').trim();
+
+    if (!titleNew) {
+      alert('O título é obrigatório.');
+      return;
+    }
+
+    const pautaId = card.dataset.id;
+
+    // Se tem ID numérico do banco, salvar via API
+    if (pautaId && !pautaId.startsWith('db_') && !isNaN(pautaId)) {
+      try {
+        const csrfToken = getCookie('csrftoken') || CSRF_TOKEN;
+        
+        const response = await fetch(`/api/pautas/${pautaId}/update/`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({
+            titulo: titleNew,
+            texto: textNew
+          })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          alert(error.error || 'Erro ao salvar pauta.');
+          return;
+        }
+      } catch (error) {
+        console.error('Erro ao salvar pauta:', error);
+        alert('Erro ao salvar pauta. Tente novamente.');
+        return;
+      }
+    }
+
+    // Atualizar estado
+    const pautaInState = pautasState.items.find(p => p.id === pautaId);
+    if (pautaInState) {
+      pautaInState.titulo = titleNew;
+      pautaInState.texto = textNew;
+    }
+
+    // Atualizar UI
+    const titleEl = document.createElement('strong');
+    titleEl.className = 'pauta-title';
+    titleEl.textContent = titleNew || 'Pauta sem título';
+
+    const textEl = document.createElement('p');
+    textEl.className = 'pauta-text';
+    textEl.textContent = textNew || 'Descrição da pauta.';
+
+    input.replaceWith(titleEl);
+    textarea.replaceWith(textEl);
+
+    const actions = $('.pauta-actions', card);
+    if (actions) {
+      actions.innerHTML = `
+        <button class="btn ghost btn-sm" data-action="edit">Editar</button>
+        <button class="btn ghost btn-sm danger" data-action="delete">Excluir</button>
+        <button class="btn btn-sm" data-action="generate-post">Gerar Post</button>
+      `;
+    }
+    delete card._old;
+  }
+
+  function exitEditMode(card) {
+    const old = card._old;
+    const input = $('.pauta-edit-title', card);
+    const textarea = $('.pauta-edit-text', card);
+
+    const titleEl = document.createElement('strong');
+    titleEl.className = 'pauta-title';
+    titleEl.textContent = old?.title || 'Pauta sem título';
+
+    const textEl = document.createElement('p');
+    textEl.className = 'pauta-text';
+    textEl.textContent = old?.text || 'Descrição da pauta.';
+
+    input.replaceWith(titleEl);
+    textarea.replaceWith(textEl);
+
+    const actions = $('.pauta-actions', card);
+    if (actions) {
+      actions.innerHTML = `
+        <button class="btn ghost btn-sm" data-action="edit">Editar</button>
+        <button class="btn ghost btn-sm danger" data-action="delete">Excluir</button>
+        <button class="btn btn-sm" data-action="generate-post">Gerar Post</button>
+      `;
+    }
+    delete card._old;
+  }
+
+  dom.pautasList?.addEventListener('click', async event => {
+    const btn = event.target.closest('button[data-action]');
+    if (!btn) return;
+    const card = event.target.closest('.pauta');
+    if (!card) return;
+    const action = btn.dataset.action;
+
+    if (action === 'delete') {
+      // Confirmação
+      if (!confirm('Tem certeza que deseja excluir esta pauta?')) {
+        return;
+      }
+
+      const pautaId = card.dataset.id;
+      
+      // Se tem ID numérico do banco, deletar via API
+      if (pautaId && !pautaId.startsWith('db_') && !isNaN(pautaId)) {
+        try {
+          // Usar cookie ou fallback para token do template
+          const csrfToken = getCookie('csrftoken') || CSRF_TOKEN;
+          
+          const response = await fetch(`/api/pautas/${pautaId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+              'X-CSRFToken': csrfToken
+            }
+          });
+          
+          if (!response.ok) {
+            const error = await response.json();
+            alert(error.error || 'Erro ao excluir pauta.');
+            return;
+          }
+        } catch (error) {
+          console.error('Erro ao excluir pauta:', error);
+          alert('Erro ao excluir pauta. Tente novamente.');
+          return;
+        }
+      }
+      
+      // Remover do estado
+      const index = pautasState.items.findIndex(p => p.id === pautaId);
+      if (index !== -1) {
+        pautasState.items.splice(index, 1);
+      }
+      
+      // Re-renderizar
+      renderPautas(false);
+      return;
+    }
+
+    if (action === 'edit') {
+      enterEditMode(card);
+      return;
+    }
+
+    if (action === 'save-edit') {
+      saveEditMode(card);
+      return;
+    }
+
+    if (action === 'cancel-edit') {
+      exitEditMode(card);
+      return;
+    }
+
+    if (action === 'generate-post') {
+      const rede = card.dataset.rede || dom.redePost?.value || 'Instagram';
+      const title = $('.pauta-title', card)?.textContent.trim() || '';
+      const text = $('.pauta-text', card)?.textContent.trim() || '';
+      prefillPostModal({
+        rede,
+        tema: [title, text].filter(Boolean).join(' — ')
+      });
+      setActiveTab('posts');
+      openModal('modalGerarPost');
+      requestAnimationFrame(() => dom.temaPost?.focus());
+    }
+  });
+
+  dom.formGerarPauta?.addEventListener('submit', async event => {
+    event.preventDefault();
+
+    const payload = {
+      rede: document.getElementById('redeSocial')?.value || 'Instagram',
+      tema: document.getElementById('temaPauta')?.value.trim() || ''
+    };
+
+    console.log('📤 [GERAR PAUTA] Payload:', payload);
+    console.log('📤 [GERAR PAUTA] URL:', PAUTAS_WEBHOOK_URL);
+
+    let resposta;
+    try {
+      if (PAUTAS_WEBHOOK_URL) {
+        console.log('✅ [GERAR PAUTA] Enviando para:', PAUTAS_WEBHOOK_URL);
+        resposta = await postJSON(PAUTAS_WEBHOOK_URL, payload);
+        console.log('✅ [GERAR PAUTA] Resposta:', resposta);
+      } else {
+        console.warn('⚠️ [GERAR PAUTA] URL não configurada! Usando resposta fake.');
+        await sleep(450);
+        resposta = {
+          titulo: payload.tema || 'Pauta sugerida pelo agente',
+          texto: 'Descrição detalhada da pauta: objetivo, ângulo, CTA, formatos sugeridos e possíveis ganchos.'
+        };
+      }
+    } catch (error) {
+      console.error('❌ [GERAR PAUTA] Erro:', error);
+      const errorMessage = error.message || 'Não foi possível gerar a pauta agora. Tente novamente.';
+      alert(errorMessage);
+      return;
+    }
+
+    alert('Sua solicitação foi enviada ao agente. Em instantes as pautas aparecerão na lista.');
+
+    closeModal('modalGerarPauta');
+    
+    // NÃO adicionar pauta aqui - será adicionada via callback do N8N
+    // As pautas devem vir apenas do callback para evitar duplicação
+    
+    // Mostrar banner de status
+    showPautaGenerationBanner();
+
+    setActiveTab('pautas');
+    if (dom.section) {
+      const offset = (window.app && window.app.stickyOffset) ? window.app.stickyOffset : 80;
+      requestAnimationFrame(() => {
+        const top = dom.section.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top, behavior: 'smooth' });
+        setTimeout(() => {
+          dom.section.setAttribute('tabindex', '-1');
+          dom.section.focus({ preventScroll: true });
+        }, 450);
+      });
+    }
+  });
+
+  // Evento do botão Verificar Status
+  dom.btnVerificarStatus?.addEventListener('click', () => {
+    window.location.reload();
+  });
+
+  resetGerarPostForm();
+  updateTemaCounter();
+  updateRefsInfo();
+  INITIAL_PAUTAS.forEach(addPautaCard);
+  renderPosts();
+  
+  // Verificar status de geração ao carregar
+  checkPautaGenerationStatus();
+})();
+
+</script>
+{% endblock %}

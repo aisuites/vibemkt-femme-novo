@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from apps.core.decorators import require_organization
-from .models import Pauta, Post, TrendMonitor
+from .models import Pauta, TrendMonitor
+from apps.posts.models import Post
 
 
 @login_required

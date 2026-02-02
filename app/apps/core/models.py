@@ -927,7 +927,7 @@ class QuotaAdjustment(TimeStampedModel):
         verbose_name='Log de Auditoria da Pauta'
     )
     post = models.ForeignKey(
-        'content.Post',
+        'posts.Post',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,

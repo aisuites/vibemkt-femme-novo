@@ -11,7 +11,8 @@ from django.core.cache import cache
 from decimal import Decimal
 import logging
 
-from apps.content.models import Pauta, Post, VideoAvatar
+from apps.content.models import Pauta, VideoAvatar
+from apps.posts.models import Post
 from apps.core.models import QuotaUsageDaily
 
 logger = logging.getLogger(__name__)
