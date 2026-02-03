@@ -757,19 +757,19 @@
   dom.filtroStatus?.addEventListener('change', () => {
     postsState.filters.status = dom.filtroStatus.value;
     postsState.page = 1;
-    renderPosts();
+    renderPosts(true);
   });
   
   dom.filtroData?.addEventListener('change', () => {
     postsState.filters.date = dom.filtroData.value;
     postsState.page = 1;
-    renderPosts();
+    renderPosts(true);
   });
   
   dom.btnBuscar?.addEventListener('click', () => {
     postsState.filters.search = dom.filtroBusca?.value.trim() || '';
     postsState.page = 1;
-    renderPosts();
+    renderPosts(true);
   });
   
   dom.filtroBusca?.addEventListener('keypress', (e) => {
@@ -777,7 +777,7 @@
       e.preventDefault();
       postsState.filters.search = dom.filtroBusca.value.trim();
       postsState.page = 1;
-      renderPosts();
+      renderPosts(true);
     }
   });
 
@@ -792,7 +792,7 @@
     postsState.filters.search = '';
     postsState.page = 1;
     
-    renderPosts();
+    renderPosts(true);
   });
 
   /**
@@ -1088,17 +1088,30 @@
   /**
    * Renderiza posts
    */
-  function renderPosts() {
+  function renderPosts(scrollIntoView = false) {
     const filtered = applyFilters();
     const total = filtered.length;
-    
+
+    if (!dom.postsPane) return;
+
     if (total === 0) {
-      logger.warn('[POSTS] Nenhum post para exibir');
+      if (dom.postsEmpty) dom.postsEmpty.style.display = '';
+      if (dom.postsMain) dom.postsMain.hidden = true;
+      if (dom.postPagerInfo) {
+        const msg = postsState.items.length && (postsState.filters.date || postsState.filters.search || postsState.filters.status !== 'all')
+          ? 'Nenhum post corresponde aos filtros aplicados'
+          : '0 posts';
+        dom.postPagerInfo.textContent = msg;
+      }
+      if (dom.pagerButtons) dom.pagerButtons.innerHTML = '';
       return;
     }
-    
+
+    if (dom.postsEmpty) dom.postsEmpty.style.display = 'none';
+    if (dom.postsMain) dom.postsMain.hidden = false;
+
     const totalPages = Math.max(1, Math.ceil(total / postsState.perPage));
-    
+
     // Restaurar post selecionado após reload (apenas na primeira renderização)
     if (!postsState.restoredFromStorage) {
       postsState.restoredFromStorage = true;
@@ -1114,7 +1127,7 @@
         // Ignorar erro
       }
     }
-    
+
     if (postsState.selectedId) {
       const selectedIndex = filtered.findIndex(item => item.id === postsState.selectedId);
       if (selectedIndex !== -1) {
@@ -1123,7 +1136,7 @@
         postsState.selectedId = null;
       }
     }
-    
+
     postsState.page = Math.min(totalPages, Math.max(1, postsState.page));
     const startIndex = (postsState.page - 1) * postsState.perPage;
     let current = filtered[startIndex] || null;
@@ -1141,11 +1154,19 @@
         // Ignorar erro
       }
     }
-    
+
     updatePostDetails(current);
     updatePostVisual(current);
     buildPostActions(current);
     buildPagination(total, totalPages);
+
+    if (scrollIntoView) {
+      const offset = (window.app && window.app.stickyOffset) ? window.app.stickyOffset : 80;
+      requestAnimationFrame(() => {
+        const top = dom.postsPane.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top, behavior: 'smooth' });
+      });
+    }
   }
 
   /**
@@ -1173,7 +1194,7 @@
           if (postsState.page === page) return;
           postsState.page = page;
           postsState.selectedId = null; // CRÍTICO: Limpa selectedId para não sobrescrever navegação manual
-          renderPosts();
+          renderPosts(true);
         });
       }
       dom.pagerButtons.appendChild(btn);
