@@ -168,6 +168,14 @@ def n8n_post_callback(request):
             post.image_prompt = data.get('descricaoImagem') or data.get('image_prompt') or data.get('visual_brief') or ''
             logger.debug(f"✏️ [N8N_POST_CALLBACK] Descrição da imagem atualizada")
         
+        # Atualizar thread_id (se N8N enviar e post ainda não tiver)
+        if 'thread_id' in data and data['thread_id']:
+            if not post.thread_id:
+                post.thread_id = data['thread_id']
+                logger.debug(f"✏️ [N8N_POST_CALLBACK] Thread ID salvo: {post.thread_id}")
+            elif post.thread_id != data['thread_id']:
+                logger.warning(f"⚠️ [N8N_POST_CALLBACK] Thread ID diferente - Atual: {post.thread_id}, Recebido: {data['thread_id']}")
+        
         # Atualizar status (se N8N enviar, usar; senão, mudar de 'generating' para 'pending')
         if 'status' in data:
             post.status = data['status']

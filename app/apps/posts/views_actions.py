@@ -6,9 +6,14 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 import json
+import logging
+import requests
 
 from .models import Post
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -134,19 +139,63 @@ def request_text_change(request, post_id):
         post.revisions_remaining -= 1
         post.save()
         
-        # TODO: Integrar com N8N para regeneração de texto
-        # webhook_url = settings.N8N_WEBHOOK_REGENERATE_TEXT
-        # requests.post(webhook_url, json={
-        #     'post_id': post.id,
-        #     'organization_id': post.organization.id,
-        #     'mensagem': mensagem
-        # })
+        # Integrar com N8N para solicitar alteração
+        n8n_success = False
+        n8n_error = None
+        
+        if settings.N8N_WEBHOOK_GERAR_POST:
+            try:
+                logger.info(f"Enviando solicitação de alteração do post {post.id} para N8N...")
+                
+                # Preparar payload para N8N
+                n8n_payload = {
+                    'action': 'request_changes',
+                    'post_id': str(post.id),
+                    'thread_id': post.thread_id or '',
+                    'empresa': request.user.email,
+                    'usuario': request.user.email,
+                    'organization_id': post.organization.id,
+                    'mensagem': mensagem,
+                    'rede': post.social_network.capitalize() if post.social_network else 'Instagram',
+                    'formato': post.content_type or 'post'
+                }
+                
+                logger.debug(f"Payload N8N (alteração): {n8n_payload}")
+                
+                # Enviar para N8N
+                response = requests.post(
+                    settings.N8N_WEBHOOK_GERAR_POST,
+                    json=n8n_payload,
+                    timeout=settings.N8N_WEBHOOK_TIMEOUT,
+                    headers={
+                        'Content-Type': 'application/json',
+                        'X-Webhook-Secret': settings.N8N_WEBHOOK_SECRET
+                    }
+                )
+                
+                response.raise_for_status()
+                n8n_success = True
+                logger.info(f"Solicitação de alteração do post {post.id} enviada para N8N com sucesso")
+                
+            except requests.exceptions.Timeout:
+                n8n_error = 'Timeout ao enviar para N8N'
+                logger.error(f"Timeout ao enviar alteração do post {post.id} para N8N")
+            except requests.exceptions.RequestException as e:
+                n8n_error = f'Erro ao enviar para N8N: {str(e)}'
+                logger.error(f"Erro ao enviar alteração do post {post.id} para N8N: {e}", exc_info=True)
+            except Exception as e:
+                n8n_error = f'Erro inesperado: {str(e)}'
+                logger.error(f"Erro inesperado ao enviar alteração do post {post.id} para N8N: {e}", exc_info=True)
+        else:
+            logger.warning("N8N_WEBHOOK_GERAR_POST não configurado - alteração registrada mas não enviada para processamento")
         
         return JsonResponse({
             'success': True,
             'status': post.status,
             'statusLabel': post.get_status_display(),
-            'revisoesRestantes': post.revisions_remaining
+            'revisoesRestantes': post.revisions_remaining,
+            'n8n_success': n8n_success,
+            'n8n_error': n8n_error
         })
         
     except Post.DoesNotExist:

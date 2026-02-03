@@ -1387,23 +1387,42 @@
       return;
     }
     
-    const confirmed = confirm('Tem certeza que deseja rejeitar este post?');
+    // Usar modal de confirmação
+    const confirmed = window.confirmModal 
+      ? await window.confirmModal.show('Tem certeza que deseja rejeitar este post?', 'Rejeitar Post')
+      : confirm('Tem certeza que deseja rejeitar este post?');
+    
     if (!confirmed) return;
     
+    const previousStatus = post.status;
+    post.status = 'rejected';
+    renderPosts();
+    
     try {
-      const response = await postJSON(`/posts/${serverId}/reject/`, {});
+      const response = await fetch(`/posts/${serverId}/reject/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
       
-      if (response.success) {
-        post.status = 'rejected';
-        post.statusLabel = 'Rejeitado';
-        window.toaster?.success('Post rejeitado com sucesso!');
-        renderPosts();
-      } else {
-        window.toaster?.error(response.error || 'Erro ao rejeitar post');
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
       }
+      
+      const data = await response.json();
+      post.status = data.status || 'rejected';
+      post.statusLabel = data.statusLabel || 'Rejeitado';
+      post.remaining_revisions = data.revisoesRestantes ?? post.remaining_revisions;
+      renderPosts();
     } catch (error) {
-      logger.error('Erro ao rejeitar post:', error);
-      window.toaster?.error('Erro ao rejeitar post. Tente novamente.');
+      console.error(error);
+      post.status = previousStatus;
+      renderPosts();
+      window.toaster?.error('Não foi possível rejeitar o post. Tente novamente.');
     }
   }
 
@@ -1417,7 +1436,11 @@
       return;
     }
     
-    const confirmed = confirm('Tem certeza que deseja aprovar este post?');
+    // Usar modal de confirmação
+    const confirmed = window.confirmModal 
+      ? await window.confirmModal.show('Tem certeza que deseja aprovar este post?', 'Aprovar Post')
+      : confirm('Tem certeza que deseja aprovar este post?');
+    
     if (!confirmed) return;
     
     try {
@@ -1447,24 +1470,54 @@
       return;
     }
     
-    const confirmed = confirm('Deseja gerar a imagem para este post?');
+    // Usar modal de confirmação
+    const confirmed = window.confirmModal 
+      ? await window.confirmModal.show('Deseja gerar a imagem para este post?', 'Gerar Imagem')
+      : confirm('Deseja gerar a imagem para este post?');
+    
     if (!confirmed) return;
     
+    const previousStatus = post.status;
+    const previousStatusLabel = post.statusLabel;
+    const previousImageStatus = post.imageStatus;
+    const previousImages = Array.isArray(post.images) ? post.images.slice() : null;
+    const previousImageChanges = post.imageChanges || 0;
+    
+    post.imageStatus = 'generating';
+    post.status = 'image_generating';
+    post.statusLabel = statusInfo.image_generating?.label || 'Agente Gerando Imagem';
+    renderPosts();
+    
     try {
-      const response = await postJSON(`/posts/${serverId}/generate-image/`, {});
+      const response = await fetch(`/posts/${serverId}/generate-image/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': CSRF_TOKEN,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mensagem: '' }),
+      });
       
-      if (response.success) {
-        post.status = 'image_generating';
-        post.imageStatus = 'generating';
-        post.statusLabel = 'Agente Gerando Imagem';
-        window.toaster?.success('Geração de imagem iniciada!');
-        renderPosts();
-      } else {
-        window.toaster?.error(response.error || 'Erro ao iniciar geração de imagem');
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || ('HTTP ' + response.status));
       }
+      
+      post.status = data?.status || 'image_generating';
+      post.statusLabel = data?.statusLabel || statusInfo[post.status]?.label || statusInfo.image_generating?.label || 'Agente Gerando Imagem';
+      post.imageStatus = data?.imageStatus || 'generating';
+      if (typeof data?.imageChanges === 'number') post.imageChanges = data.imageChanges;
+      renderPosts();
     } catch (error) {
-      logger.error('Erro ao gerar imagem:', error);
-      window.toaster?.error('Erro ao gerar imagem. Tente novamente.');
+      console.error(error);
+      post.status = previousStatus;
+      post.statusLabel = previousStatusLabel;
+      post.imageStatus = previousImageStatus || 'none';
+      if (previousImages) post.images = previousImages;
+      post.imageChanges = previousImageChanges;
+      renderPosts();
+      window.toaster?.error(error.message || 'Não foi possível acionar a geração de imagem. Tente novamente.');
     }
   }
 
@@ -1481,32 +1534,65 @@
       window.toaster?.error('Não foi possível identificar o post selecionado.');
       return;
     }
-    
-    if (!text || !text.trim()) {
-      if (dom.textRequestInput) {
-        dom.textRequestInput.classList.add('invalid');
-      }
-      return;
-    }
-    
+
+    // Salvar estado anterior para rollback em caso de erro
+    const previousStatus = post.status;
+    const previousStatusLabel = post.statusLabel;
+    const previousRevisions = post.remaining_revisions;
+
+    // Atualizar UI imediatamente para feedback visual
+    post.textRequestOpen = false;
+    post.pendingTextRequest = text;
+    post.status = 'generating';
+    post.statusLabel = statusInfo.generating?.label || 'Agente Gerando Conteúdo';
+    renderPosts();
+
     try {
-      const response = await postJSON(`/posts/${serverId}/request-text-change/`, {
-        request: text.trim()
+      const response = await fetch(`/posts/${serverId}/request-text-change/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ mensagem: text }),
       });
       
-      if (response.success) {
-        post.status = 'agent';
-        post.statusLabel = 'Agente Alterando';
-        post.textRequestOpen = false;
-        post.pendingTextRequest = '';
-        window.toaster?.success('Solicitação enviada com sucesso!');
-        renderPosts();
-      } else {
-        window.toaster?.error(response.error || 'Erro ao enviar solicitação');
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
       }
+      
+      const data = await response.json();
+      
+      // Atualizar post com dados da resposta
+      post.status = data.status || 'agent';
+      post.statusLabel = data.statusLabel || (statusInfo[post.status]?.label ?? 'Agente Alterando');
+      
+      if (typeof data.revisoesRestantes === 'number') {
+        post.remaining_revisions = data.revisoesRestantes;
+      }
+      if (typeof data.imageChanges === 'number') {
+        post.imageChanges = data.imageChanges;
+      }
+      
+      post.pendingTextRequest = '';
+      if (dom.textRequestInput) dom.textRequestInput.value = '';
+      
+      renderPosts();
+      window.toaster?.success('Solicitação enviada ao agente.');
+      
     } catch (error) {
-      logger.error('Erro ao enviar solicitação de texto:', error);
-      window.toaster?.error('Erro ao enviar solicitação. Tente novamente.');
+      console.error(error);
+      
+      // Rollback: restaurar estado anterior
+      post.textRequestOpen = true;
+      post.pendingTextRequest = text;
+      post.status = previousStatus;
+      post.statusLabel = previousStatusLabel;
+      post.remaining_revisions = previousRevisions;
+      
+      renderPosts();
+      window.toaster?.error('Não foi possível enviar a solicitação. Tente novamente.');
     }
   }
 
@@ -1514,10 +1600,7 @@
    * Envia solicitação de alteração de imagem
    */
   async function submitImageRequest(post, text) {
-    if (post.imageChanges >= 1) {
-      window.toaster?.warning('Limite de alterações de imagem atingido');
-      return;
-    }
+    if (post.imageChanges >= 1) return;
     
     const serverId = getServerId(post);
     if (!serverId) {
@@ -1532,31 +1615,66 @@
       return;
     }
     
+    // Salvar estado anterior para rollback
+    post.imageRequestOpen = false;
+    post.pendingImageRequest = text;
+    const previousStatus = post.status;
+    const previousStatusLabel = post.statusLabel;
+    const previousImageStatus = post.imageStatus;
+    const previousImages = Array.isArray(post.images) ? post.images.slice() : null;
+    const previousImageChanges = post.imageChanges || 0;
+    
+    // Atualizar UI imediatamente
+    post.status = 'image_generating';
+    post.statusLabel = statusInfo.image_generating?.label || 'Agente Gerando Imagem';
+    post.imageStatus = 'generating';
+    post.imageChanges = previousImageChanges + 1;
+    renderPosts();
+    
     try {
-      const response = await postJSON(`/posts/${serverId}/request-image-change/`, {
-        request: text.trim()
+      const response = await fetch(`/posts/${serverId}/generate-image/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': CSRF_TOKEN,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mensagem: text }),
       });
       
-      if (response.success) {
-        post.imageStatus = 'generating';
-        post.imageChanges = (post.imageChanges || 0) + 1;
-        post.imageRequestOpen = false;
-        post.pendingImageRequest = '';
-        window.toaster?.success('Solicitação enviada com sucesso!');
-        renderPosts();
-      } else {
-        window.toaster?.error(response.error || 'Erro ao enviar solicitação');
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || ('HTTP ' + response.status));
       }
+      
+      // Atualizar com dados da resposta
+      post.status = data?.status || 'image_generating';
+      post.statusLabel = data?.statusLabel || statusInfo[post.status]?.label || statusInfo.image_generating?.label || 'Agente Gerando Imagem';
+      post.imageStatus = data?.imageStatus || 'generating';
+      if (typeof data?.imageChanges === 'number') post.imageChanges = data.imageChanges;
+      post.pendingImageRequest = '';
+      if (dom.imageRequestInput) dom.imageRequestInput.value = '';
+      renderPosts();
+      window.toaster?.success('Solicitação enviada ao agente.');
     } catch (error) {
-      logger.error('Erro ao enviar solicitação de imagem:', error);
-      window.toaster?.error('Erro ao enviar solicitação. Tente novamente.');
+      console.error(error);
+      // Rollback em caso de erro
+      post.imageRequestOpen = true;
+      post.pendingImageRequest = text;
+      post.status = previousStatus;
+      post.statusLabel = previousStatusLabel;
+      post.imageStatus = previousImageStatus || 'none';
+      if (previousImages) post.images = previousImages;
+      post.imageChanges = previousImageChanges;
+      renderPosts();
+      window.toaster?.error(error.message || 'Não foi possível enviar a solicitação. Tente novamente.');
     }
   }
 
   // Event listeners para solicitações de alteração
   document.addEventListener('click', (e) => {
     // Cancelar solicitação de texto
-    if (e.target.closest('#btnCancelTextRequest')) {
+    if (e.target.closest('[data-action="cancel-text-request"]')) {
       const current = getCurrentPost();
       if (current) {
         current.textRequestOpen = false;
@@ -1566,7 +1684,7 @@
     }
     
     // Enviar solicitação de texto
-    if (e.target.closest('#btnSendTextRequest')) {
+    if (e.target.closest('[data-action="submit-text-request"]')) {
       const current = getCurrentPost();
       if (current && dom.textRequestInput) {
         submitTextRequest(current, dom.textRequestInput.value);
@@ -1574,7 +1692,7 @@
     }
     
     // Cancelar solicitação de imagem
-    if (e.target.closest('#btnCancelImageRequest')) {
+    if (e.target.closest('[data-action="cancel-image-request"]')) {
       const current = getCurrentPost();
       if (current) {
         current.imageRequestOpen = false;
@@ -1584,7 +1702,7 @@
     }
     
     // Enviar solicitação de imagem
-    if (e.target.closest('#btnSendImageRequest')) {
+    if (e.target.closest('[data-action="submit-image-request"]')) {
       const current = getCurrentPost();
       if (current && dom.imageRequestInput) {
         submitImageRequest(current, dom.imageRequestInput.value);
