@@ -4,7 +4,7 @@
 {% block title %}Posts{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/posts.css' %}?v=20260202-1008">
+<link rel="stylesheet" href="{% static 'css/posts.css' %}?v=20260203-0135">
 <link rel="stylesheet" href="{% static 'css/posts-detail.css' %}?v=20260202-1323">
 <link rel="stylesheet" href="{% static 'css/confirm-modal.css' %}?v=20260202-1008">
 <link rel="stylesheet" href="{% static 'css/toaster.css' %}?v=20260202-1008">
@@ -387,6 +387,48 @@
         </form>
     </div>
 </div>
+
+<!-- Modal: Editar Post -->
+<div class="modal" id="modalEditarPost" aria-hidden="true" role="dialog" aria-label="Editar Post">
+    <div class="panel">
+        <div class="head">
+            <h3>Editar Post</h3>
+            <button class="close" data-close>Fechar</button>
+        </div>
+        <form class="form" id="formEditarPost">
+            <div class="form-grid" style="display:grid; gap:1rem;">
+                <label>
+                    <span>Título</span>
+                    <input type="text" id="editTitulo" maxlength="220" required>
+                </label>
+                <label>
+                    <span>Subtítulo</span>
+                    <input type="text" id="editSubtitulo" maxlength="220">
+                </label>
+                <label>
+                    <span>Legenda</span>
+                    <textarea id="editLegenda" rows="4"></textarea>
+                </label>
+                <label>
+                    <span>Hashtags</span>
+                    <input type="text" id="editHashtags" placeholder="#tag1 #tag2">
+                </label>
+                <label>
+                    <span>CTA</span>
+                    <input type="text" id="editCTA" maxlength="160">
+                </label>
+                <label>
+                    <span>Descrição da imagem</span>
+                    <textarea id="editDescricaoImagem" rows="3"></textarea>
+                </label>
+            </div>
+            <div class="form-footer">
+                <button type="button" class="btn ghost" data-close>Cancelar</button>
+                <button type="submit" class="btn">Salvar alterações</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -417,7 +459,7 @@ window.ORGANIZATION_ID = {{ request.user.organization.id|default:0 }};
 </script>
 
 {% load static %}
-<script src="{% static 'js/posts.js' %}?v=20260203-0245"></script>
+<script src="{% static 'js/posts.js' %}?v=20260203-0146"></script>
 <!-- Temporariamente desabilitados para debug -->
 <!-- <script src="{% static 'js/posts-modal.js' %}?v=20260203-0129"></script> -->
 <!-- <script src="{% static 'js/posts-gallery.js' %}?v=20260203-0129"></script> -->

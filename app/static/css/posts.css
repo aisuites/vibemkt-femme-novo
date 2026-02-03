@@ -665,6 +665,102 @@
    MODAL
    ======================================== */
 
+/* Modal genérico (para modal de edição) - IDÊNTICO ao resumo.html */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  padding: 12px;
+}
+
+.modal.open {
+  display: grid;
+}
+
+.modal .panel {
+  width: min(720px, 92vw);
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  background: linear-gradient(180deg, #17181d 0%, #121318 100%);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.modal .head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.modal .head h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.modal .close {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal .close:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.modal .form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal .form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal .form label span {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.modal .form input,
+.modal .form textarea {
+  background: #0e1017;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 0.7rem;
+  font: inherit;
+}
+
+.modal .form input:focus,
+.modal .form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.modal .form-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+/* Modal de posts (para modal de gerar post) */
 .posts-modal {
   position: fixed;
   inset: 0;

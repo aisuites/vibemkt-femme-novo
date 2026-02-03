@@ -1291,89 +1291,6 @@
   }
 
   // ============================================================================
-  // MODAL DE EDIÇÃO
-  // ============================================================================
-
-  let editingPostRef = null;
-
-  /**
-   * Reseta formulário de edição
-   */
-  function resetEditPostForm() {
-    if (dom.formEditarPost) dom.formEditarPost.reset();
-  }
-
-  /**
-   * Fecha modal de edição
-   */
-  function closeEditPostModal() {
-    resetEditPostForm();
-    editingPostRef = null;
-    closeModal(dom.modalEditarPost);
-  }
-
-  /**
-   * Abre modal de edição e preenche campos
-   */
-  function openEditPostModal(post) {
-    if (!post || !dom.modalEditarPost) return;
-    
-    editingPostRef = post;
-    
-    // Preencher campos
-    if (dom.editTitulo) dom.editTitulo.value = post.title || '';
-    if (dom.editSubtitulo) dom.editSubtitulo.value = post.subtitle || '';
-    if (dom.editLegenda) dom.editLegenda.value = post.caption || '';
-    if (dom.editHashtags) dom.editHashtags.value = Array.isArray(post.hashtags) ? post.hashtags.join(' ') : (post.hashtags || '');
-    if (dom.editCTA) dom.editCTA.value = post.cta || '';
-    if (dom.editDescricaoImagem) dom.editDescricaoImagem.value = post.image_prompt || '';
-    
-    openModal(dom.modalEditarPost);
-    requestAnimationFrame(() => dom.editTitulo?.focus());
-  }
-
-  // Event listener para submit do formulário de edição
-  if (dom.formEditarPost) {
-    dom.formEditarPost.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      if (!editingPostRef) return;
-      
-      const serverId = getServerId(editingPostRef);
-      if (!serverId) {
-        window.toaster?.error('Não foi possível identificar o post selecionado.');
-        return;
-      }
-      
-      const payload = {
-        title: dom.editTitulo?.value.trim() || '',
-        subtitle: dom.editSubtitulo?.value.trim() || '',
-        caption: dom.editLegenda?.value.trim() || '',
-        hashtags: dom.editHashtags?.value.trim() || '',
-        cta: dom.editCTA?.value.trim() || '',
-        image_prompt: dom.editDescricaoImagem?.value.trim() || ''
-      };
-      
-      try {
-        const response = await postJSON(`/posts/${serverId}/edit/`, payload);
-        
-        if (response.success) {
-          // Atualizar post local
-          Object.assign(editingPostRef, payload);
-          window.toaster?.success('Post editado com sucesso!');
-          closeEditPostModal();
-          renderPosts();
-        } else {
-          window.toaster?.error(response.error || 'Erro ao editar post');
-        }
-      } catch (error) {
-        logger.error('Erro ao editar post:', error);
-        window.toaster?.error('Erro ao editar post. Tente novamente.');
-      }
-    });
-  }
-
-  // ============================================================================
   // AÇÕES DE POSTS
   // ============================================================================
 
@@ -1670,6 +1587,141 @@
       window.toaster?.error(error.message || 'Não foi possível enviar a solicitação. Tente novamente.');
     }
   }
+
+  // ============================================================================
+  // MODAL DE EDIÇÃO DE POST
+  // ============================================================================
+
+  let editingPostRef = null;
+
+  function openEditPostModal(post) {
+    if (!post || !dom.modalEditarPost) return;
+    editingPostRef = post;
+    
+    // Usar nomes dos campos do model (em inglês)
+    if (dom.editTitulo) dom.editTitulo.value = post.title || '';
+    if (dom.editSubtitulo) dom.editSubtitulo.value = post.subtitle || '';
+    if (dom.editLegenda) dom.editLegenda.value = post.caption || '';
+    if (dom.editHashtags) {
+      const tags = Array.isArray(post.hashtags) ? post.hashtags.join(' ') : (post.hashtags || '');
+      dom.editHashtags.value = tags.trim();
+    }
+    if (dom.editCTA) dom.editCTA.value = post.cta || '';
+    if (dom.editDescricaoImagem) dom.editDescricaoImagem.value = post.image_prompt || '';
+    
+    openModal('modalEditarPost');
+    requestAnimationFrame(() => dom.editTitulo?.focus());
+  }
+
+  function closeEditPostModal() {
+    resetEditPostForm();
+    editingPostRef = null;
+    closeModal('modalEditarPost');
+  }
+
+  function resetEditPostForm() {
+    if (dom.formEditarPost) dom.formEditarPost.reset();
+  }
+
+  // Event listener para fechar modal
+  if (dom.modalEditarPost) {
+    $$('[data-close]', dom.modalEditarPost).forEach(btn => {
+      btn.addEventListener('click', () => closeEditPostModal());
+    });
+    dom.modalEditarPost.addEventListener('click', event => {
+      if (event.target === dom.modalEditarPost) {
+        closeEditPostModal();
+      }
+    });
+  }
+
+  // Event listener para submit do formulário de edição
+  dom.formEditarPost?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const post = editingPostRef;
+    if (!post) {
+      closeEditPostModal();
+      return;
+    }
+    const serverId = getServerId(post);
+    if (!serverId) {
+      window.toaster?.error('Não foi possível identificar o post selecionado.');
+      return;
+    }
+    const payload = {
+      titulo: dom.editTitulo?.value.trim() || '',
+      subtitulo: dom.editSubtitulo?.value.trim() || '',
+      legenda: dom.editLegenda?.value.trim() || '',
+      hashtags: dom.editHashtags?.value.trim() || '',
+      cta: dom.editCTA?.value.trim() || '',
+      descricaoImagem: dom.editDescricaoImagem?.value.trim() || ''
+    };
+    const submitBtn = dom.formEditarPost.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    try {
+      const response = await fetch(`/posts/${serverId}/edit/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('[EDIT] Dados retornados do backend:', data);
+        
+        // Atualizar post local com dados retornados (converter português → inglês)
+        post.title = data.titulo || '';
+        post.subtitle = data.subtitulo || '';
+        post.caption = data.legenda || '';
+        post.cta = data.cta || '';
+        post.image_prompt = data.descricaoImagem || '';
+        post.hashtags = Array.isArray(data.hashtags) ? data.hashtags : normalizeHashtags(data.hashtags);
+        if (data.status) post.status = data.status;
+        if (data.statusLabel) post.statusLabel = data.statusLabel;
+        
+        console.log('[EDIT] Post atualizado:', post);
+        
+        // Atualizar também no array original para persistir as mudanças
+        const originalPost = postsState.items.find(p => p.id === post.id || p.serverId === post.serverId);
+        console.log('[EDIT] Post original encontrado:', originalPost);
+        
+        if (originalPost) {
+          originalPost.title = post.title;
+          originalPost.subtitle = post.subtitle;
+          originalPost.caption = post.caption;
+          originalPost.cta = post.cta;
+          originalPost.image_prompt = post.image_prompt;
+          originalPost.hashtags = post.hashtags;
+          originalPost.status = post.status;
+          originalPost.statusLabel = post.statusLabel;
+          
+          console.log('[EDIT] Post original após atualização:', originalPost);
+        }
+        
+        closeEditPostModal();
+        renderPosts();
+        window.toaster?.success('Post editado com sucesso!');
+      } else {
+        throw new Error(data.error || 'Erro ao editar post');
+      }
+    } catch (error) {
+      console.error(error);
+      window.toaster?.error('Não foi possível salvar as alterações. Tente novamente.');
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  });
+
+  // ============================================================================
+  // EVENT LISTENERS DE SOLICITAÇÕES DE ALTERAÇÃO
+  // ============================================================================
 
   // Event listeners para solicitações de alteração
   document.addEventListener('click', (e) => {

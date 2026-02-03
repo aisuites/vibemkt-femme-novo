@@ -318,7 +318,15 @@ def edit_post(request, post_id):
         
         return JsonResponse({
             'success': True,
-            'message': 'Post atualizado com sucesso'
+            'message': 'Post atualizado com sucesso',
+            'titulo': post.title,
+            'subtitulo': post.subtitle,
+            'legenda': post.caption,
+            'hashtags': post.hashtags,
+            'cta': post.cta,
+            'descricaoImagem': post.image_prompt,
+            'status': post.status,
+            'statusLabel': post.get_status_display()
         })
         
     except Post.DoesNotExist:
