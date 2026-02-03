@@ -1111,11 +1111,10 @@
           }
         }
       } catch (e) {
-        logger.warn('[POSTS] Erro ao restaurar post do localStorage:', e);
+        // Ignorar erro
       }
     }
     
-    // Se há post selecionado, ir para a página dele
     if (postsState.selectedId) {
       const selectedIndex = filtered.findIndex(item => item.id === postsState.selectedId);
       if (selectedIndex !== -1) {
@@ -1125,43 +1124,70 @@
       }
     }
     
-    // Ajustar página para estar dentro dos limites
     postsState.page = Math.min(totalPages, Math.max(1, postsState.page));
-    
     const startIndex = (postsState.page - 1) * postsState.perPage;
     let current = filtered[startIndex] || null;
-    
     if (!current && filtered.length) {
       current = filtered[0];
       postsState.page = 1;
     }
+    postsState.selectedId = current?.id || postsState.selectedId || null;
     
-    if (!current) {
-      logger.warn('[POSTS] Nenhum post atual');
-      return;
+    // Salvar post selecionado no localStorage
+    if (postsState.selectedId) {
+      try {
+        localStorage.setItem('selectedPostId', postsState.selectedId.toString());
+      } catch (e) {
+        // Ignorar erro
+      }
     }
-    
-    // Atualizar selectedId e salvar no localStorage
-    postsState.selectedId = current.id;
-    try {
-      localStorage.setItem('selectedPostId', postsState.selectedId.toString());
-    } catch (e) {
-      logger.warn('[POSTS] Erro ao salvar post no localStorage:', e);
-    }
-    
-    logger.info('[POSTS] Post atual:', current.id, 'Status:', current.status);
     
     updatePostDetails(current);
     updatePostVisual(current);
     buildPostActions(current);
+    buildPagination(total, totalPages);
   }
 
   /**
-   * Renderiza paginação
+   * Constrói botões de paginação
    */
-  function renderPostPagination() {
-    // TODO: Implementar paginação
-    logger.debug('[POSTS] Renderizando paginação...');
+  function buildPagination(totalItems, totalPages) {
+    if (!dom.pagerButtons || !dom.postPagerInfo) return;
+    dom.postPagerInfo.textContent = `${postsState.page} de ${totalItems} ${totalItems === 1 ? 'post' : 'posts'}`;
+    dom.pagerButtons.innerHTML = '';
+
+    const windowSize = 10;
+    const currentPage = postsState.page;
+    const maxStart = Math.max(1, totalPages - windowSize + 1);
+    let startPage = Math.min(Math.max(1, currentPage), maxStart);
+    let endPage = Math.min(totalPages, startPage + windowSize - 1);
+
+    const addButton = (label, page, disabled = false, extraClass = '') => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = label;
+      if (extraClass) btn.classList.add(extraClass);
+      btn.disabled = disabled;
+      if (!disabled) {
+        btn.addEventListener('click', () => {
+          if (postsState.page === page) return;
+          postsState.page = page;
+          postsState.selectedId = null; // CRÍTICO: Limpa selectedId para não sobrescrever navegação manual
+          renderPosts();
+        });
+      }
+      dom.pagerButtons.appendChild(btn);
+    };
+
+    addButton('«', 1, currentPage === 1, 'nav-first');
+    addButton('‹', Math.max(1, currentPage - 1), currentPage === 1, 'nav-prev');
+
+    for (let page = startPage; page <= endPage; page += 1) {
+      addButton(page, page, false, page === currentPage ? 'active' : '');
+    }
+
+    addButton('›', Math.min(totalPages, currentPage + 1), currentPage >= totalPages, 'nav-next');
+    addButton('»', totalPages, currentPage >= totalPages, 'nav-last');
   }
 
   // ============================================================================
