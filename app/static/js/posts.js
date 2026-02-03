@@ -94,6 +94,107 @@
       .map(v => (v.startsWith('#') ? v : '#' + v));
   }
 
+  /**
+   * Obtém ID do servidor do post
+   */
+  function getServerId(post) {
+    if (!post) return null;
+    
+    if (typeof post.serverId === 'number' && Number.isFinite(post.serverId)) {
+      return post.serverId;
+    }
+    
+    if (typeof post.id === 'number' && Number.isFinite(post.id)) {
+      return post.id;
+    }
+    
+    if (typeof post.id === 'string' && /^\d+$/.test(post.id)) {
+      return parseInt(post.id, 10);
+    }
+    
+    return null;
+  }
+
+  /**
+   * Formata data e hora para exibição (DD/MM/YYYY às HH:MM)
+   */
+  function formatDateTime(dateStr) {
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} às ${hour}:${minute}`;
+  }
+
+  /**
+   * Formata data para chave de filtro (YYYY-MM-DD)
+   */
+  function formatDateKey(dateStr) {
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * Calcula prazo de entrega da imagem (3 dias úteis)
+   */
+  function calculateImageDeadline(createdAtStr) {
+    const created = new Date(createdAtStr);
+    
+    // Função auxiliar: adicionar dias úteis (pula fim de semana)
+    function addBusinessDays(date, days) {
+      let result = new Date(date);
+      let addedDays = 0;
+      
+      while (addedDays < days) {
+        result.setDate(result.getDate() + 1);
+        const dayOfWeek = result.getDay();
+        
+        // Se não é sábado (6) nem domingo (0)
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          addedDays++;
+        }
+      }
+      
+      return result;
+    }
+    
+    return addBusinessDays(created, 3);
+  }
+
+  /**
+   * Formata prazo para exibição (DD/MM/YYYY)
+   */
+  function formatDeadline(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  /**
+   * Verifica se deve mostrar banner de geração de imagem
+   */
+  function shouldShowImageGenerationBanner(post) {
+    // Mostra banner se:
+    // 1. Status é 'image_generating' OU imageStatus é 'generating' E
+    // 2. Ainda não tem imagens
+    return (post.status === 'image_generating' || post.imageStatus === 'generating') 
+           && (!post.imagens || post.imagens.length === 0);
+  }
+
+  /**
+   * Verifica se deve mostrar banner de geração de texto
+   */
+  function shouldShowTextGenerationBanner(post) {
+    // Mostra banner se status é 'generating'
+    return post.status === 'generating';
+  }
+
   // ============================================================================
   // INFORMAÇÕES DE STATUS
   // ============================================================================
@@ -126,8 +227,6 @@
     selectedId: null,
     restoredFromStorage: false
   };
-
-  let editingPostRef = null;
 
   // Normalizar dados dos posts
   postsState.items.forEach(item => {
@@ -713,6 +812,25 @@
     
     const dom = window.postsDOM || {};
     
+    // Banner de status de geração de texto (coluna esquerda)
+    const bannerContainer = dom.postStatus?.parentElement?.parentElement;
+    const existingTextBanner = bannerContainer?.querySelector('.post-text-status-banner');
+    if (existingTextBanner) {
+      existingTextBanner.remove();
+    }
+    
+    // Mostrar banner apenas se status === 'generating'
+    if (dom.postStatus && post.status === 'generating' && bannerContainer) {
+      const textBanner = document.createElement('div');
+      textBanner.className = 'post-text-status-banner';
+      textBanner.innerHTML = `
+        <span class="status-icon">🔄</span>
+        <span class="status-text">Seu conteúdo será gerado em até 3 minutos.</span>
+        <button type="button" class="btn btn-sm" onclick="window.location.reload()">Atualizar Status</button>
+      `;
+      bannerContainer.insertBefore(textBanner, dom.postStatus.parentElement);
+    }
+    
     // Status
     if (dom.postStatus) {
       const info = statusInfo[post.status] || statusInfo.pending;
@@ -727,6 +845,148 @@
     if (dom.postHashtags) dom.postHashtags.textContent = Array.isArray(post.hashtags) ? post.hashtags.join(' ') : (post.hashtags || '—');
     if (dom.postCTA) dom.postCTA.textContent = post.cta || '—';
     if (dom.postDescricaoImagem) dom.postDescricaoImagem.textContent = post.image_prompt || '—';
+    
+    // Revisões e data
+    if (dom.postRevisoes) {
+      const rev = typeof post.imageChanges === 'number' ? post.imageChanges : 0;
+      const max = 1;
+      dom.postRevisoes.textContent = `${rev}/${max}`;
+    }
+    
+    if (dom.postDataCriacao && post.created_at) {
+      dom.postDataCriacao.textContent = formatDateTime(post.created_at);
+    }
+  }
+
+  /**
+   * Atualiza área visual do post (imagens, galeria, banners)
+   */
+  function updatePostVisual(post) {
+    if (!post || !dom.postImageFrame || !dom.postGallery) {
+      return;
+    }
+    
+    // Limpar containers
+    dom.postImageFrame.innerHTML = '';
+    dom.postGallery.innerHTML = '';
+    dom.postGallery.hidden = true;
+    if (dom.postImageActions) dom.postImageActions.innerHTML = '';
+    
+    // Remover banner existente
+    const existingBanner = dom.postImageFrame.parentElement?.querySelector('.post-image-status-banner');
+    if (existingBanner) {
+      existingBanner.remove();
+    }
+    
+    // Mostrar banner de geração de imagem se necessário
+    if (shouldShowImageGenerationBanner(post)) {
+      const banner = document.createElement('div');
+      banner.className = 'post-image-status-banner';
+      
+      // Calcular prazo de entrega
+      const deadline = calculateImageDeadline(post.created_at);
+      const deadlineText = formatDeadline(deadline);
+      
+      banner.innerHTML = `
+        <span class="status-icon">🔄</span>
+        <span class="status-text">Sua imagem será gerada até ${deadlineText}</span>
+        <button type="button" class="btn btn-sm" onclick="window.location.reload()">Atualizar Status</button>
+      `;
+      dom.postImageFrame.parentElement.insertBefore(banner, dom.postImageFrame);
+    }
+    
+    // Controlar caixa de solicitação de alteração de imagem
+    if (dom.imageRequestBox) dom.imageRequestBox.hidden = !post.imageRequestOpen;
+    if (dom.imageRequestInput) {
+      dom.imageRequestInput.classList.remove('invalid');
+      dom.imageRequestInput.value = post.imageRequestOpen ? (post.pendingImageRequest || '') : '';
+    }
+    
+    // Status 'agent' - Agente alterando
+    if (post.status === 'agent') {
+      const span = document.createElement('span');
+      span.className = 'placeholder';
+      span.textContent = 'Agente alterando — aguarde';
+      dom.postImageFrame.appendChild(span);
+      return;
+    }
+    
+    // Imagem pronta
+    if (post.imageStatus === 'ready' && post.imagens && post.imagens.length) {
+      const index = Math.max(0, Math.min(post.imagens.length - 1, post.activeImageIndex || 0));
+      post.activeImageIndex = index;
+      
+      // Mostrar imagem principal
+      const img = document.createElement('img');
+      img.src = post.imagens[index];
+      img.alt = `Pré-visualização da imagem ${index + 1}`;
+      dom.postImageFrame.appendChild(img);
+      
+      // Galeria de miniaturas (se houver múltiplas imagens)
+      if (post.imagens.length > 1 && dom.postGallery) {
+        dom.postGallery.hidden = false;
+        post.imagens.forEach((url, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'gallery-thumb';
+          if (idx === index) btn.classList.add('active');
+          
+          const thumb = document.createElement('img');
+          thumb.src = url;
+          thumb.alt = `Miniatura ${idx + 1}`;
+          btn.appendChild(thumb);
+          
+          btn.addEventListener('click', () => {
+            post.activeImageIndex = idx;
+            updatePostVisual(post);
+          });
+          
+          dom.postGallery.appendChild(btn);
+        });
+      }
+      
+      // Ações da imagem
+      if (dom.postImageActions) {
+        if (post.imageRequestOpen) return;
+        
+        // Se atingiu limite de alterações
+        if (post.imageChanges >= 1) {
+          const badge = document.createElement('span');
+          badge.className = 'badge-muted';
+          badge.textContent = 'Limite de alterações de imagem atingido';
+          dom.postImageActions.appendChild(badge);
+        } else {
+          // Botão de solicitar alteração
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn';
+          btn.textContent = 'Solicitar Alteração de imagem';
+          btn.addEventListener('click', () => {
+            post.imageRequestOpen = true;
+            post.pendingImageRequest = '';
+            updatePostVisual(post);
+            requestAnimationFrame(() => dom.imageRequestInput?.focus());
+          });
+          dom.postImageActions.appendChild(btn);
+        }
+      }
+      return;
+    }
+    
+    // Imagem gerando
+    if (post.imageStatus === 'generating') {
+      const span = document.createElement('span');
+      span.className = 'placeholder';
+      span.textContent = 'Gerando imagem...';
+      dom.postImageFrame.appendChild(span);
+      return;
+    }
+    
+    // Sem imagem
+    const placeholder = document.createElement('span');
+    placeholder.className = 'placeholder';
+    placeholder.textContent = 'SEM IMAGEM GERADA';
+    dom.postImageFrame.appendChild(placeholder);
   }
 
   /**
@@ -739,7 +999,7 @@
     actionsContainer.innerHTML = '';
     if (!post) return;
     
-    // Status: generating
+    // Status: generating - Mostrar badge
     if (post.status === 'generating') {
       const badge = document.createElement('span');
       badge.className = 'badge-muted';
@@ -748,33 +1008,80 @@
       return;
     }
     
-    // Status: pending - MOSTRAR 4 BOTÕES
-    if (post.status === 'pending') {
+    // Status: agent - Mostrar badge
+    if (post.status === 'agent') {
+      const badge = document.createElement('span');
+      badge.className = 'badge-muted';
+      badge.textContent = 'Agente alterando — aguarde';
+      actionsContainer.appendChild(badge);
+      return;
+    }
+    
+    // Status: approved - Mostrar badge
+    if (post.status === 'approved') {
+      const badge = document.createElement('span');
+      badge.className = 'badge-success';
+      badge.textContent = '✓ Post aprovado';
+      actionsContainer.appendChild(badge);
+      return;
+    }
+    
+    // Status: rejected - Mostrar badge
+    if (post.status === 'rejected') {
+      const badge = document.createElement('span');
+      badge.className = 'badge-danger';
+      badge.textContent = '✗ Post rejeitado';
+      actionsContainer.appendChild(badge);
+      return;
+    }
+    
+    // Status: pending, image_generating ou image_ready - Mostrar botões
+    if (post.status === 'pending' || post.status === 'image_generating' || post.status === 'image_ready') {
+      // Botão Rejeitar
       const btnReject = document.createElement('button');
       btnReject.type = 'button';
       btnReject.className = 'btn btn-outline-danger';
       btnReject.textContent = 'Rejeitar';
-      btnReject.onclick = () => alert('Funcionalidade em desenvolvimento');
+      btnReject.addEventListener('click', () => rejectPost(post));
       
+      // Botão Solicitar Alteração
       const btnRequest = document.createElement('button');
       btnRequest.type = 'button';
       btnRequest.className = 'btn btn-outline-secondary';
       btnRequest.textContent = 'Solicitar Alteração';
-      btnRequest.onclick = () => alert('Funcionalidade em desenvolvimento');
+      btnRequest.addEventListener('click', () => {
+        post.textRequestOpen = true;
+        post.pendingTextRequest = '';
+        updatePostDetails(post);
+        requestAnimationFrame(() => dom.textRequestInput?.focus());
+      });
       
+      // Botão Editar
       const btnEdit = document.createElement('button');
       btnEdit.type = 'button';
-      btnEdit.className = 'btn btn-outline-secondary';
+      btnEdit.className = 'btn btn-outline-primary';
       btnEdit.textContent = 'Editar';
-      btnEdit.onclick = () => alert('Funcionalidade em desenvolvimento');
+      btnEdit.addEventListener('click', () => openEditPostModal(post));
       
-      const btnGenerate = document.createElement('button');
-      btnGenerate.type = 'button';
-      btnGenerate.className = 'btn btn-primary';
-      btnGenerate.textContent = 'Gerar Imagem';
-      btnGenerate.onclick = () => alert('Funcionalidade em desenvolvimento');
-      
-      actionsContainer.append(btnReject, btnRequest, btnEdit, btnGenerate);
+      // Botão Gerar Imagem (apenas se não tem imagem)
+      if (!post.images || post.images.length === 0) {
+        const btnGenerate = document.createElement('button');
+        btnGenerate.type = 'button';
+        btnGenerate.className = 'btn btn-primary';
+        btnGenerate.textContent = 'Gerar Imagem';
+        btnGenerate.addEventListener('click', () => startImageGeneration(post));
+        
+        actionsContainer.append(btnReject, btnRequest, btnEdit, btnGenerate);
+      } else {
+        // Botão Aprovar (se tem imagem)
+        const btnApprove = document.createElement('button');
+        btnApprove.type = 'button';
+        btnApprove.className = 'btn btn-success';
+        btnApprove.textContent = 'Aprovar';
+        btnApprove.addEventListener('click', () => approvePost(post));
+        
+        actionsContainer.append(btnReject, btnRequest, btnEdit, btnApprove);
+      }
     }
   }
 
@@ -791,6 +1098,34 @@
     }
     
     const totalPages = Math.max(1, Math.ceil(total / postsState.perPage));
+    
+    // Restaurar post selecionado após reload (apenas na primeira renderização)
+    if (!postsState.restoredFromStorage) {
+      postsState.restoredFromStorage = true;
+      try {
+        const savedPostId = localStorage.getItem('selectedPostId');
+        if (savedPostId) {
+          const postId = parseInt(savedPostId, 10);
+          if (!isNaN(postId) && filtered.some(p => p.id === postId)) {
+            postsState.selectedId = postId;
+          }
+        }
+      } catch (e) {
+        logger.warn('[POSTS] Erro ao restaurar post do localStorage:', e);
+      }
+    }
+    
+    // Se há post selecionado, ir para a página dele
+    if (postsState.selectedId) {
+      const selectedIndex = filtered.findIndex(item => item.id === postsState.selectedId);
+      if (selectedIndex !== -1) {
+        postsState.page = Math.floor(selectedIndex / postsState.perPage) + 1;
+      } else {
+        postsState.selectedId = null;
+      }
+    }
+    
+    // Ajustar página para estar dentro dos limites
     postsState.page = Math.min(totalPages, Math.max(1, postsState.page));
     
     const startIndex = (postsState.page - 1) * postsState.perPage;
@@ -806,9 +1141,18 @@
       return;
     }
     
+    // Atualizar selectedId e salvar no localStorage
+    postsState.selectedId = current.id;
+    try {
+      localStorage.setItem('selectedPostId', postsState.selectedId.toString());
+    } catch (e) {
+      logger.warn('[POSTS] Erro ao salvar post no localStorage:', e);
+    }
+    
     logger.info('[POSTS] Post atual:', current.id, 'Status:', current.status);
     
     updatePostDetails(current);
+    updatePostVisual(current);
     buildPostActions(current);
   }
 
@@ -819,6 +1163,308 @@
     // TODO: Implementar paginação
     logger.debug('[POSTS] Renderizando paginação...');
   }
+
+  // ============================================================================
+  // MODAL DE EDIÇÃO
+  // ============================================================================
+
+  let editingPostRef = null;
+
+  /**
+   * Reseta formulário de edição
+   */
+  function resetEditPostForm() {
+    if (dom.formEditarPost) dom.formEditarPost.reset();
+  }
+
+  /**
+   * Fecha modal de edição
+   */
+  function closeEditPostModal() {
+    resetEditPostForm();
+    editingPostRef = null;
+    closeModal(dom.modalEditarPost);
+  }
+
+  /**
+   * Abre modal de edição e preenche campos
+   */
+  function openEditPostModal(post) {
+    if (!post || !dom.modalEditarPost) return;
+    
+    editingPostRef = post;
+    
+    // Preencher campos
+    if (dom.editTitulo) dom.editTitulo.value = post.title || '';
+    if (dom.editSubtitulo) dom.editSubtitulo.value = post.subtitle || '';
+    if (dom.editLegenda) dom.editLegenda.value = post.caption || '';
+    if (dom.editHashtags) dom.editHashtags.value = Array.isArray(post.hashtags) ? post.hashtags.join(' ') : (post.hashtags || '');
+    if (dom.editCTA) dom.editCTA.value = post.cta || '';
+    if (dom.editDescricaoImagem) dom.editDescricaoImagem.value = post.image_prompt || '';
+    
+    openModal(dom.modalEditarPost);
+    requestAnimationFrame(() => dom.editTitulo?.focus());
+  }
+
+  // Event listener para submit do formulário de edição
+  if (dom.formEditarPost) {
+    dom.formEditarPost.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!editingPostRef) return;
+      
+      const serverId = getServerId(editingPostRef);
+      if (!serverId) {
+        window.toaster?.error('Não foi possível identificar o post selecionado.');
+        return;
+      }
+      
+      const payload = {
+        title: dom.editTitulo?.value.trim() || '',
+        subtitle: dom.editSubtitulo?.value.trim() || '',
+        caption: dom.editLegenda?.value.trim() || '',
+        hashtags: dom.editHashtags?.value.trim() || '',
+        cta: dom.editCTA?.value.trim() || '',
+        image_prompt: dom.editDescricaoImagem?.value.trim() || ''
+      };
+      
+      try {
+        const response = await postJSON(`/posts/${serverId}/edit/`, payload);
+        
+        if (response.success) {
+          // Atualizar post local
+          Object.assign(editingPostRef, payload);
+          window.toaster?.success('Post editado com sucesso!');
+          closeEditPostModal();
+          renderPosts();
+        } else {
+          window.toaster?.error(response.error || 'Erro ao editar post');
+        }
+      } catch (error) {
+        logger.error('Erro ao editar post:', error);
+        window.toaster?.error('Erro ao editar post. Tente novamente.');
+      }
+    });
+  }
+
+  // ============================================================================
+  // AÇÕES DE POSTS
+  // ============================================================================
+
+  /**
+   * Rejeita um post
+   */
+  async function rejectPost(post) {
+    const serverId = getServerId(post);
+    if (!serverId) {
+      window.toaster?.error('Não foi possível identificar o post selecionado.');
+      return;
+    }
+    
+    const confirmed = confirm('Tem certeza que deseja rejeitar este post?');
+    if (!confirmed) return;
+    
+    try {
+      const response = await postJSON(`/posts/${serverId}/reject/`, {});
+      
+      if (response.success) {
+        post.status = 'rejected';
+        post.statusLabel = 'Rejeitado';
+        window.toaster?.success('Post rejeitado com sucesso!');
+        renderPosts();
+      } else {
+        window.toaster?.error(response.error || 'Erro ao rejeitar post');
+      }
+    } catch (error) {
+      logger.error('Erro ao rejeitar post:', error);
+      window.toaster?.error('Erro ao rejeitar post. Tente novamente.');
+    }
+  }
+
+  /**
+   * Aprova um post
+   */
+  async function approvePost(post) {
+    const serverId = getServerId(post);
+    if (!serverId) {
+      window.toaster?.error('Não foi possível identificar o post selecionado.');
+      return;
+    }
+    
+    const confirmed = confirm('Tem certeza que deseja aprovar este post?');
+    if (!confirmed) return;
+    
+    try {
+      const response = await postJSON(`/posts/${serverId}/approve/`, {});
+      
+      if (response.success) {
+        post.status = 'approved';
+        post.statusLabel = 'Aprovado';
+        window.toaster?.success('Post aprovado com sucesso!');
+        renderPosts();
+      } else {
+        window.toaster?.error(response.error || 'Erro ao aprovar post');
+      }
+    } catch (error) {
+      logger.error('Erro ao aprovar post:', error);
+      window.toaster?.error('Erro ao aprovar post. Tente novamente.');
+    }
+  }
+
+  /**
+   * Inicia geração de imagem para o post
+   */
+  async function startImageGeneration(post) {
+    const serverId = getServerId(post);
+    if (!serverId) {
+      window.toaster?.error('Não foi possível identificar o post selecionado.');
+      return;
+    }
+    
+    const confirmed = confirm('Deseja gerar a imagem para este post?');
+    if (!confirmed) return;
+    
+    try {
+      const response = await postJSON(`/posts/${serverId}/generate-image/`, {});
+      
+      if (response.success) {
+        post.status = 'image_generating';
+        post.imageStatus = 'generating';
+        post.statusLabel = 'Agente Gerando Imagem';
+        window.toaster?.success('Geração de imagem iniciada!');
+        renderPosts();
+      } else {
+        window.toaster?.error(response.error || 'Erro ao iniciar geração de imagem');
+      }
+    } catch (error) {
+      logger.error('Erro ao gerar imagem:', error);
+      window.toaster?.error('Erro ao gerar imagem. Tente novamente.');
+    }
+  }
+
+  // ============================================================================
+  // SOLICITAÇÕES DE ALTERAÇÃO
+  // ============================================================================
+
+  /**
+   * Envia solicitação de alteração de texto
+   */
+  async function submitTextRequest(post, text) {
+    const serverId = getServerId(post);
+    if (!serverId) {
+      window.toaster?.error('Não foi possível identificar o post selecionado.');
+      return;
+    }
+    
+    if (!text || !text.trim()) {
+      if (dom.textRequestInput) {
+        dom.textRequestInput.classList.add('invalid');
+      }
+      return;
+    }
+    
+    try {
+      const response = await postJSON(`/posts/${serverId}/request-text-change/`, {
+        request: text.trim()
+      });
+      
+      if (response.success) {
+        post.status = 'agent';
+        post.statusLabel = 'Agente Alterando';
+        post.textRequestOpen = false;
+        post.pendingTextRequest = '';
+        window.toaster?.success('Solicitação enviada com sucesso!');
+        renderPosts();
+      } else {
+        window.toaster?.error(response.error || 'Erro ao enviar solicitação');
+      }
+    } catch (error) {
+      logger.error('Erro ao enviar solicitação de texto:', error);
+      window.toaster?.error('Erro ao enviar solicitação. Tente novamente.');
+    }
+  }
+
+  /**
+   * Envia solicitação de alteração de imagem
+   */
+  async function submitImageRequest(post, text) {
+    if (post.imageChanges >= 1) {
+      window.toaster?.warning('Limite de alterações de imagem atingido');
+      return;
+    }
+    
+    const serverId = getServerId(post);
+    if (!serverId) {
+      window.toaster?.error('Não foi possível identificar o post selecionado.');
+      return;
+    }
+    
+    if (!text || !text.trim()) {
+      if (dom.imageRequestInput) {
+        dom.imageRequestInput.classList.add('invalid');
+      }
+      return;
+    }
+    
+    try {
+      const response = await postJSON(`/posts/${serverId}/request-image-change/`, {
+        request: text.trim()
+      });
+      
+      if (response.success) {
+        post.imageStatus = 'generating';
+        post.imageChanges = (post.imageChanges || 0) + 1;
+        post.imageRequestOpen = false;
+        post.pendingImageRequest = '';
+        window.toaster?.success('Solicitação enviada com sucesso!');
+        renderPosts();
+      } else {
+        window.toaster?.error(response.error || 'Erro ao enviar solicitação');
+      }
+    } catch (error) {
+      logger.error('Erro ao enviar solicitação de imagem:', error);
+      window.toaster?.error('Erro ao enviar solicitação. Tente novamente.');
+    }
+  }
+
+  // Event listeners para solicitações de alteração
+  document.addEventListener('click', (e) => {
+    // Cancelar solicitação de texto
+    if (e.target.closest('#btnCancelTextRequest')) {
+      const current = getCurrentPost();
+      if (current) {
+        current.textRequestOpen = false;
+        current.pendingTextRequest = '';
+        updatePostDetails(current);
+      }
+    }
+    
+    // Enviar solicitação de texto
+    if (e.target.closest('#btnSendTextRequest')) {
+      const current = getCurrentPost();
+      if (current && dom.textRequestInput) {
+        submitTextRequest(current, dom.textRequestInput.value);
+      }
+    }
+    
+    // Cancelar solicitação de imagem
+    if (e.target.closest('#btnCancelImageRequest')) {
+      const current = getCurrentPost();
+      if (current) {
+        current.imageRequestOpen = false;
+        current.pendingImageRequest = '';
+        updatePostVisual(current);
+      }
+    }
+    
+    // Enviar solicitação de imagem
+    if (e.target.closest('#btnSendImageRequest')) {
+      const current = getCurrentPost();
+      if (current && dom.imageRequestInput) {
+        submitImageRequest(current, dom.imageRequestInput.value);
+      }
+    }
+  });
 
   // ============================================================================
   // INICIALIZAÇÃO

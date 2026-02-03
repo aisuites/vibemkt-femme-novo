@@ -1665,3 +1665,206 @@
     background: #dc2626;
     transform: scale(1.1);
 }
+
+/* ========================================
+   BANNERS DE STATUS (do resumo.html)
+   ======================================== */
+
+/* Banner de status de texto (coluna esquerda) */
+.post-text-status-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 10px;
+    background: rgba(34, 197, 94, 0.08);
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+}
+
+.post-text-status-banner .status-icon {
+    font-size: 1.1rem;
+    animation: spin 2s linear infinite;
+}
+
+.post-text-status-banner .status-text {
+    flex: 1;
+    color: var(--posts-success);
+    font-weight: 600;
+}
+
+.post-text-status-banner .btn {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+}
+
+/* Banner de status de imagem (coluna direita) */
+.post-image-status-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 10px;
+    background: rgba(34, 197, 94, 0.08);
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+}
+
+.post-image-status-banner .status-icon {
+    font-size: 1.1rem;
+    animation: spin 2s linear infinite;
+}
+
+.post-image-status-banner .status-text {
+    flex: 1;
+    color: var(--posts-success);
+    font-weight: 600;
+}
+
+.post-image-status-banner .btn {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+}
+
+/* Animação de rotação para ícones */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========================================
+   BADGES (do resumo.html)
+   ======================================== */
+
+.badge-muted {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+    background: rgba(156, 163, 175, 0.1);
+    border: 1px solid rgba(156, 163, 175, 0.3);
+    color: var(--posts-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.badge-success {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: var(--posts-success);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.badge-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--posts-danger);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* ========================================
+   PLACEHOLDERS (do resumo.html)
+   ======================================== */
+
+.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: 2rem;
+    color: var(--posts-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: center;
+    background: rgba(75, 85, 99, 0.1);
+    border: 1px dashed var(--posts-border);
+    border-radius: 8px;
+}
+
+/* ========================================
+   GALERIA DE IMAGENS (do resumo.html)
+   ======================================== */
+
+.gallery-thumb {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    background: rgba(75, 85, 99, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.gallery-thumb:hover {
+    border-color: var(--posts-accent-2);
+    transform: scale(1.05);
+}
+
+.gallery-thumb.active {
+    border-color: var(--posts-accent);
+    box-shadow: 0 0 0 2px rgba(122, 61, 138, 0.2);
+}
+
+/* ========================================
+   CAIXAS DE SOLICITAÇÃO (do resumo.html)
+   ======================================== */
+
+.request-box {
+    padding: 1rem;
+    background: rgba(75, 85, 99, 0.1);
+    border: 1px solid var(--posts-border);
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.request-box textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 0.75rem;
+    background: rgba(31, 41, 55, 0.5);
+    border: 1px solid var(--posts-border);
+    border-radius: 6px;
+    color: var(--posts-text);
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+}
+
+.request-box textarea.invalid {
+    border-color: var(--posts-danger);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.request-box .request-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
