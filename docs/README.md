@@ -17,9 +17,9 @@ make down
 
 ## 🔗 URLs
 
-- **Produção:** https://vibemkt-femme.aisuites.com.br
-- **Admin:** https://vibemkt-femme.aisuites.com.br/admin/
-- **Health Check:** https://vibemkt-femme.aisuites.com.br/health/
+- **Produção:** https://vibemkt.aisuites.com.br
+- **Admin:** https://vibemkt.aisuites.com.br/admin/
+- **Health Check:** https://vibemkt.aisuites.com.br/health/
 
 ## 📚 Documentação
 
