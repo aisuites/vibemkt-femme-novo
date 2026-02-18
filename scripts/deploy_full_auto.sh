@@ -464,12 +464,21 @@ EOF
 chmod 600 .env.development
 log_success "Arquivo .env.development criado"
 
-# Exportar variáveis para docker-compose
-export PROJECT_NAME
-export APP_DOMAIN
-export DB_PASSWORD
+# Gerar docker-compose.yml a partir do template
+log_info "Gerando docker-compose.yml personalizado..."
+if [ ! -f "docker-compose.yml.template" ]; then
+    log_error "Template docker-compose.yml.template não encontrado!"
+    exit 1
+fi
 
-log_info "Variáveis de ambiente configuradas:"
+sed -e "s/__PROJECT_NAME__/${PROJECT_NAME}/g" \
+    -e "s/__APP_DOMAIN__/${APP_DOMAIN}/g" \
+    -e "s/__DB_PASSWORD__/${DB_PASSWORD}/g" \
+    docker-compose.yml.template > docker-compose.yml
+
+log_success "docker-compose.yml gerado com sucesso"
+
+log_info "Configuração aplicada:"
 echo "  - PROJECT_NAME: $PROJECT_NAME"
 echo "  - APP_DOMAIN: $APP_DOMAIN"
 echo "  - DB_PASSWORD: ********"
