@@ -1,21 +1,21 @@
 version: '3.8'
 
 services:
-  iamkt_web:
+  ${PROJECT_NAME:-iamkt}_web:
     build:
       context: ./app
       dockerfile: Dockerfile
-    container_name: iamkt_web
+    container_name: ${PROJECT_NAME:-iamkt}_web
     restart: unless-stopped
     depends_on:
-      - iamkt_postgres
-      - iamkt_redis
+      - ${PROJECT_NAME:-iamkt}_postgres
+      - ${PROJECT_NAME:-iamkt}_redis
     volumes:
       - ./app:/app
-      - iamkt_media:/app/media
-      - iamkt_static:/app/staticfiles
+      - ${PROJECT_NAME:-iamkt}_media:/app/media
+      - ${PROJECT_NAME:-iamkt}_static:/app/staticfiles
     networks:
-      - iamkt_internal
+      - ${PROJECT_NAME:-iamkt}_internal
       - traefik_proxy
     environment:
       - ENV_FILE=${ENV_FILE:-development}
@@ -30,34 +30,34 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
-      - "traefik.http.routers.iamkt-https.rule=Host(`app.iamkt.com.br`)"
-      - "traefik.http.routers.iamkt-https.entrypoints=websecure"
-      - "traefik.http.routers.iamkt-https.tls=true"
-      - "traefik.http.routers.iamkt-https.tls.certresolver=cloudflare"
-      - "traefik.http.routers.iamkt-https.priority=200"
-      - "traefik.http.routers.iamkt-http.rule=Host(`app.iamkt.com.br`)"
-      - "traefik.http.routers.iamkt-http.entrypoints=web"
-      - "traefik.http.routers.iamkt-http.middlewares=https-redirect"
-      - "traefik.http.routers.iamkt-http.priority=200"
-      - "traefik.http.services.iamkt.loadbalancer.server.port=8000"
+      - "traefik.http.routers.${PROJECT_NAME:-iamkt}-https.rule=Host(`${APP_DOMAIN:-app.iamkt.com.br}`)"
+      - "traefik.http.routers.${PROJECT_NAME:-iamkt}-https.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_NAME:-iamkt}-https.tls=true"
+      - "traefik.http.routers.${PROJECT_NAME:-iamkt}-https.tls.certresolver=cloudflare"
+      - "traefik.http.routers.${PROJECT_NAME:-iamkt}-https.priority=200"
+      - "traefik.http.routers.${PROJECT_NAME:-iamkt}-http.rule=Host(`${APP_DOMAIN:-app.iamkt.com.br}`)"
+      - "traefik.http.routers.${PROJECT_NAME:-iamkt}-http.entrypoints=web"
+      - "traefik.http.routers.${PROJECT_NAME:-iamkt}-http.middlewares=https-redirect"
+      - "traefik.http.routers.${PROJECT_NAME:-iamkt}-http.priority=200"
+      - "traefik.http.services.${PROJECT_NAME:-iamkt}.loadbalancer.server.port=8000"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
 
-  iamkt_celery:
+  ${PROJECT_NAME:-iamkt}_celery:
     build:
       context: ./app
       dockerfile: Dockerfile
-    container_name: iamkt_celery
+    container_name: ${PROJECT_NAME:-iamkt}_celery
     restart: unless-stopped
     command: celery -A sistema worker -l info
     depends_on:
-      - iamkt_postgres
-      - iamkt_redis
+      - ${PROJECT_NAME:-iamkt}_postgres
+      - ${PROJECT_NAME:-iamkt}_redis
     volumes:
       - ./app:/app
-      - iamkt_media:/app/media
+      - ${PROJECT_NAME:-iamkt}_media:/app/media
     networks:
-      - iamkt_internal
+      - ${PROJECT_NAME:-iamkt}_internal
     environment:
       - ENV_FILE=${ENV_FILE:-development}
     env_file:
@@ -75,19 +75,19 @@ services:
         reservations:
           memory: 128M
 
-  iamkt_postgres:
+  ${PROJECT_NAME:-iamkt}_postgres:
     image: postgres:15-alpine
-    container_name: iamkt_postgres
+    container_name: ${PROJECT_NAME:-iamkt}_postgres
     restart: unless-stopped
     volumes:
-      - iamkt_postgres_data:/var/lib/postgresql/data
+      - ${PROJECT_NAME:-iamkt}_postgres_data:/var/lib/postgresql/data
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
-      - iamkt_internal
+      - ${PROJECT_NAME:-iamkt}_internal
     environment:
-      POSTGRES_DB: iamkt_db
-      POSTGRES_USER: iamkt_user
-      POSTGRES_PASSWORD: a151e5ff5c10dcf53e47e820807fdd5b
+      POSTGRES_DB: ${PROJECT_NAME:-iamkt}_db
+      POSTGRES_USER: ${PROJECT_NAME:-iamkt}_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     deploy:
       resources:
         limits:
@@ -95,15 +95,15 @@ services:
         reservations:
           memory: 128M
 
-  iamkt_redis:
+  ${PROJECT_NAME:-iamkt}_redis:
     image: redis:7-alpine
-    container_name: iamkt_redis
+    container_name: ${PROJECT_NAME:-iamkt}_redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
     volumes:
-      - iamkt_redis_data:/data
+      - ${PROJECT_NAME:-iamkt}_redis_data:/data
     networks:
-      - iamkt_internal
+      - ${PROJECT_NAME:-iamkt}_internal
     deploy:
       resources:
         limits:
@@ -112,18 +112,18 @@ services:
           memory: 64M
 
 volumes:
-  iamkt_postgres_data:
-    name: iamkt_postgres_data
-  iamkt_redis_data:
-    name: iamkt_redis_data
-  iamkt_media:
-    name: iamkt_media
-  iamkt_static:
-    name: iamkt_static
+  ${PROJECT_NAME:-iamkt}_postgres_data:
+    name: ${PROJECT_NAME:-iamkt}_postgres_data
+  ${PROJECT_NAME:-iamkt}_redis_data:
+    name: ${PROJECT_NAME:-iamkt}_redis_data
+  ${PROJECT_NAME:-iamkt}_media:
+    name: ${PROJECT_NAME:-iamkt}_media
+  ${PROJECT_NAME:-iamkt}_static:
+    name: ${PROJECT_NAME:-iamkt}_static
 
 networks:
-  iamkt_internal:
-    name: iamkt_internal
+  ${PROJECT_NAME:-iamkt}_internal:
+    name: ${PROJECT_NAME:-iamkt}_internal
     driver: bridge
     ipam:
       driver: default

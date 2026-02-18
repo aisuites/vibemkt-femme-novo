@@ -358,11 +358,25 @@ SECRET_KEY=$(openssl rand -hex 32)
 N8N_WEBHOOK_SECRET=$(openssl rand -hex 32)
 DB_PASSWORD=$(openssl rand -hex 16)
 
-# Coletar informações
-read -p "Domínio da aplicação (ex: iamkt.seudominio.com): " APP_DOMAIN
+# Coletar informações do projeto
+echo ""
+log_info "=== CONFIGURAÇÃO DO PROJETO ==="
+echo ""
+read -p "Nome do projeto (ex: iamkt, vibemkt): " PROJECT_NAME
+PROJECT_NAME=${PROJECT_NAME:-iamkt}
+log_success "Nome do projeto: $PROJECT_NAME"
+
+read -p "Domínio da aplicação (ex: app.vibemkt.aisuites.com.br): " APP_DOMAIN
+log_success "Domínio: $APP_DOMAIN"
+
+echo ""
+log_info "=== CREDENCIAIS AWS ==="
 read -p "AWS Access Key ID: " AWS_ACCESS_KEY_ID
 read -p "AWS Secret Access Key: " AWS_SECRET_ACCESS_KEY
 read -p "AWS S3 Bucket Name: " AWS_STORAGE_BUCKET_NAME
+
+echo ""
+log_info "=== CREDENCIAIS IA ==="
 read -p "OpenAI API Key: " OPENAI_API_KEY
 
 echo ""
@@ -377,21 +391,26 @@ read -p "Email Password: " EMAIL_HOST_PASSWORD
 log_info "Gerando arquivo .env.development..."
 cat > .env.development <<EOF
 # =============================================================================
-# IAMKT - CONFIGURAÇÃO DE DESENVOLVIMENTO
+# ${PROJECT_NAME^^} - CONFIGURAÇÃO DE DESENVOLVIMENTO
 # Gerado automaticamente em $(date)
 # =============================================================================
+
+# Project Configuration
+PROJECT_NAME=${PROJECT_NAME}
+APP_DOMAIN=${APP_DOMAIN}
+DB_PASSWORD=${DB_PASSWORD}
 
 # Environment
 ENVIRONMENT=development
 DEBUG=True
 
 # Database
-DATABASE_URL=postgresql://iamkt_user:${DB_PASSWORD}@iamkt_postgres:5432/iamkt_db
+DATABASE_URL=postgresql://${PROJECT_NAME}_user:${DB_PASSWORD}@${PROJECT_NAME}_postgres:5432/${PROJECT_NAME}_db
 
 # Redis & Celery
-REDIS_URL=redis://iamkt_redis:6379/0
-CELERY_BROKER_URL=redis://iamkt_redis:6379/0
-CELERY_RESULT_BACKEND=redis://iamkt_redis:6379/0
+REDIS_URL=redis://${PROJECT_NAME}_redis:6379/0
+CELERY_BROKER_URL=redis://${PROJECT_NAME}_redis:6379/0
+CELERY_RESULT_BACKEND=redis://${PROJECT_NAME}_redis:6379/0
 
 # Django Security
 SECRET_KEY=${SECRET_KEY}
@@ -403,7 +422,7 @@ SITE_URL=https://${APP_DOMAIN}
 DJANGO_APPS=posts,pautas,perfil,dashboard
 
 # Docker
-COMPOSE_PROJECT_NAME=iamkt
+COMPOSE_PROJECT_NAME=${PROJECT_NAME}
 
 # AI Integrations
 OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -445,14 +464,15 @@ EOF
 chmod 600 .env.development
 log_success "Arquivo .env.development criado"
 
-# Atualizar docker-compose.yml com domínio
-log_info "Atualizando docker-compose.yml com domínio..."
-sed -i "s/iamkt-femmeintegra.aisuites.com.br/${APP_DOMAIN}/g" docker-compose.yml
-log_success "Domínio atualizado no docker-compose.yml"
+# Exportar variáveis para docker-compose
+export PROJECT_NAME
+export APP_DOMAIN
+export DB_PASSWORD
 
-# Atualizar senha do PostgreSQL no docker-compose.yml
-sed -i "s/dev_iamkt_password_2026/${DB_PASSWORD}/g" docker-compose.yml
-log_success "Senha do PostgreSQL atualizada"
+log_info "Variáveis de ambiente configuradas:"
+echo "  - PROJECT_NAME: $PROJECT_NAME"
+echo "  - APP_DOMAIN: $APP_DOMAIN"
+echo "  - DB_PASSWORD: ********"
 
 # Build e deploy
 log_info "Fazendo build da aplicação..."
@@ -469,19 +489,19 @@ sleep 60
 
 # Executar migrations
 log_info "Executando migrations do Django..."
-docker exec iamkt_web python manage.py migrate
+docker exec ${PROJECT_NAME}_web python manage.py migrate
 log_success "Migrations executadas"
 
 # Coletar estáticos
 log_info "Coletando arquivos estáticos..."
-docker exec iamkt_web python manage.py collectstatic --noinput
+docker exec ${PROJECT_NAME}_web python manage.py collectstatic --noinput
 log_success "Arquivos estáticos coletados"
 
 # Criar superusuário
 echo ""
 log_info "Criando superusuário do Django..."
 log_warning "Você precisará fornecer email e senha para o admin"
-docker exec -it iamkt_web python manage.py createsuperuser
+docker exec -it ${PROJECT_NAME}_web python manage.py createsuperuser
 
 log_success "FASE 3 CONCLUÍDA: Aplicação deployada!"
 
@@ -491,7 +511,7 @@ log_success "FASE 3 CONCLUÍDA: Aplicação deployada!"
 log_step "FASE 4/4: VALIDAÇÃO DO DEPLOY"
 
 log_info "Verificando containers..."
-docker ps | grep iamkt
+docker ps | grep ${PROJECT_NAME}
 
 echo ""
 log_info "Status dos containers:"
