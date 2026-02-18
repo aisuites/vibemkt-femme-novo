@@ -604,31 +604,30 @@
    * Envia requisição para gerar post
    */
   async function requestPostFromAgent(payload) {
-    if (!POSTS_WEBHOOK_URL) {
-      throw new Error('URL de webhook não configurada');
-    }
-
-    const formData = new FormData();
-    formData.append('rede', payload.rede || 'Instagram');
-    formData.append('tema', payload.tema || '');
-    formData.append('usuario', payload.usuario || '');
-    formData.append('formatos', JSON.stringify(payload.formatos || []));
-    formData.append('carrossel', payload.carrossel ? '1' : '0');
-    formData.append('qtdImagens', String(payload.qtdImagens || 1));
-    formData.append('ctaRequested', payload.ctaRequested ? '1' : '0');
+    // Enviar para endpoint Django /posts/gerar/
+    // O Django cria o post e envia para N8N com todos os dados necessários (knowledge_base, etc)
+    const endpoint = '/posts/gerar/';
     
-    if (Array.isArray(payload.files)) {
-      payload.files.forEach(file => {
-        if (file) formData.append('referencias', file);
-      });
-    }
+    // Preparar payload JSON para Django
+    const jsonPayload = {
+      rede_social: payload.rede?.toLowerCase() || 'instagram',
+      formato: payload.formatos?.[0] || 'feed',
+      cta_requested: payload.ctaRequested || false,
+      is_carousel: payload.carrossel || false,
+      image_count: payload.qtdImagens || 1,
+      tema: payload.tema || '',
+      reference_images: payload.files || []
+    };
 
-    logger.debug('[POSTS] Enviando post para:', POSTS_WEBHOOK_URL);
+    logger.debug('[POSTS] Enviando post para Django:', endpoint, jsonPayload);
     
-    const response = await fetch(POSTS_WEBHOOK_URL, {
+    const response = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'X-CSRFToken': CSRF_TOKEN },
-      body: formData,
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRFToken': CSRF_TOKEN 
+      },
+      body: JSON.stringify(jsonPayload),
     });
 
     logger.debug('[POSTS] Response status:', response.status, response.ok);
@@ -654,8 +653,6 @@
   }
 
   // Submit do formulário Gerar Post
-  // NOTA: Event listener desabilitado - agora é tratado por posts-modal.js
-  /*
   if (dom.formGerarPost) {
     dom.formGerarPost.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -708,7 +705,6 @@
       }
     });
   }
-  */
 
   // ============================================================================
   // FILTROS E PAGINAÇÃO

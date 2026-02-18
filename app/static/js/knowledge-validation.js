@@ -8,10 +8,10 @@
 
   // Configuração de campos obrigatórios por bloco
   const REQUIRED_FIELDS = {
-    'bloco1': ['nome_empresa', 'missao', 'valores'],
-    'bloco2': ['publico_externo'],
-    'bloco3': ['posicionamento', 'diferenciais'],
-    'bloco4': ['tom_voz_externo'],
+    'bloco1': ['nome_empresa', 'descricao_produto'],
+    'bloco2': [],
+    'bloco3': [],
+    'bloco4': [],
     'bloco5': [],
     'bloco6': [],
     'bloco7': []
@@ -20,12 +20,7 @@
   // Labels dos campos para mensagens amigáveis
   const FIELD_LABELS = {
     'nome_empresa': 'Nome da empresa',
-    'missao': 'Missão',
-    'valores': 'Valores & princípios',
-    'publico_externo': 'Público externo',
-    'posicionamento': 'Posicionamento de mercado',
-    'diferenciais': 'Diferenciais competitivos',
-    'tom_voz_externo': 'Tom de voz externo'
+    'descricao_produto': 'Descrição do Produto/Serviço'
   };
 
   /**

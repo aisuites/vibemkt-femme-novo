@@ -129,13 +129,13 @@ class KnowledgeBase(models.Model):
     
     # BLOCO 1: IDENTIDADE INSTITUCIONAL
     nome_empresa = models.CharField(max_length=200, verbose_name='Nome da Empresa')
-    missao = models.TextField(verbose_name='Missão')
+    missao = models.TextField(blank=True, verbose_name='Missão')
     visao = models.TextField(blank=True, verbose_name='Visão')
-    valores = models.TextField(verbose_name='Valores')
-    descricao_produto = models.TextField(blank=True, verbose_name='Descrição do Produto/Serviço')
+    valores = models.TextField(blank=True, verbose_name='Valores')
+    descricao_produto = models.TextField(verbose_name='Descrição do Produto/Serviço')
     
     # BLOCO 2: PÚBLICO E SEGMENTOS
-    publico_externo = models.TextField(verbose_name='Público Externo')
+    publico_externo = models.TextField(blank=True, verbose_name='Público Externo')
     publico_interno = models.TextField(blank=True, verbose_name='Público Interno')
     segmentos_internos = models.JSONField(
         default=list,
@@ -145,12 +145,12 @@ class KnowledgeBase(models.Model):
     )
     
     # BLOCO 3: POSICIONAMENTO E DIFERENCIAIS
-    posicionamento = models.TextField(verbose_name='Posicionamento de Marca')
-    diferenciais = models.TextField(verbose_name='Diferenciais Competitivos')
+    posicionamento = models.TextField(blank=True, verbose_name='Posicionamento de Marca')
+    diferenciais = models.TextField(blank=True, verbose_name='Diferenciais Competitivos')
     proposta_valor = models.TextField(blank=True, verbose_name='Proposta de Valor')
     
     # BLOCO 4: TOM DE VOZ E LINGUAGEM
-    tom_voz_externo = models.TextField(verbose_name='Tom de Voz Externo')
+    tom_voz_externo = models.TextField(blank=True, verbose_name='Tom de Voz Externo')
     tom_voz_interno = models.TextField(blank=True, verbose_name='Tom de Voz Interno')
     palavras_recomendadas = models.JSONField(
         default=list,

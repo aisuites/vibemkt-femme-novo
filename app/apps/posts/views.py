@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.conf import settings
 from .models import Post
 
 
@@ -98,7 +99,7 @@ def posts_list(request):
         'filtros': filtros,
         'knowledge_base': knowledge_base,
         'posts_json': posts_json,
-        'posts_webhook_url': '',  # TODO: Configurar webhook URL
+        'posts_webhook_url': settings.N8N_WEBHOOK_GERAR_POST,
     }
     
     return render(request, 'posts/posts_list.html', context)

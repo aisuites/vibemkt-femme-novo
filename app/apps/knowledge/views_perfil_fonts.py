@@ -23,8 +23,12 @@ def perfil_add_font(request):
     """
     try:
         data = json.loads(request.body)
+        print(f"🔍 [PERFIL_ADD_FONT] Payload recebido: {data}", flush=True)
+        
         font_source = data.get('font_source', 'google')
         usage = data.get('usage', '').strip()
+        
+        print(f"🔍 [PERFIL_ADD_FONT] font_source={font_source}, usage={usage}", flush=True)
         
         if not usage:
             return JsonResponse({

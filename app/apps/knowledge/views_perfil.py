@@ -101,7 +101,7 @@ def perfil_apply_suggestions(request):
                                 'is_active': True
                             }
                         )
-                        updated_fields.append(f'social_{network_type}')
+                        # NÃO adicionar a updated_fields (SocialNetwork é modelo separado)
                         print(f"✅ [PERFIL_APPLY] Rede social editada: {network_type} = {url}", flush=True)
                     continue
                 

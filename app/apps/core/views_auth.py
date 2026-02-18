@@ -69,8 +69,21 @@ def login_view(request):
             
             # Verificar onboarding e suggestions_reviewed para decidir redirecionamento
             from apps.knowledge.models import KnowledgeBase
+            import logging
+            logger = logging.getLogger(__name__)
+            
             try:
                 kb = KnowledgeBase.objects.filter(organization=org).first()
+                
+                # Criar KB automaticamente se não existir
+                if not kb:
+                    kb = KnowledgeBase.objects.create(
+                        organization=org,
+                        nome_empresa=org.name
+                    )
+                    logger.info(f"✅ [LOGIN] KB criado automaticamente para {org.name}")
+                    print(f"✅ [LOGIN] KB criado automaticamente para {org.name}", flush=True)
+                
                 print(f"🔍 [LOGIN] KB encontrado: {kb is not None}", flush=True)
                 
                 if kb:

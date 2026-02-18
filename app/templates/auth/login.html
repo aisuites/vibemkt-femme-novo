@@ -18,7 +18,7 @@
         <!-- Coluna Esquerda: Logo e Texto -->
         <div class="auth-left">
             <div class="auth-brand">
-                <img src="{% static 'img/logo.png' %}" alt="IAMKT Logo" class="auth-logo">
+                <img src="{% static 'img/logo-iamkt-vf.png' %}" alt="IAMKT Logo" class="auth-logo">
                 <h1 class="auth-title">Acesso inteligente</h1>
                 <p class="auth-description">
                     Conecte-se para acompanhar pautas, conteúdos aprovados e solicitações do agente. 
@@ -77,8 +77,15 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="auth-btn-primary">
-                        Acessar painel
+                    <button type="submit" class="auth-btn-primary" id="loginButton">
+                        <span class="btn-text">Acessar painel</span>
+                        <span class="btn-spinner" style="display: none;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path>
+                            </svg>
+                            Entrando...
+                        </span>
                     </button>
 
                     <a href="#" class="auth-link">Esqueci minha senha</a>
@@ -95,12 +102,42 @@
         </div>
     </div>
 
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .btn-spinner {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .auth-btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+    </style>
+
     <script>
         // Toggle password visibility
         document.querySelector('.btn-toggle-password')?.addEventListener('click', function() {
             const input = document.getElementById('password');
             const type = input.type === 'password' ? 'text' : 'password';
             input.type = type;
+        });
+
+        // Show loading spinner on form submit
+        document.querySelector('.auth-form')?.addEventListener('submit', function(e) {
+            const button = document.getElementById('loginButton');
+            const btnText = button.querySelector('.btn-text');
+            const btnSpinner = button.querySelector('.btn-spinner');
+            
+            // Show spinner and disable button
+            btnText.style.display = 'none';
+            btnSpinner.style.display = 'flex';
+            button.disabled = true;
         });
     </script>
 </body>
