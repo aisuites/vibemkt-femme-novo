@@ -1,4 +1,4 @@
-# IAMKT - Marketing Automation Platform
+# vibemkt FEMME - Marketing Automation Platform
 
 Sistema de automação de marketing integrado à infraestrutura FemmeIntegra.
 
@@ -17,9 +17,9 @@ make down
 
 ## 🔗 URLs
 
-- **Produção:** https://iamkt-femmeintegra.aisuites.com.br
-- **Admin:** https://iamkt-femmeintegra.aisuites.com.br/admin/
-- **Health Check:** https://iamkt-femmeintegra.aisuites.com.br/health/
+- **Produção:** https://vibemkt-femme.aisuites.com.br
+- **Admin:** https://vibemkt-femme.aisuites.com.br/admin/
+- **Health Check:** https://vibemkt-femme.aisuites.com.br/health/
 
 ## 📚 Documentação
 
