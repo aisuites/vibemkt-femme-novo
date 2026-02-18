@@ -1,21 +1,21 @@
 version: '3.8'
 
 services:
-  iamkt_web:
+  vibemkt_web:
     build:
       context: ./app
       dockerfile: Dockerfile
-    container_name: iamkt_web
+    container_name: vibemkt_web
     restart: unless-stopped
     depends_on:
-      - iamkt_postgres
-      - iamkt_redis
+      - vibemkt_postgres
+      - vibemkt_redis
     volumes:
       - ./app:/app
-      - iamkt_media:/app/media
-      - iamkt_static:/app/staticfiles
+      - vibemkt_media:/app/media
+      - vibemkt_static:/app/staticfiles
     networks:
-      - iamkt_internal
+      - vibemkt_internal
       - traefik_proxy
     environment:
       - ENV_FILE=${ENV_FILE:-development}
@@ -30,34 +30,34 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
-      - "traefik.http.routers.iamkt-https.rule=Host(`app.iamkt.com.br`)"
-      - "traefik.http.routers.iamkt-https.entrypoints=websecure"
-      - "traefik.http.routers.iamkt-https.tls=true"
-      - "traefik.http.routers.iamkt-https.tls.certresolver=cloudflare"
-      - "traefik.http.routers.iamkt-https.priority=200"
-      - "traefik.http.routers.iamkt-http.rule=Host(`app.iamkt.com.br`)"
-      - "traefik.http.routers.iamkt-http.entrypoints=web"
-      - "traefik.http.routers.iamkt-http.middlewares=https-redirect"
-      - "traefik.http.routers.iamkt-http.priority=200"
-      - "traefik.http.services.iamkt.loadbalancer.server.port=8000"
+      - "traefik.http.routers.vibemkt-https.rule=Host(`vibemkt.aisuites.com.br`)"
+      - "traefik.http.routers.vibemkt-https.entrypoints=websecure"
+      - "traefik.http.routers.vibemkt-https.tls=true"
+      - "traefik.http.routers.vibemkt-https.tls.certresolver=cloudflare"
+      - "traefik.http.routers.vibemkt-https.priority=200"
+      - "traefik.http.routers.vibemkt-http.rule=Host(`vibemkt.aisuites.com.br`)"
+      - "traefik.http.routers.vibemkt-http.entrypoints=web"
+      - "traefik.http.routers.vibemkt-http.middlewares=https-redirect"
+      - "traefik.http.routers.vibemkt-http.priority=200"
+      - "traefik.http.services.vibemkt.loadbalancer.server.port=8000"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
 
-  iamkt_celery:
+  vibemkt_celery:
     build:
       context: ./app
       dockerfile: Dockerfile
-    container_name: iamkt_celery
+    container_name: vibemkt_celery
     restart: unless-stopped
     command: celery -A sistema worker -l info
     depends_on:
-      - iamkt_postgres
-      - iamkt_redis
+      - vibemkt_postgres
+      - vibemkt_redis
     volumes:
       - ./app:/app
-      - iamkt_media:/app/media
+      - vibemkt_media:/app/media
     networks:
-      - iamkt_internal
+      - vibemkt_internal
     environment:
       - ENV_FILE=${ENV_FILE:-development}
     env_file:
@@ -75,19 +75,19 @@ services:
         reservations:
           memory: 128M
 
-  iamkt_postgres:
+  vibemkt_postgres:
     image: postgres:15-alpine
-    container_name: iamkt_postgres
+    container_name: vibemkt_postgres
     restart: unless-stopped
     volumes:
-      - iamkt_postgres_data:/var/lib/postgresql/data
+      - vibemkt_postgres_data:/var/lib/postgresql/data
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
-      - iamkt_internal
+      - vibemkt_internal
     environment:
-      POSTGRES_DB: iamkt_db
-      POSTGRES_USER: iamkt_user
-      POSTGRES_PASSWORD: dev_password_change_me
+      POSTGRES_DB: vibemkt_db
+      POSTGRES_USER: vibemkt_user
+      POSTGRES_PASSWORD: 1ffd3ae6f22da32c988f50fad858a9d3
     deploy:
       resources:
         limits:
@@ -95,15 +95,15 @@ services:
         reservations:
           memory: 128M
 
-  iamkt_redis:
+  vibemkt_redis:
     image: redis:7-alpine
-    container_name: iamkt_redis
+    container_name: vibemkt_redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
     volumes:
-      - iamkt_redis_data:/data
+      - vibemkt_redis_data:/data
     networks:
-      - iamkt_internal
+      - vibemkt_internal
     deploy:
       resources:
         limits:
@@ -112,18 +112,18 @@ services:
           memory: 64M
 
 volumes:
-  iamkt_postgres_data:
-    name: iamkt_postgres_data
-  iamkt_redis_data:
-    name: iamkt_redis_data
-  iamkt_media:
-    name: iamkt_media
-  iamkt_static:
-    name: iamkt_static
+  vibemkt_postgres_data:
+    name: vibemkt_postgres_data
+  vibemkt_redis_data:
+    name: vibemkt_redis_data
+  vibemkt_media:
+    name: vibemkt_media
+  vibemkt_static:
+    name: vibemkt_static
 
 networks:
-  iamkt_internal:
-    name: iamkt_internal
+  vibemkt_internal:
+    name: vibemkt_internal
     driver: bridge
     ipam:
       driver: default
