@@ -211,6 +211,9 @@ IA_CACHE_TTL = config('IA_CACHE_TTL', default=2592000, cast=int)  # 30 dias
 DEFAULT_MONTHLY_GENERATION_LIMIT = config('DEFAULT_MONTHLY_GENERATION_LIMIT', default=100, cast=int)
 DEFAULT_MONTHLY_COST_LIMIT = config('DEFAULT_MONTHLY_COST_LIMIT', default=100.00, cast=float)
 
+# URL base da aplicação (usada para montar callbacks internos)
+APP_BASE_URL = config('APP_BASE_URL', default='https://vibemkt.aisuites.com.br').rstrip('/')
+
 # N8N INTEGRATION
 N8N_WEBHOOK_FUNDAMENTOS = config('N8N_WEBHOOK_FUNDAMENTOS', default='')
 N8N_WEBHOOK_COMPILE_SEMSUGEST = config('N8N_WEBHOOK_COMPILA_SEM_SUGEST', default='')
