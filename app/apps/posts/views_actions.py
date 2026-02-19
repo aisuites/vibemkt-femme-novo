@@ -168,14 +168,12 @@ def generate_image(request, post_id):
         
         if settings.N8N_WEBHOOK_GERAR_IMAGEM:
             try:
-                import uuid
                 from django.urls import reverse
                 from apps.knowledge.models import KnowledgeBase
                 
-                # Gerar job_id e salvar no thread_id do post
-                job_id = str(uuid.uuid4())
-                post.thread_id = job_id
-                post.save(update_fields=['thread_id', 'updated_at'])
+                # Usar thread_id existente (alteração) ou deixar vazio (solicitação nova)
+                # O N8N devolverá o thread_id gerado, que será salvo no post via callback
+                thread_id = post.thread_id or ''
                 
                 # Buscar KnowledgeBase da organização
                 kb = KnowledgeBase.objects.filter(
@@ -234,7 +232,8 @@ def generate_image(request, post_id):
                 # Payload para N8N
                 n8n_payload = {
                     'callback_url': callback_url,
-                    'job_id': job_id,
+                    'post_id': post.id,
+                    'thread_id': thread_id,
                     'kb_id': kb_id,
                     's3_bucket': settings.AWS_BUCKET_NAME,
                     's3_pasta': f'/org-{post.organization.id}/imagensgeradas/',
@@ -244,7 +243,7 @@ def generate_image(request, post_id):
                     'referencias': referencias,
                 }
                 
-                logger.info(f"Enviando solicitação de imagem do post {post.id} para N8N (job_id={job_id})...")
+                logger.info(f"Enviando solicitação de imagem do post {post.id} para N8N...")
                 logger.debug(f"Payload N8N imagem: {n8n_payload}")
                 
                 response = requests.post(
