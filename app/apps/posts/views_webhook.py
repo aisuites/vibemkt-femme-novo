@@ -186,23 +186,48 @@ def n8n_post_callback(request):
         
         # Atualizar imagens (se fornecidas)
         if 'imagens' in data and isinstance(data['imagens'], list):
-            # Extrair URLs das imagens
-            image_urls = []
-            for img in data['imagens']:
-                if isinstance(img, dict) and 'url' in img:
-                    image_urls.append(img['url'])
-                elif isinstance(img, str):
-                    image_urls.append(img)
+            from apps.posts.models import PostImage
+            from urllib.parse import urlparse
             
-            if image_urls:
-                # Usar primeira imagem como principal
-                post.image_s3_url = image_urls[0]
-                post.has_image = True
-                logger.debug(f"✏️ [N8N_POST_CALLBACK] Imagem principal atualizada")
+            imagens_data = data['imagens']
+            imagens_processadas = []
+            
+            for img in imagens_data:
+                if isinstance(img, dict) and img.get('url'):
+                    imagens_processadas.append(img)
+                elif isinstance(img, str) and img:
+                    imagens_processadas.append({'url': img})
+            
+            if imagens_processadas:
+                # Remover imagens anteriores geradas automaticamente (manter uploads manuais se necessário)
+                PostImage.objects.filter(post=post).delete()
                 
-                # Se tiver s3_key, salvar também
-                if isinstance(data['imagens'][0], dict) and 's3_key' in data['imagens'][0]:
-                    post.image_s3_key = data['imagens'][0]['s3_key']
+                for order, img in enumerate(imagens_processadas):
+                    url = img.get('url', '')
+                    
+                    # s3_key: usar explícita se disponível, senão derivar da URL
+                    s3_key = img.get('s3_key', '')
+                    if not s3_key and url:
+                        parsed = urlparse(url)
+                        s3_key = parsed.path.lstrip('/')
+                    
+                    PostImage.objects.create(
+                        post=post,
+                        s3_url=url,
+                        s3_key=s3_key,
+                        order=order,
+                    )
+                
+                # Atualizar campos principais do post com a primeira imagem
+                post.image_s3_url = imagens_processadas[0].get('url', '')
+                post.image_s3_key = (
+                    imagens_processadas[0].get('s3_key', '')
+                    or urlparse(post.image_s3_url).path.lstrip('/')
+                )
+                post.has_image = True
+                logger.debug(
+                    f"✏️ [N8N_POST_CALLBACK] {len(imagens_processadas)} imagem(ns) salva(s) via PostImage"
+                )
         
         # Salvar alterações
         post.save()

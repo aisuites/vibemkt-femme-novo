@@ -162,6 +162,116 @@ def generate_image(request, post_id):
         except Exception as exc:
             logger.warning(f'Erro ao enviar email de solicitação: {exc}')
         
+        # Enviar para N8N (geração automática de imagem)
+        n8n_image_success = False
+        n8n_image_error = None
+        
+        if settings.N8N_WEBHOOK_GERAR_IMAGEM:
+            try:
+                import uuid
+                from django.urls import reverse
+                from apps.knowledge.models import KnowledgeBase
+                
+                # Gerar job_id e salvar no thread_id do post
+                job_id = str(uuid.uuid4())
+                post.thread_id = job_id
+                post.save(update_fields=['thread_id', 'updated_at'])
+                
+                # Buscar KnowledgeBase da organização
+                kb = KnowledgeBase.objects.filter(
+                    organization=post.organization
+                ).first()
+                
+                # marketing_input_summary
+                marketing_summary = ''
+                kb_id = ''
+                if kb:
+                    kb_id = str(kb.id)
+                    if isinstance(kb.n8n_compilation, dict):
+                        marketing_summary = kb.n8n_compilation.get('marketing_input_summary', '')
+                    elif isinstance(kb.n8n_compilation, str):
+                        try:
+                            import json as json_lib
+                            compilation_data = json_lib.loads(kb.n8n_compilation)
+                            marketing_summary = compilation_data.get('marketing_input_summary', '')
+                        except Exception:
+                            marketing_summary = kb.n8n_compilation
+                
+                # Montar lista de referências
+                referencias = []
+                
+                # 1. Logos do KB
+                if kb:
+                    for logo in kb.logos.all():
+                        if logo.s3_url:
+                            referencias.append({
+                                'tipo': 'logotipo',
+                                'url': logo.s3_url,
+                            })
+                
+                # 2. Imagens de referência do KB
+                if kb:
+                    for ref in kb.reference_images.all():
+                        if ref.s3_url:
+                            referencias.append({
+                                'tipo': 'referencia',
+                                'url': ref.s3_url,
+                            })
+                
+                # 3. Imagens de referência adicionadas no modal Gerar Post
+                if post.reference_images:
+                    for ref in post.reference_images:
+                        ref_url = ref.get('url') or ref.get('s3_url') or '' if isinstance(ref, dict) else str(ref)
+                        if ref_url:
+                            referencias.append({
+                                'tipo': 'referencia',
+                                'url': ref_url,
+                            })
+                
+                # callback_url usando endpoint existente
+                callback_url = f"{settings.APP_BASE_URL}{reverse('posts:n8n_post_callback')}"
+                
+                # Payload para N8N
+                n8n_payload = {
+                    'callback_url': callback_url,
+                    'job_id': job_id,
+                    'kb_id': kb_id,
+                    's3_bucket': settings.AWS_BUCKET_NAME,
+                    's3_pasta': f'/org-{post.organization.id}/imagensgeradas/',
+                    'quantidade': post.image_count,
+                    'prompt': post.image_prompt or '',
+                    'marketing_input_summary': marketing_summary,
+                    'referencias': referencias,
+                }
+                
+                logger.info(f"Enviando solicitação de imagem do post {post.id} para N8N (job_id={job_id})...")
+                logger.debug(f"Payload N8N imagem: {n8n_payload}")
+                
+                response = requests.post(
+                    settings.N8N_WEBHOOK_GERAR_IMAGEM,
+                    json=n8n_payload,
+                    timeout=settings.N8N_WEBHOOK_TIMEOUT,
+                    headers={
+                        'Content-Type': 'application/json',
+                        'X-Webhook-Secret': settings.N8N_WEBHOOK_SECRET,
+                    }
+                )
+                response.raise_for_status()
+                n8n_image_success = True
+                logger.info(f"Solicitação de imagem do post {post.id} enviada ao N8N com sucesso")
+                
+            except requests.exceptions.Timeout:
+                n8n_image_error = 'Timeout ao enviar para N8N'
+                logger.error(f"Timeout ao enviar imagem do post {post.id} para N8N")
+            except requests.exceptions.RequestException as e:
+                n8n_image_error = f'Erro ao enviar para N8N: {str(e)}'
+                logger.error(f"Erro ao enviar imagem do post {post.id} para N8N: {e}", exc_info=True)
+            except Exception as e:
+                n8n_image_error = f'Erro inesperado: {str(e)}'
+                logger.error(f"Erro inesperado ao enviar imagem do post {post.id} para N8N: {e}", exc_info=True)
+        else:
+            logger.info("N8N_WEBHOOK_GERAR_IMAGEM não configurado — solicitação registrada manualmente")
+        
         return JsonResponse({
             'success': True,
             'id': post.id,
