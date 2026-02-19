@@ -202,7 +202,7 @@ AWS_QUERYSTRING_EXPIRE = 604800  # 7 dias
 
 # AWS S3 - Upload com Presigned URLs (bucket único com prefixos por organização)
 AWS_REGION = config('AWS_REGION', default='us-east-1')  # Alias para compatibilidade
-AWS_BUCKET_NAME = config('AWS_BUCKET_NAME', default='iamkt-uploads')  # Bucket único para toda aplicação
+AWS_BUCKET_NAME = config('AWS_BUCKET_NAME', default='vibemkt-femme-arquivos')  # Bucket único para toda aplicação
 
 # IA CACHE
 IA_CACHE_TTL = config('IA_CACHE_TTL', default=2592000, cast=int)  # 30 dias
