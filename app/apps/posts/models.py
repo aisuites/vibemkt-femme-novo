@@ -3,6 +3,54 @@ from apps.core.models import User, Area
 from apps.core.managers import OrganizationScopedManager
 
 
+class PostFormat(models.Model):
+    """
+    Formatos padrão de imagem por rede social e tipo de conteúdo.
+    Tabela global pré-populada, não vinculada a organização.
+    """
+    NETWORK_CHOICES = [
+        ('instagram', 'Instagram'),
+        ('facebook', 'Facebook'),
+        ('linkedin', 'LinkedIn'),
+        ('twitter', 'Twitter/X'),
+        ('tiktok', 'TikTok'),
+        ('whatsapp', 'WhatsApp'),
+    ]
+
+    social_network = models.CharField(
+        max_length=20,
+        choices=NETWORK_CHOICES,
+        verbose_name='Rede Social'
+    )
+    name = models.CharField(
+        max_length=100,
+        verbose_name='Nome do Formato',
+        help_text='Ex: Feed Quadrado, Stories, Reels'
+    )
+    width = models.IntegerField(verbose_name='Largura (px)')
+    height = models.IntegerField(verbose_name='Altura (px)')
+    aspect_ratio = models.CharField(
+        max_length=10,
+        verbose_name='Aspect Ratio',
+        help_text='Ex: 1:1, 4:5, 9:16, 16:9'
+    )
+    is_active = models.BooleanField(default=True, verbose_name='Ativo')
+    order = models.IntegerField(default=0, verbose_name='Ordem')
+
+    class Meta:
+        verbose_name = 'Formato de Post'
+        verbose_name_plural = 'Formatos de Post'
+        ordering = ['social_network', 'order', 'name']
+        unique_together = [['social_network', 'name']]
+
+    def __str__(self):
+        return f"{self.get_social_network_display()} — {self.name} ({self.width}x{self.height})"
+
+    @property
+    def dimensions(self):
+        return f"{self.width}x{self.height}"
+
+
 class Post(models.Model):
     """
     Posts de redes sociais gerados por IA (Instagram, Facebook, LinkedIn, etc)
@@ -183,6 +231,15 @@ class Post(models.Model):
     image_prompt = models.TextField(blank=True, verbose_name='Prompt da Imagem')
     image_width = models.IntegerField(null=True, blank=True, verbose_name='Largura')
     image_height = models.IntegerField(null=True, blank=True, verbose_name='Altura')
+    post_format = models.ForeignKey(
+        'PostFormat',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='posts',
+        verbose_name='Formato',
+        help_text='Formato de imagem selecionado (dimensões e aspect ratio)'
+    )
     
     # Status e aprovação
     status = models.CharField(

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, PostImage, PostChangeRequest
+from .models import Post, PostImage, PostChangeRequest, PostFormat
 
 
 class PostImageInline(admin.TabularInline):
@@ -90,6 +90,7 @@ class PostAdmin(admin.ModelAdmin):
                 'image_s3_url',
                 'image_s3_key',
                 'image_prompt',
+                'post_format',
                 'image_width',
                 'image_height',
                 'reference_images',
@@ -115,6 +116,14 @@ class PostAdmin(admin.ModelAdmin):
         if request.user.is_superuser:
             return qs
         return qs.filter(organization=request.user.organization)
+
+
+@admin.register(PostFormat)
+class PostFormatAdmin(admin.ModelAdmin):
+    list_display = ['social_network', 'name', 'width', 'height', 'aspect_ratio', 'is_active', 'order']
+    list_filter = ['social_network', 'is_active']
+    list_editable = ['order', 'is_active']
+    ordering = ['social_network', 'order', 'name']
 
 
 @admin.register(PostChangeRequest)

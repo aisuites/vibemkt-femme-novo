@@ -180,9 +180,12 @@ def generate_image(request, post_id):
                     organization=post.organization
                 ).first()
                 
-                # marketing_input_summary
+                # marketing_input_summary e dados do KB
                 marketing_summary = ''
                 kb_id = ''
+                publico_alvo = ''
+                paleta = []
+                tipografia = []
                 if kb:
                     kb_id = str(kb.id)
                     if isinstance(kb.n8n_compilation, dict):
@@ -194,6 +197,38 @@ def generate_image(request, post_id):
                             marketing_summary = compilation_data.get('marketing_input_summary', '')
                         except Exception:
                             marketing_summary = kb.n8n_compilation
+                    
+                    # Público-alvo
+                    publico_alvo = kb.publico_externo or ''
+                    
+                    # Paleta de cores
+                    for cor in kb.colors.all():
+                        paleta.append({
+                            'nome': cor.name,
+                            'hex': cor.hex_code,
+                            'tipo': cor.color_type,
+                        })
+                    
+                    # Tipografia
+                    for font in kb.typography_settings.all():
+                        font_entry = {
+                            'uso': font.usage,
+                            'origem': font.font_source,
+                        }
+                        if font.font_source == 'google':
+                            font_entry['nome'] = font.google_font_name
+                            font_entry['peso'] = font.google_font_weight
+                            font_entry['url'] = font.google_font_url
+                        elif font.custom_font:
+                            font_entry['nome'] = font.custom_font.name
+                        tipografia.append(font_entry)
+                
+                # Formato e aspect ratio via PostFormat
+                formato_px = ''
+                aspect_ratio = ''
+                if post.post_format:
+                    formato_px = post.post_format.dimensions
+                    aspect_ratio = post.post_format.aspect_ratio
                 
                 # Montar lista de referências
                 referencias = []
@@ -238,8 +273,17 @@ def generate_image(request, post_id):
                     's3_bucket': settings.AWS_BUCKET_NAME,
                     's3_pasta': f'/org-{post.organization.id}/imagensgeradas/',
                     'quantidade': post.image_count,
+                    'rede_social': post.social_network,
+                    'formato_px': formato_px,
+                    'aspect_ratio': aspect_ratio,
+                    'publico_alvo': publico_alvo,
+                    'titulo': post.title or '',
+                    'subtitulo': post.subtitle or '',
+                    'cta': post.cta or '',
                     'prompt': post.image_prompt or '',
                     'marketing_input_summary': marketing_summary,
+                    'paleta': paleta,
+                    'tipografia': tipografia,
                     'referencias': referencias,
                 }
                 
