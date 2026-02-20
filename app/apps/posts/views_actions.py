@@ -223,12 +223,41 @@ def generate_image(request, post_id):
                             font_entry['nome'] = font.custom_font.name
                         tipografia.append(font_entry)
                 
-                # Formato e aspect ratio via PostFormat
+                # Formato e aspect ratio — derivar de rede_social + formato do post
+                from apps.posts.models import PostFormat
                 formato_px = ''
                 aspect_ratio = ''
-                if post.post_format:
-                    formato_px = post.post_format.dimensions
-                    aspect_ratio = post.post_format.aspect_ratio
+                
+                # Mapeamento: formato do post → nomes preferidos no PostFormat (ordem de prioridade)
+                FORMATO_MAP = {
+                    'feed':      ['Feed Retrato', 'Feed', 'Feed Quadrado', 'Imagem'],
+                    'stories':   ['Stories', 'Status'],
+                    'reels':     ['Reels', 'Vídeo/Reels', 'Stories'],
+                    'both':      ['Feed Retrato', 'Feed', 'Feed Quadrado', 'Imagem'],
+                    'story':     ['Stories', 'Status'],
+                    'carrossel': ['Feed Retrato', 'Feed', 'Feed Quadrado', 'Imagem'],
+                    'post':      ['Feed Retrato', 'Feed', 'Feed Quadrado', 'Imagem'],
+                }
+                
+                # Primeiro tenta pelo FK direto (se já preenchido)
+                pf = post.post_format
+                
+                # Se não tiver FK, busca pela rede social + formato
+                if not pf:
+                    formato_post = post.formats[0] if post.formats else post.content_type
+                    nomes_preferidos = FORMATO_MAP.get(formato_post, ['Feed', 'Feed Retrato'])
+                    for nome in nomes_preferidos:
+                        pf = PostFormat.objects.filter(
+                            social_network=post.social_network,
+                            name=nome,
+                            is_active=True,
+                        ).first()
+                        if pf:
+                            break
+                
+                if pf:
+                    formato_px = pf.dimensions
+                    aspect_ratio = pf.aspect_ratio
                 
                 # Montar lista de referências
                 referencias = []
