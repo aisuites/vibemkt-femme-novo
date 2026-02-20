@@ -110,7 +110,7 @@
 
 /* Header específico da página de visualização */
 .perfil-header {
-    background: linear-gradient(135deg, var(--primary-color, #3b82f6) 0%, var(--primary-dark, #2563eb) 100%);
+    background: var(--color-teal-500);/*linear-gradient(135deg, var(--primary-color, #3b82f6) 0%, var(--primary-dark, #2563eb) 100%);*/
     color: white;
     padding: 3rem 2rem;
     border-radius: 12px;
@@ -742,12 +742,13 @@
 }
 
 .btn-primary {
-    background: var(--primary-color, #3b82f6);
-    color: white;
+    background: #E9C2DB;/*var(--primary-color, #3b82f6);*/
+    color: var(--color-teal-500);
 }
 
 .btn-primary:hover {
-    background: var(--primary-dark, #2563eb);
+    background: white;/*var(--primary-dark, #2563eb);*/
+    color: var(--color-teal-500);
 }
 
 .btn-secondary {

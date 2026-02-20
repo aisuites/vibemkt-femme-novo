@@ -377,7 +377,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
-    background: linear-gradient(135deg, var(--posts-accent) 0%, #5c35ff 50%, #3f2bd6 100%);
+    background: var(--color-purple-600);/*linear-gradient(135deg, var(--posts-accent) 0%, #5c35ff 50%, #3f2bd6 100%);*/
     color: #fff;
     padding: 0.9rem 1.1rem;
     border-radius: 12px;
@@ -393,6 +393,7 @@
 .btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 10px 22px rgba(92, 53, 255, 0.45);
+    color: var(--color-purple-600);;
 }
 
 .btn.ghost {

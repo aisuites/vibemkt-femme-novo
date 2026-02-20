@@ -497,7 +497,7 @@ textarea.form-input-filter {
 
 /* Header estilo perfil */
 .perfil-header {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: var(--color-secondary);/*linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);*/
   color: white;
   padding: 3rem 2rem;
   border-radius: 12px;
