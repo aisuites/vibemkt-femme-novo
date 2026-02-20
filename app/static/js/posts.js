@@ -652,6 +652,86 @@
     return response.json();
   }
 
+  // ============================================================================
+  // UPLOAD DE IMAGENS DE REFERÊNCIA PARA S3
+  // ============================================================================
+
+  async function uploadReferencesToS3(files) {
+    if (!files || files.length === 0) return [];
+
+    const uploadedRefs = [];
+
+    for (const file of files) {
+      // 1. Obter Presigned URL
+      const urlResponse = await fetch('/posts/reference/upload-url/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': CSRF_TOKEN
+        },
+        body: new URLSearchParams({
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size
+        })
+      });
+
+      if (!urlResponse.ok) {
+        throw new Error(`Erro ao obter URL de upload para ${file.name}`);
+      }
+
+      const urlData = await urlResponse.json();
+      if (!urlData.success) throw new Error(urlData.error || `Erro ao obter URL para ${file.name}`);
+
+      const { upload_url, s3_key, organization_id } = urlData.data;
+
+      // 2. Upload direto para S3 via PUT
+      const s3Response = await fetch(upload_url, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+          'x-amz-server-side-encryption': 'AES256',
+          'x-amz-storage-class': 'INTELLIGENT_TIERING',
+          'x-amz-meta-original-name': file.name,
+          'x-amz-meta-organization-id': String(organization_id || '0'),
+          'x-amz-meta-category': 'posts',
+          'x-amz-meta-upload-timestamp': Math.floor(Date.now() / 1000).toString()
+        }
+      });
+
+      if (!s3Response.ok) throw new Error(`Erro ao fazer upload de ${file.name} para S3`);
+
+      // 3. Confirmar upload e obter URL pública
+      const confirmResponse = await fetch('/posts/reference/create/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify({
+          s3Key: s3_key,
+          name: file.name.replace(/\.(png|jpg|jpeg)$/i, '')
+        })
+      });
+
+      if (!confirmResponse.ok) throw new Error(`Erro ao confirmar upload de ${file.name}`);
+
+      const confirmData = await confirmResponse.json();
+      if (!confirmData.success) throw new Error(confirmData.error || `Erro ao confirmar ${file.name}`);
+
+      uploadedRefs.push({
+        name: file.name,
+        s3_key: s3_key,
+        s3_url: confirmData.data.s3_url
+      });
+
+      logger.debug('[POSTS] Referência enviada:', file.name, s3_key);
+    }
+
+    return uploadedRefs;
+  }
+
   // Submit do formulário Gerar Post
   if (dom.formGerarPost) {
     dom.formGerarPost.addEventListener('submit', async (e) => {
@@ -666,23 +746,33 @@
       const ctaRequested = ctaRadio?.value === 'sim';
       const files = dom.refImgs?.files ? Array.from(dom.refImgs.files) : [];
 
-      const payload = {
-        rede,
-        tema,
-        usuario: CURRENT_USER,
-        formatos,
-        carrossel,
-        qtdImagens,
-        ctaRequested,
-        files
-      };
+      const btnEnviar = document.getElementById('btnEnviarPost');
+      if (btnEnviar) { btnEnviar.disabled = true; btnEnviar.textContent = 'Enviando...'; }
 
       try {
+        // Upload das imagens de referência para S3 antes de enviar ao backend
+        let referenceImages = [];
+        if (files.length > 0) {
+          if (window.toaster) window.toaster.info('Fazendo upload das imagens de referência...');
+          referenceImages = await uploadReferencesToS3(files);
+          logger.debug('[POSTS] Referências enviadas:', referenceImages.length);
+        }
+
+        const payload = {
+          rede,
+          tema,
+          usuario: CURRENT_USER,
+          formatos,
+          carrossel,
+          qtdImagens,
+          ctaRequested,
+          files: referenceImages
+        };
+
         const result = await requestPostFromAgent(payload);
         
         logger.debug('[POSTS] Post gerado com sucesso:', result);
         
-        // Usar toaster ao invés de alert
         if (window.toaster) {
           window.toaster.success('Post enviado ao agente! Aguarde o processamento.');
         }
@@ -690,7 +780,6 @@
         closeModal('modalGerarPost');
         resetGerarPostForm();
         
-        // Recarregar página após 2 segundos
         setTimeout(() => {
           window.location.reload();
         }, 2000);
@@ -698,10 +787,11 @@
       } catch (error) {
         logger.error('[POSTS] Erro ao gerar post:', error);
         
-        // Usar toaster ao invés de alert
         if (window.toaster) {
           window.toaster.error(error.message || 'Erro ao gerar post. Tente novamente.');
         }
+      } finally {
+        if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.textContent = 'Enviar ao agente'; }
       }
     });
   }
