@@ -49,7 +49,10 @@ def gerar_post(request):
         is_carousel = data.get('is_carousel', False)
         image_count = data.get('image_count', 1)
         tema = data.get('tema', '').strip()
-        reference_images = data.get('reference_images', [])
+        reference_images = [
+            r for r in data.get('reference_images', [])
+            if isinstance(r, dict) and r.get('s3_url')
+        ]
         
         # Validar campos obrigatórios
         if not rede_social:
